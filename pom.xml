@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.dianemodb.tpcc</groupId>
+	<artifactId>tpcc</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+
+	<properties>
+		<log4j>2.13.3</log4j>
+		<diadb.version>0.0.1-SNAPSHOT</diadb.version>
+		<java.version>13</java.version>
+		<maven.compiler.source>13</maven.compiler.source>
+		<maven.compiler.target>13</maven.compiler.target>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.dianemodb</groupId>
+			<artifactId>h2-impl</artifactId>
+			<version>${diadb.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.dianemodb</groupId>
+			<artifactId>kryo-impl</artifactId>
+			<version>${diadb.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.dianemodb</groupId>
+			<artifactId>kafka-impl</artifactId>
+			<version>${diadb.version}</version>
+		</dependency>
+
+		<!-- Log4j components -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>${log4j}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>${log4j}</version>
+		</dependency>
+
+		<!-- Log4j's SLF4J implementation -->
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+			<version>${log4j}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-1.2-api</artifactId>
+			<version>${log4j}</version>
+		</dependency>
+		
+	</dependencies>
+
+</project>
