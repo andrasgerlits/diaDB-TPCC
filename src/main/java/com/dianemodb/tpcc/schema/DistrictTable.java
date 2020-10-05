@@ -3,10 +3,10 @@ package com.dianemodb.tpcc.schema;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.h2impl.SimpleIndexQueryPlan;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -17,7 +17,6 @@ import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.tpcc.entity.District;
-import com.dianemodb.tpcc.entity.Warehouse;
 
 
 public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
@@ -38,20 +37,32 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	public static final String NEXT_OID_COLUMN_NAME = "d_next_o_id";
 
 	private static final RecordColumn<District, Short> WAREHOUSE_COLUMN = 
-			new RecordColumn<>(new ShortColumn(WAREHOUSE_ID_COLUMNNAME), District::getWarehouseId);
+			new RecordColumn<>(
+					new ShortColumn(WAREHOUSE_ID_COLUMNNAME), 
+					District::getWarehouseId, 
+					District::setWarehouseId
+			);
 
 	private static final RecordColumn<District, Integer> NEXT_OID_COLUMN = 
-			new RecordColumn<>(new IntColumn(WAREHOUSE_ID_COLUMNNAME), District::getNextOid);
+			new RecordColumn<>(
+					new IntColumn(WAREHOUSE_ID_COLUMNNAME), 
+					District::getNextOid, 
+					District::setNextOid
+			);
 
 	public static final RecordColumn<District, Byte> PUBLIC_ID_COLUMN = 
-			new RecordColumn<>(new ByteColumn(PUBLIC_ID_COLUMNNAME), District::getPublicId);
+			new RecordColumn<>(
+					new ByteColumn(PUBLIC_ID_COLUMNNAME), 
+					District::getPublicId, 
+					District::setPublicId
+			);
 	
 	public static final UserRecordTableId ID = new UserRecordTableId(DISTRICT_TABLE_ID);
 
 	private final List<RecordColumn<District, ?>> columns;
-	private final Collection<DistributedIndex<District, ?>> indices;
+	private final Collection<DistributedIndex<District>> indices;
 	
-	protected DistrictTable(Collection<ServerComputerId> servers) {
+	protected DistrictTable(List<ServerComputerId> servers) {
 		super(
 			TABLE_NAME, 
 			ID, 
@@ -72,7 +83,11 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 		
 		this.indices = 
 			List.of(
-					PUBLIC_ID
+				SimpleIndexQueryPlan.hashBasedIndex(
+						servers, 
+						TABLE_NAME, 
+						List.of(PUBLIC_ID_COLUMN)
+				)
 			);
 	}
 	
@@ -101,7 +116,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<District, ?>> indices() {
+	protected Collection<DistributedIndex<District>> indices() {
 		return indices;
 	}
 

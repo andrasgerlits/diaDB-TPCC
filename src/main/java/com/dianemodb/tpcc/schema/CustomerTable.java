@@ -1,8 +1,6 @@
 package com.dianemodb.tpcc.schema;
 
 import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -16,15 +14,12 @@ import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.BigDecimalColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.LongColumn;
-import com.dianemodb.metaschema.QueryStep;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
-import com.dianemodb.metaschema.distributed.UniqueHashCodeBasedDistributedIndex;
-import com.dianemodb.metaschema.index.IndexRecord;
 import com.dianemodb.tpcc.entity.Customer;
 
 public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
@@ -61,105 +56,128 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	public static final RecordColumn<Customer, Integer> PUBLIC_ID_COLUMN = 
 			new RecordColumn<>(
 					new IntColumn(PUBLIC_ID_COLUMN_NAME), 
-					Customer::getPublicId
+					Customer::getPublicId,
+					Customer::setPublicId
 			);
 
 	public static final RecordColumn<Customer, Short> DISTRICT_ID_COLUMN =
 			new RecordColumn<>(
 					new ShortColumn(DISTRICT_ID_COLUMN_NAME), 
-					Customer::getDistrictId
+					Customer::getDistrictId,
+					Customer::setDistrictId
 			);
 
 	public static final RecordColumn<Customer, Short> WAREHOUSE_ID_COLUMN =
 			new RecordColumn<>(
 					new ShortColumn(WAREHOUSE_ID_COLUMN_NAME), 
-					Customer::getWarehouseId
+					Customer::getWarehouseId,
+					Customer::setWarehouseId
 			);
 	
 	public static final RecordColumn<Customer, String> FIRST_NAME_COLUMN = 
 			new RecordColumn<>(
 					new StringColumn(FIRST_NAME_COLUMN_NAME), 
-					Customer::getFirstName
+					Customer::getFirstName,
+					Customer::setFirstName
 			);
 	
 	public static final RecordColumn<Customer, String> MIDDLE_NAME_COLUMN =
 			new RecordColumn<>(
 					new StringColumn(MIDDLE_NAME_COLUMN_NAME), 
-					Customer::getMiddleName
+					Customer::getMiddleName,
+					Customer::setMiddleName
 			);
 	
 	public static final RecordColumn<Customer, String> LAST_NAME_COLUMN = 
 			new RecordColumn<>(
 					new StringColumn(LAST_NAME_COLUMN_NAME), 
-					Customer::getLastName
+					Customer::getLastName,
+					Customer::setLastName
 			);
 	
 	public static final RecordColumn<Customer, String> PHONE_COLUMN =
 			new RecordColumn<>(
 					new StringColumn(PHONE_COLUMN_NAME), 
-					Customer::getPhone
+					Customer::getPhone,
+					Customer::setPhone
 			);
 	
 	public static final RecordColumn<Customer, Timestamp> SINCE_COLUMN =
 			new RecordColumn<>(
 					new TimestampColumn(SINCE_COLUMN_NAME), 
-					Customer::getSince
+					Customer::getSince,
+					Customer::setSince
 			);
 	
 	public static final RecordColumn<Customer, String> CREDIT_COLUMN = 
 			new RecordColumn<>(
 					new StringColumn(CREDIT_COLUMN_NAME), 
-					Customer::getCredit
+					Customer::getCredit,
+					Customer::setCredit
 			);
 	
 	public static final RecordColumn<Customer, Long> CREDIT_LIMIT_COLUMN = 
 			new RecordColumn<>(
 					new LongColumn(CREDIT_LIMIT_COLUMN_NAME), 
-					Customer::getCreditLimit
+					Customer::getCreditLimit,
+					Customer::setCreditLimit
 			);
 	
 	public static final RecordColumn<Customer, BigDecimal> DISCOUNT_COLUMN = 
 			new RecordColumn<>(
 					new BigDecimalColumn(DISCOUNT_COLUMN_NAME, 4, 2), 
-					Customer::getDiscount
+					Customer::getDiscount,
+					Customer::setDiscount
 			);
 	
 	public static final RecordColumn<Customer, BigDecimal> BALANCE_COLUMN =
 			new RecordColumn<>(
 					new BigDecimalColumn(BALANCE_COLUMN_NAME, 12, 2), 
-					Customer::getBalance
+					Customer::getBalance,
+					Customer::setBalance
 			);
 	
 	public static final RecordColumn<Customer, BigDecimal> YTD_PAYMENT_COLUMN =
 			new RecordColumn<>(
 					new BigDecimalColumn(YTD_PAYMENT_COLUMN_NAME, 12, 2), 
-					Customer::getYtdPayment
+					Customer::getYtdPayment,
+					Customer::setYtdPayment
 			);
 	
 	public static final RecordColumn<Customer, Short> PAYMENT_CNT_COLUMN =
 			new RecordColumn<>(
 					new ShortColumn(PAYMENT_CNT_COLUMN_NAME), 
-					Customer::getPaymentCnt
+					Customer::getPaymentCnt,
+					Customer::setPaymentCnt
 			);
 	
 	public static final RecordColumn<Customer, Short> DELIVERY_CNT_COLUMN =
 			new RecordColumn<>(
 					new ShortColumn(DELIVERY_CNT_COLUMN_NAME), 
-					Customer::getDeliveryCnt
+					Customer::getDeliveryCnt,
+					Customer::setDeliveryCnt
 			);
 	
 	public static final RecordColumn<Customer, String> DATA_COLUMN =
 			new RecordColumn<>(
 					new StringColumn(DATA_COLUMN_NAME), 
-					Customer::getData
+					Customer::getData,
+					Customer::setData
+			);
+	
+	public static final List<RecordColumn<Customer, ?>> ID_WAREHOUSE_INDEX_COLUMNS = 
+			List.of(
+				CustomerTable.PUBLIC_ID_COLUMN,
+				CustomerTable.WAREHOUSE_ID_COLUMN
 			);
 
 
 	public static final UserRecordTableId ID = new UserRecordTableId(CUSTOMER_TABLE_ID);
 
-	private final Collection<DistributedIndex<Customer, ?>> indices;
+	private final Collection<DistributedIndex<Customer>> indices;
+	private final List<RecordColumn<Customer, ?>> columns;
 	
-	public CustomerTable(Collection<ServerComputerId> servers) {
+	public CustomerTable(List<ServerComputerId> servers) {
 		super(
 			TABLE_NAME, 
 			ID, 
@@ -171,19 +189,30 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 		);
 		
 		this.indices = 
-			List.of(
-				new UniqueHashCodeBasedDistributedIndex<Customer, Integer>(
-						TABLE_NAME, 
-						PUBLIC_ID_COLUMN, 
-						servers
-				) 
-				{
-					@Override
-					public QueryStep<IndexRecord<Integer>, Integer> getQueryPlan(UserRecordTableId recordTableId) {
-						return new SimpleIndexQueryPlan<>(this, recordTableId);
-					}					
-				}
-			);
+				List.of(
+					SimpleIndexQueryPlan.hashBasedIndex(
+							servers, 
+							TABLE_NAME, 
+							ID_WAREHOUSE_INDEX_COLUMNS
+					)
+				);
+		
+		columns = new LinkedList<>(super.columns());
+		columns.add(DISTRICT_ID_COLUMN);
+		columns.add(WAREHOUSE_ID_COLUMN);
+		columns.add(FIRST_NAME_COLUMN);
+		columns.add(MIDDLE_NAME_COLUMN);
+		columns.add(LAST_NAME_COLUMN);
+		columns.add(PHONE_COLUMN);
+		columns.add(SINCE_COLUMN);
+		columns.add(CREDIT_COLUMN);
+		columns.add(CREDIT_LIMIT_COLUMN);
+		columns.add(DISCOUNT_COLUMN);
+		columns.add(BALANCE_COLUMN);
+		columns.add(YTD_PAYMENT_COLUMN);				
+		columns.add(PAYMENT_CNT_COLUMN);
+		columns.add(DELIVERY_CNT_COLUMN);
+		columns.add(DATA_COLUMN);
 	}
 
 	@Override
@@ -207,50 +236,11 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 
 	@Override
 	protected List<RecordColumn<Customer, ?>> columns() {
-		List<RecordColumn<Customer, ?>> columns = new LinkedList<>(super.columns());
-		columns.add(DISTRICT_ID_COLUMN);
-		columns.add(WAREHOUSE_ID_COLUMN);
-		columns.add(FIRST_NAME_COLUMN);
-		columns.add(MIDDLE_NAME_COLUMN);
-		columns.add(LAST_NAME_COLUMN);
-		columns.add(PHONE_COLUMN);
-		columns.add(SINCE_COLUMN);
-		columns.add(CREDIT_COLUMN);
-		columns.add(CREDIT_LIMIT_COLUMN);
-		columns.add(DISCOUNT_COLUMN);
-		columns.add(BALANCE_COLUMN);
-		columns.add(YTD_PAYMENT_COLUMN);				
-		columns.add(PAYMENT_CNT_COLUMN);
-		columns.add(DELIVERY_CNT_COLUMN);
-		columns.add(DATA_COLUMN);
-		
 		return columns;
 	}
 
 	@Override
-	public Collection<DistributedIndex<Customer, ?>> indices() {
+	public Collection<DistributedIndex<Customer>> indices() {
 		return indices;
-	}
-
-	public Customer customerFromResultSet(ResultSet rs) throws SQLException {
-		Customer customer = setFieldsFromResultSet(rs);
-		
-		customer.setDistrictId(rs.getShort(DISTRICT_ID_COLUMN_NAME));
-		customer.setWarehouseId(rs.getShort(WAREHOUSE_ID_COLUMN_NAME));
-		customer.setFirstName(rs.getString(FIRST_NAME_COLUMN_NAME));
-		customer.setLastName(rs.getString(LAST_NAME_COLUMN_NAME));
-		customer.setMiddleName(rs.getString(MIDDLE_NAME_COLUMN_NAME));
-		customer.setPhone(rs.getString(PHONE_COLUMN_NAME));
-		customer.setSince(rs.getTimestamp(SINCE_COLUMN_NAME));
-		customer.setCredit(rs.getString(CREDIT_COLUMN_NAME));
-		customer.setCreditLimit(rs.getLong(CREDIT_LIMIT_COLUMN_NAME));
-		customer.setDiscount(rs.getBigDecimal(DISCOUNT_COLUMN_NAME));
-		customer.setBalance(rs.getBigDecimal(BALANCE_COLUMN_NAME));
-		customer.setYtdPayment(rs.getBigDecimal(YTD_PAYMENT_COLUMN_NAME));
-		customer.setPaymentCnt(rs.getShort(PAYMENT_CNT_COLUMN_NAME));
-		customer.setDeliveryCnt(rs.getShort(DELIVERY_CNT_COLUMN_NAME));
-		customer.setData(rs.getString(DATA_COLUMN_NAME));
-				
-		return customer;
 	}
 }

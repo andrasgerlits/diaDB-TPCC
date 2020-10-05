@@ -1,9 +1,6 @@
 package com.dianemodb.tpcc.schema;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.function.BiFunction;
 
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.RecordId;
@@ -37,13 +34,6 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 		this.columns = List.of(txIdColumn, recordIdColumn);
 	}
 	
-	protected R setFieldsFromResultSet(ResultSet rs) throws SQLException {
-		RecordId recordId = RecordId.valueOf(rs.getString(RECORD_ID_COLUMN_NAME));
-		TransactionId txId = TransactionId.valueOf(rs.getString(TX_ID_COLUMN_NAME));
-		
-		return newInstance(txId, recordId);
-	}
-
 	@Override
 	protected List<RecordColumn<R, ?>> columns() {
 		return columns;

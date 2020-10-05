@@ -33,7 +33,7 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 	
 	public static final String TABLE_NAME = "orders";
 	
-	public static final String ID_COLUMN_NAME = "o_id";
+	public static final String ORDER_ID_COLUMN_NAME = "o_id";
 	public static final String DISTRICT_ID_COLUMN_NAME = "o_d_id";
 	public static final String WAREHOUSE_ID_COLUMN_NAME = "o_w_id";
 	public static final String CUSTOMER_ID_COLUMN_NAME = "o_c_id";
@@ -44,18 +44,18 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 	
 	private static final List<RecordColumn<Orders, ?>> COLUMNS = 
 			List.of(
-				new RecordColumn<>(new IntColumn(ID_COLUMN_NAME), Orders::getPublicId),
-				new RecordColumn<>(new ShortColumn(DISTRICT_ID_COLUMN_NAME), Orders::getDistrictId),
-				new RecordColumn<>(new ShortColumn(WAREHOUSE_ID_COLUMN_NAME), Orders::getWarehouseId),
-				new RecordColumn<>(new IntColumn(CUSTOMER_ID_COLUMN_NAME), Orders::getCustomerId),
-				new RecordColumn<>(new TimestampColumn(ENTRY_DATE_COLUMN_NAME), Orders::getEntryDate),
-				new RecordColumn<>(new ShortColumn(CARRIER_ID_COLUMN_NAME), Orders::getCarrierId),
-				new RecordColumn<>(new ShortColumn(ORDER_LINE_COUNT_COLUMN_NAME), Orders::getOrderLineCount),
-				new RecordColumn<>(new ShortColumn(ALL_LOCAL_COLUMN_NAME), Orders::getAllLocal)
+				new RecordColumn<>(new IntColumn(ORDER_ID_COLUMN_NAME), Orders::getOrderId, Orders::setOrderId),
+				new RecordColumn<>(new ShortColumn(DISTRICT_ID_COLUMN_NAME), Orders::getDistrictId, Orders::setDistrictId),
+				new RecordColumn<>(new ShortColumn(WAREHOUSE_ID_COLUMN_NAME), Orders::getWarehouseId, Orders::setWarehouseId),
+				new RecordColumn<>(new IntColumn(CUSTOMER_ID_COLUMN_NAME), Orders::getCustomerId, Orders::setCustomerId),
+				new RecordColumn<>(new TimestampColumn(ENTRY_DATE_COLUMN_NAME), Orders::getEntryDate, Orders::setEntryDate),
+				new RecordColumn<>(new ShortColumn(CARRIER_ID_COLUMN_NAME), Orders::getCarrierId, Orders::setCarrierId),
+				new RecordColumn<>(new ShortColumn(ORDER_LINE_COUNT_COLUMN_NAME), Orders::getOrderLineCount, Orders::setOrderLineCount),
+				new RecordColumn<>(new ShortColumn(ALL_LOCAL_COLUMN_NAME), Orders::getAllLocal, Orders::setAllLocal)
 			);
 
 	private final List<RecordColumn<Orders, ?>> columns;
-	private final List<DistributedIndex<Orders, ?>> indices;
+	private final List<DistributedIndex<Orders>> indices;
 	
 	public OrdersTable() {
 		super(ID, TABLE_NAME);
@@ -90,7 +90,7 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<Orders, ?>> indices() {
+	protected Collection<DistributedIndex<Orders>> indices() {
 		return indices;
 	}
 }

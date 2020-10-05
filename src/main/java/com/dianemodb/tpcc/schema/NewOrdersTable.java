@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.h2impl.SimpleIndexQueryPlan;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -14,6 +15,7 @@ import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.UniqueHashCodeBasedDistributedIndex;
 import com.dianemodb.tpcc.entity.NewOrders;
 
 public class NewOrdersTable extends TpccBaseTable<NewOrders>{
@@ -22,7 +24,7 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	
 	public static final String TABLE_NAME = "orders";
 	
-	public static final String PUBLIC_ID_COLUMN_NAME = "o_id";
+	public static final String ORDER_ID_COLUMN_NAME = "o_id";
 	public static final String DISTRICT_ID_COLUMN_NAME = "o_d_id";
 	public static final String WAREHOUSE_ID_COLUMN_NAME = "o_w_id";
 	public static final String CUSTOMER_ID_COLUMN_NAME = "o_c_id";
@@ -33,25 +35,80 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	
 	public static final RecordColumn<NewOrders, TransactionId> TX_ID_COLUMN = TX_ID();
 	public static final RecordColumn<NewOrders, RecordId> RECORD_ID_COLUMN = RECORD_ID();
+
+	public static final RecordColumn<NewOrders, Short> DISTRICT_ID_COLUMN = 				
+			new RecordColumn<>(
+					new ShortColumn(DISTRICT_ID_COLUMN_NAME), 
+					NewOrders::getDistrictId, 
+					NewOrders::setDistrictId
+			);
+	
+	public static final RecordColumn<NewOrders, Short> WAREHOUSE_ID_COLUMN = 
+			new RecordColumn<>(
+					new ShortColumn(WAREHOUSE_ID_COLUMN_NAME), 
+					NewOrders::getWarehouseId, 
+					NewOrders::setWarehouseId
+			);
 	
 	public static final List<RecordColumn<NewOrders, ?>> COLUMNS = 
 			List.of(
-				new RecordColumn<>(new IntColumn(PUBLIC_ID_COLUMN_NAME), NewOrders::getPublicId),
-				new RecordColumn<>(new ShortColumn(DISTRICT_ID_COLUMN_NAME), NewOrders::getDistrictId),
-				new RecordColumn<>(new ShortColumn(WAREHOUSE_ID_COLUMN_NAME), NewOrders::getWarehouseId),
-				new RecordColumn<>(new IntColumn(CUSTOMER_ID_COLUMN_NAME), NewOrders::getCustomerId),
-				new RecordColumn<>(new TimestampColumn(ENTRY_TIME_COLUMN_NAME), NewOrders::getEntryTime),
-				new RecordColumn<>(new ShortColumn(CARRIER_ID_COLUMN_NAME), NewOrders::getCarrierId),
-				new RecordColumn<>(new ShortColumn(LINE_COLUMN_NAME), NewOrders::getLine),
-				new RecordColumn<>(new ShortColumn(ALL_LOCAL_COLUMN_NAME), NewOrders::getAllLocal)
+				new RecordColumn<>(
+						new IntColumn(ORDER_ID_COLUMN_NAME), 
+						NewOrders::getOrderId, 
+						NewOrders::setOrderId
+				),
+				DISTRICT_ID_COLUMN,
+				WAREHOUSE_ID_COLUMN,
+				new RecordColumn<>(
+						new IntColumn(CUSTOMER_ID_COLUMN_NAME), 
+						NewOrders::getCustomerId, 
+						NewOrders::setCustomerId
+				),
+				new RecordColumn<>(
+						new TimestampColumn(ENTRY_TIME_COLUMN_NAME), 
+						NewOrders::getEntryTime, 
+						NewOrders::setEntryTime
+				),
+				new RecordColumn<>(
+						new ShortColumn(CARRIER_ID_COLUMN_NAME), 
+						NewOrders::getCarrierId, 
+						NewOrders::setCarrierId
+				),
+				new RecordColumn<>(
+						new ShortColumn(LINE_COLUMN_NAME), 
+						NewOrders::getLine, 
+						NewOrders::setLine
+				),
+				new RecordColumn<>(
+						new ShortColumn(ALL_LOCAL_COLUMN_NAME), 
+						NewOrders::getAllLocal, 
+						NewOrders::setAllLocal
+				)
 			);
 
+	public static final List<RecordColumn<NewOrders, ?>> DISTRICT_WAREHOUSE_COLUMNS = 
+			List.of(
+					NewOrdersTable.DISTRICT_ID_COLUMN,
+					NewOrdersTable.WAREHOUSE_ID_COLUMN
+				);
+
 	private final LinkedList<RecordColumn<NewOrders, ?>> columns;
+
+	private final Collection<DistributedIndex<NewOrders>> indices;
 	
-	public NewOrdersTable(Collection<ServerComputerId> servers) {
+	public NewOrdersTable(List<ServerComputerId> servers) {
 		super(ID, TABLE_NAME);
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
+		
+		this.indices = 
+				List.of(
+					SimpleIndexQueryPlan.hashBasedIndex(
+							servers, 
+							TABLE_NAME, 
+							DISTRICT_WAREHOUSE_COLUMNS
+					)
+				);
 	}
 
 	@Override
@@ -79,7 +136,7 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	}
 
 	@Override
-	protected Collection<DistributedIndex<NewOrders, ?>> indices() {
-		return List.of();
+	protected Collection<DistributedIndex<NewOrders>> indices() {
+		return indices;
 	}
 }

@@ -9,7 +9,7 @@ import com.dianemodb.tpcc.schema.NewOrdersTable;
 
 public class NewOrders extends UserBaseRecord {
 	
-	private int publicId;
+	private int orderId;
 	private short districtId;
 	private short warehouseId;
 	private int customerId;
@@ -22,12 +22,12 @@ public class NewOrders extends UserBaseRecord {
 		super(txId, recordId, NewOrdersTable.ID);
 	}
 
-	public int getPublicId() {
-		return publicId;
+	public int getOrderId() {
+		return orderId;
 	}
 
-	public void setPublicId(int publicId) {
-		this.publicId = publicId;
+	public void setOrderId(int publicId) {
+		this.orderId = publicId;
 	}
 
 	public short getDistrictId() {
@@ -96,7 +96,7 @@ public class NewOrders extends UserBaseRecord {
 		result = prime * result + districtId;
 		result = prime * result + ((entryTime == null) ? 0 : entryTime.hashCode());
 		result = prime * result + line;
-		result = prime * result + publicId;
+		result = prime * result + orderId;
 		result = prime * result + warehouseId;
 		return result;
 	}
@@ -125,7 +125,7 @@ public class NewOrders extends UserBaseRecord {
 			return false;
 		if (line != other.line)
 			return false;
-		if (publicId != other.publicId)
+		if (orderId != other.orderId)
 			return false;
 		if (warehouseId != other.warehouseId)
 			return false;
@@ -134,7 +134,7 @@ public class NewOrders extends UserBaseRecord {
 
 	@Override
 	public String toString() {
-		return "NewOrders [publicId=" + publicId + ", districtId=" + districtId + ", warehouseId=" + warehouseId
+		return "NewOrders [orderId=" + orderId + ", districtId=" + districtId + ", warehouseId=" + warehouseId
 				+ ", customerId=" + customerId + ", entryTime=" + entryTime + ", carrierId=" + carrierId + ", line="
 				+ line + ", allLocal=" + allLocal + ", txId=" + txId + ", recordId=" + recordId + "]";
 	}

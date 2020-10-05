@@ -10,11 +10,11 @@ import com.dianemodb.tpcc.schema.OrderLineTable;
 
 public class OrderLine extends UserBaseRecord {
 	
-	private int publicId;
+	private int orderId;
 	private short districtId;
 	private short warehouseId;
 	private short lineNumber;
-	private short iId;
+	private short itemId;
 	private short supplyWarehouseId;
 	private Timestamp deliveryDate;
 	private short quantity;
@@ -25,12 +25,12 @@ public class OrderLine extends UserBaseRecord {
 		super(txId, recordId, OrderLineTable.ID);
 	}
 
-	public int getPublicId() {
-		return publicId;
+	public int getOrderId() {
+		return orderId;
 	}
 
-	public void setPublicId(int publicId) {
-		this.publicId = publicId;
+	public void setOrderId(int orderId) {
+		this.orderId = orderId;
 	}
 
 	public short getDistrictId() {
@@ -57,12 +57,12 @@ public class OrderLine extends UserBaseRecord {
 		this.lineNumber = lineNumber;
 	}
 
-	public short getiId() {
-		return iId;
+	public short getItemId() {
+		return itemId;
 	}
 
-	public void setiId(short iId) {
-		this.iId = iId;
+	public void setItemId(short iId) {
+		this.itemId = iId;
 	}
 
 	public short getSupplyWarehouseId() {
@@ -113,9 +113,9 @@ public class OrderLine extends UserBaseRecord {
 		result = prime * result + ((deliveryDate == null) ? 0 : deliveryDate.hashCode());
 		result = prime * result + ((distInfo == null) ? 0 : distInfo.hashCode());
 		result = prime * result + districtId;
-		result = prime * result + iId;
+		result = prime * result + itemId;
 		result = prime * result + lineNumber;
-		result = prime * result + publicId;
+		result = prime * result + orderId;
 		result = prime * result + quantity;
 		result = prime * result + supplyWarehouseId;
 		result = prime * result + warehouseId;
@@ -148,11 +148,11 @@ public class OrderLine extends UserBaseRecord {
 			return false;
 		if (districtId != other.districtId)
 			return false;
-		if (iId != other.iId)
+		if (itemId != other.itemId)
 			return false;
 		if (lineNumber != other.lineNumber)
 			return false;
-		if (publicId != other.publicId)
+		if (orderId != other.orderId)
 			return false;
 		if (quantity != other.quantity)
 			return false;
@@ -165,8 +165,8 @@ public class OrderLine extends UserBaseRecord {
 
 	@Override
 	public String toString() {
-		return "OrderLine [publicId=" + publicId + ", districtId=" + districtId + ", warehouseId=" + warehouseId
-				+ ", lineNumber=" + lineNumber + ", iId=" + iId + ", supplyWarehouseId=" + supplyWarehouseId
+		return "OrderLine [orderId=" + orderId + ", districtId=" + districtId + ", warehouseId=" + warehouseId
+				+ ", lineNumber=" + lineNumber + ", itemId=" + itemId + ", supplyWarehouseId=" + supplyWarehouseId
 				+ ", deliveryDate=" + deliveryDate + ", quantity=" + quantity + ", amount=" + amount + ", distInfo="
 				+ distInfo + ", txId=" + txId + ", recordId=" + recordId + "]";
 	}

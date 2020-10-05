@@ -1,7 +1,5 @@
 package com.dianemodb.tpcc.schema;
 
-import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,7 +16,6 @@ import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
-import com.dianemodb.metaschema.schema.UserRecordTable;
 import com.dianemodb.tpcc.entity.History;
 /*
 h_c_id int, 
@@ -47,19 +44,51 @@ public class HistoryTable extends TpccBaseTable<History> {
 
 	private static final List<RecordColumn<History, ?>> COLUMNS = 
 			List.of(
-				new RecordColumn<>(new IntColumn(CUSTOMER_ID_COLUMN_NAME), History::getCustomerId),
-				new RecordColumn<>(new ShortColumn(CUSTOMER_DISTRICT_ID_COLUMN_NAME), History::getCustomerDistrictId),
-				new RecordColumn<>(new ShortColumn(CUSTOMER_WAREHOUSE_ID_COLUMN_NAME), History::getCustomerWarehouseId),
-				new RecordColumn<>(new ShortColumn(DISTRICT_ID_COLUMN_NAME), History::getDistrictId),
-				new RecordColumn<>(new ShortColumn(WAREHOUSE_ID_COLUMN_NAME), History::getWarehouseId),
-				new RecordColumn<>(new TimestampColumn(DATE_COLUMN_NAME), History::getDate),
-				new RecordColumn<>(new BigDecimalColumn(AMOUNT_COLUMN_NAME, 6, 2), History::getAmount),
-				new RecordColumn<>(new StringColumn(DATA_COLUMN_NAME), History::getData)
+				new RecordColumn<>(
+					new IntColumn(CUSTOMER_ID_COLUMN_NAME), 
+					History::getCustomerId, 
+					History::setCustomerId
+				),
+				new RecordColumn<>(
+					new ShortColumn(CUSTOMER_DISTRICT_ID_COLUMN_NAME), 
+					History::getCustomerDistrictId,
+					History::setCustomerDistrictId
+				),
+				new RecordColumn<>(
+					new ShortColumn(CUSTOMER_WAREHOUSE_ID_COLUMN_NAME), 
+					History::getCustomerWarehouseId,
+					History::setCustomerWarehouseId
+				),
+				new RecordColumn<>(
+					new ShortColumn(DISTRICT_ID_COLUMN_NAME), 
+					History::getDistrictId,
+					History::setDistrictId
+				),
+				new RecordColumn<>(
+					new ShortColumn(WAREHOUSE_ID_COLUMN_NAME), 
+					History::getWarehouseId,
+					History::setWarehouseId
+				),
+				new RecordColumn<>(
+					new TimestampColumn(DATE_COLUMN_NAME), 
+					History::getDate,
+					History::setDate
+				),
+				new RecordColumn<>(
+					new BigDecimalColumn(AMOUNT_COLUMN_NAME, 6, 2), 
+					History::getAmount,
+					History::setAmount
+				),
+				new RecordColumn<>(
+					new StringColumn(DATA_COLUMN_NAME), 
+					History::getData,
+					History::setData
+				)
 			);
 
 	private final List<RecordColumn<History, ?>> columns;
 
-	private final Collection<DistributedIndex<History, ?>> indices;
+	private final Collection<DistributedIndex<History>> indices;
 	
 	
 	public HistoryTable(Collection<ServerComputerId> servers) {
@@ -95,7 +124,7 @@ public class HistoryTable extends TpccBaseTable<History> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<History, ?>> indices() {
+	protected Collection<DistributedIndex<History>> indices() {
 		return indices;
 	}
 }

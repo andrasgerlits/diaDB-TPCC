@@ -1,12 +1,11 @@
 package com.dianemodb.tpcc.schema;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.h2impl.SimpleIndexQueryPlan;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -31,20 +30,14 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	public static final String YTD_COLUMN_NAME = "w_ytd";
 
 	public static final UserRecordTableId ID = new UserRecordTableId(WAREHOUSE_TABLE_ID);
-	
-	public Warehouse readFromResultSet(ResultSet rs) throws SQLException {
-		Warehouse warehouse = setFieldsFromResultSet(rs);
-		warehouse.setPublicId(rs.getShort(PUBLIC_ID_COLUMNNAME));
-		return warehouse;
-	}
 
-	private final Collection<DistributedIndex<Warehouse, ?>> indices;
+	private final Collection<DistributedIndex<Warehouse>> indices;
 
 	private List<RecordColumn<Warehouse, ?>> columns;
 
 	private final RecordColumn<Warehouse, Short> publicIdColumn;
 	
-	protected WarehouseTable() {
+	protected WarehouseTable(List<ServerComputerId> servers) {
 		super(
 			TABLE_NAME,
 			ID,
@@ -61,15 +54,21 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 		this.publicIdColumn = 
 				new RecordColumn<>(
 						new ShortColumn(PUBLIC_ID_COLUMNNAME), 
-						Warehouse::getPublicId
+						Warehouse::getPublicId,
+						Warehouse::setPublicId
 				);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.add(publicIdColumn);
 
-		this.indices = List.of(
-				PUBLIC_ID
-			);
+		this.indices = 
+				List.of(
+					SimpleIndexQueryPlan.hashBasedIndex(
+							servers, 
+							TABLE_NAME, 
+							List.of(publicIdColumn)
+					)
+				);
 	}
 
 	@Override
@@ -92,7 +91,7 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<Warehouse, ?>> indices() {
+	protected Collection<DistributedIndex<Warehouse>> indices() {
 		return indices;
 	}
 

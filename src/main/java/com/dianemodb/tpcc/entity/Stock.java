@@ -1,7 +1,5 @@
 package com.dianemodb.tpcc.entity;
 
-import java.math.BigDecimal;
-
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.UserBaseRecord;
@@ -29,8 +27,8 @@ s_data varchar(50),
 PRIMARY KEY(s_w_id, s_i_id) ) Engine=InnoDB 
  */
 public class Stock extends UserBaseRecord {
-
-	private int publicId;
+	
+	private int itemId;
 	private short warehousId;
 	private short quantity;
 	private String dist1;
@@ -43,7 +41,7 @@ public class Stock extends UserBaseRecord {
 	private String dist8;
 	private String dist9;
 	private String dist10;
-	private BigDecimal ytd;
+	private long ytd;
 	private short orderCnt;
 	private short remoteCnt;
 	private String data;
@@ -52,12 +50,12 @@ public class Stock extends UserBaseRecord {
 		super(txId, recordId, StockTable.ID);
 	}
 
-	public int getPublicId() {
-		return publicId;
+	public int getItemId() {
+		return itemId;
 	}
 
-	public void setPublicId(int publicId) {
-		this.publicId = publicId;
+	public void setItemId(int itemId) {
+		this.itemId = itemId;
 	}
 
 	public short getWarehouseId() {
@@ -156,11 +154,11 @@ public class Stock extends UserBaseRecord {
 		this.dist10 = dist10;
 	}
 
-	public BigDecimal getYtd() {
+	public Long getYtd() {
 		return ytd;
 	}
 
-	public void setYtd(BigDecimal ytd) {
+	public void setYtd(Long ytd) {
 		this.ytd = ytd;
 	}
 
@@ -204,11 +202,11 @@ public class Stock extends UserBaseRecord {
 		result = prime * result + ((dist8 == null) ? 0 : dist8.hashCode());
 		result = prime * result + ((dist9 == null) ? 0 : dist9.hashCode());
 		result = prime * result + orderCnt;
-		result = prime * result + publicId;
+		result = prime * result + itemId;
 		result = prime * result + quantity;
 		result = prime * result + remoteCnt;
 		result = prime * result + warehousId;
-		result = prime * result + ((ytd == null) ? 0 : ytd.hashCode());
+		result = prime * result + (int) (ytd ^ (ytd >>> 32));
 		return result;
 	}
 
@@ -278,7 +276,7 @@ public class Stock extends UserBaseRecord {
 			return false;
 		if (orderCnt != other.orderCnt)
 			return false;
-		if (publicId != other.publicId)
+		if (itemId != other.itemId)
 			return false;
 		if (quantity != other.quantity)
 			return false;
@@ -286,17 +284,14 @@ public class Stock extends UserBaseRecord {
 			return false;
 		if (warehousId != other.warehousId)
 			return false;
-		if (ytd == null) {
-			if (other.ytd != null)
-				return false;
-		} else if (!ytd.equals(other.ytd))
+		if (ytd != other.ytd)
 			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "Stock [publicId=" + publicId + ", warehousId=" + warehousId + ", quantity=" + quantity + ", dist1="
+		return "Stock [itemId=" + itemId + ", warehousId=" + warehousId + ", quantity=" + quantity + ", dist1="
 				+ dist1 + ", dist2=" + dist2 + ", dist3=" + dist3 + ", dist4=" + dist4 + ", dist5=" + dist5 + ", dist6="
 				+ dist6 + ", dist7=" + dist7 + ", dist8=" + dist8 + ", dist9=" + dist9 + ", dist10=" + dist10 + ", ytd="
 				+ ytd + ", orderCnt=" + orderCnt + ", remoteCnt=" + remoteCnt + ", data=" + data + ", txId=" + txId

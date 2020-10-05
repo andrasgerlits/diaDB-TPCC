@@ -19,19 +19,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.dianemodb</groupId>
-			<artifactId>h2-impl</artifactId>
-			<version>${diadb.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.dianemodb</groupId>
-			<artifactId>kryo-impl</artifactId>
-			<version>${diadb.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.dianemodb</groupId>
-			<artifactId>kafka-impl</artifactId>
+			<artifactId>integration_tests</artifactId>
 			<version>${diadb.version}</version>
 		</dependency>
 

@@ -9,7 +9,7 @@ import com.dianemodb.tpcc.schema.ItemTable;
 
 public class Item extends UserBaseRecord {
 
-	private int publicId;
+	private int itemId;
 	private int im;
 	private String name;
 	private BigDecimal price;
@@ -19,12 +19,12 @@ public class Item extends UserBaseRecord {
 		super(txId, recordId, ItemTable.ID);
 	}
 
-	public int getPublicId() {
-		return publicId;
+	public int getItemId() {
+		return itemId;
 	}
 
-	public void setPublicId(int publicId) {
-		this.publicId = publicId;
+	public void setItemId(int publicId) {
+		this.itemId = publicId;
 	}
 
 	public int getIm() {
@@ -67,7 +67,7 @@ public class Item extends UserBaseRecord {
 		result = prime * result + im;
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + ((price == null) ? 0 : price.hashCode());
-		result = prime * result + publicId;
+		result = prime * result + itemId;
 		return result;
 	}
 
@@ -97,14 +97,14 @@ public class Item extends UserBaseRecord {
 				return false;
 		} else if (!price.equals(other.price))
 			return false;
-		if (publicId != other.publicId)
+		if (itemId != other.itemId)
 			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "Item [publicId=" + publicId + ", im=" + im + ", name=" + name + ", price=" + price + ", data=" + data
+		return "Item [publicId=" + itemId + ", im=" + im + ", name=" + name + ", price=" + price + ", data=" + data
 				+ ", txId=" + txId + ", recordId=" + recordId + "]";
 	}
 }

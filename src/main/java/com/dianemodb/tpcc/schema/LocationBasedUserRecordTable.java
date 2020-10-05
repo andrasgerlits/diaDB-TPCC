@@ -4,10 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiFunction;
 
-import com.dianemodb.id.RecordId;
-import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.StringColumn;
@@ -34,11 +31,11 @@ public abstract class LocationBasedUserRecordTable<R extends LocationBasedUserRe
 	) {
 		super(tableId, name);
 		
-		this.street1Column = new RecordColumn<>(new StringColumn(street1Column, 20), R::getStreet1);
-		this.street2Column = new RecordColumn<>(new StringColumn(street2Column, 20), R::getStreet2);
-		this.cityColumn = new RecordColumn<>(new StringColumn(cityColumn,20), R::getCity);	
-		this.stateColumn = new RecordColumn<>(new StringColumn(stateColumn, 2), R::getState);				
-		this.zipColumn = new RecordColumn<>(new StringColumn(zipColumn, 9), R::getZip);
+		this.street1Column = new RecordColumn<>(new StringColumn(street1Column, 20), R::getStreet1, R::setStreet1);
+		this.street2Column = new RecordColumn<>(new StringColumn(street2Column, 20), R::getStreet2, R::setStreet2);
+		this.cityColumn = new RecordColumn<>(new StringColumn(cityColumn,20), R::getCity, R::setCity);	
+		this.stateColumn = new RecordColumn<>(new StringColumn(stateColumn, 2), R::getState, R::setState);		
+		this.zipColumn = new RecordColumn<>(new StringColumn(zipColumn, 9), R::getZip, R::setZip);
 		
 		this.columns = new LinkedList<>(super.columns());
 		

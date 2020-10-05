@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.h2impl.SimpleIndexQueryPlan;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -20,7 +21,7 @@ public class ItemTable extends TpccBaseTable<Item> {
 
 	public static final UserRecordTableId ID = new UserRecordTableId(ITEM_TABLE_ID);
 	
-	private static final String TABLE_NAME = "item";
+	public static final String TABLE_NAME = "item";
 	
 	public static final String ID_COLUMN_NAME = "i_id";
 	public static final String IM_ID_COLUMN_NAME = "i_im_id";
@@ -28,29 +29,36 @@ public class ItemTable extends TpccBaseTable<Item> {
 	public static final String PRICE_COLUMN_NAME = "i_price";
 	public static final String DATA_COLUMN_NAME = "i_data";
 	
-	public static final RecordColumn<Item, TransactionId> TX_ID_COLUMN = TX_ID();
-	public static final RecordColumn<Item, RecordId> RECORD_ID_COLUMN = RECORD_ID();
+	public static final RecordColumn<Item, Integer> PUBLIC_ID_COLUMN = 
+			new RecordColumn<>(new IntColumn(ID_COLUMN_NAME), Item::getItemId, Item::setItemId);
 
 	private static final List<RecordColumn<Item, ?>> COLUMNS = 
 			List.of(
-				new RecordColumn<>(new IntColumn(ID_COLUMN_NAME), Item::getPublicId),
-				new RecordColumn<>(new IntColumn(IM_ID_COLUMN_NAME), Item::getIm),
-				new RecordColumn<>(new StringColumn(NAME_COLUMN_NAME), Item::getName),
-				new RecordColumn<>(new BigDecimalColumn(PRICE_COLUMN_NAME, 5, 2), Item::getPrice),
-				new RecordColumn<>(new StringColumn(DATA_COLUMN_NAME), Item::getData)
+				PUBLIC_ID_COLUMN,
+				new RecordColumn<>(new IntColumn(IM_ID_COLUMN_NAME), Item::getIm, Item::setIm),
+				new RecordColumn<>(new StringColumn(NAME_COLUMN_NAME), Item::getName, Item::setName),
+				new RecordColumn<>(new BigDecimalColumn(PRICE_COLUMN_NAME, 5, 2), Item::getPrice, Item::setPrice),
+				new RecordColumn<>(new StringColumn(DATA_COLUMN_NAME), Item::getData, Item::setData)
 		);
 
 	private final List<RecordColumn<Item, ?>> columns;
 
-	private final Collection<DistributedIndex<Item, ?>> indices;
+	private final Collection<DistributedIndex<Item>> indices;
 	
-	public ItemTable(Collection<ServerComputerId> servers) {
+	public ItemTable(List<ServerComputerId> servers) {
 		super(ID, TABLE_NAME);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
-		this.indices = List.of();
+		this.indices = 
+				List.of(
+					SimpleIndexQueryPlan.hashBasedIndex(
+							servers, 
+							TABLE_NAME, 
+							List.of(PUBLIC_ID_COLUMN)
+					)
+				);
 	}
 
 	@Override
@@ -78,12 +86,7 @@ public class ItemTable extends TpccBaseTable<Item> {
 	}
 
 	@Override
-	public RecordColumn<Item, TransactionId> getTransactionIdColumn() {
-		return TX_ID_COLUMN;
-	}
-
-	@Override
-	protected Collection<DistributedIndex<Item, ?>> indices() {
+	protected Collection<DistributedIndex<Item>> indices() {
 		return indices;
 	}
 }

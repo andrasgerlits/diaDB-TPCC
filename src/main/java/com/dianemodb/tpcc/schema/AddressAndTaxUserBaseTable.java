@@ -1,14 +1,9 @@
 package com.dianemodb.tpcc.schema;
 
 import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.BiFunction;
 
-import com.dianemodb.id.RecordId;
-import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.BigDecimalColumn;
 import com.dianemodb.metaschema.RecordColumn;
@@ -51,19 +46,22 @@ public abstract class AddressAndTaxUserBaseTable<R extends AddressAndTaxUserBase
 		this.nameColumn = 
 				new RecordColumn<>(
 						new StringColumn(nameColumn, 10), 
-						R::getName
+						R::getName,
+						R::setName
 				);
 
 		this.taxColumn = 
 				new RecordColumn<>(
 					new BigDecimalColumn(taxColumn, 4, 2), 
-					R::getTax
+					R::getTax,
+					R::setTax
 				);
 		 
 		this.ytdColumn = 
 				new RecordColumn<>(
 					new BigDecimalColumn(ytdColumn, 12, 2), 
-					R::getYtd
+					R::getYtd,
+					R::setYtd
 				);
 		
 		this.columns = new LinkedList<>(super.columns());
@@ -71,17 +69,7 @@ public abstract class AddressAndTaxUserBaseTable<R extends AddressAndTaxUserBase
 		this.columns.add(this.taxColumn);
 		this.columns.add(this.ytdColumn);
 	}
-	
-	@Override
-	protected R setFieldsFromResultSet(ResultSet rs) throws SQLException {
-		R r = super.setFieldsFromResultSet(rs);
-		
-		r.setName(nameColumn.getName());
-		r.setTax(rs.getBigDecimal(taxColumn.getName()));
-		r.setYtd(rs.getBigDecimal(ytdColumn.getName()));
-		return r;
-	}
-	
+
 	@Override
 	public List<RecordColumn<R, ?>> columns() {
 		return this.columns;
