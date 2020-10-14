@@ -7,11 +7,13 @@ import java.util.List;
 
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.RecordWithVersion;
+import com.dianemodb.ServerComputerId;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.District;
 import com.dianemodb.tpcc.entity.Warehouse;
+import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
 import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
 import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
 
@@ -23,13 +25,14 @@ public class Payment extends TpccTestProcess {
 	protected final CustomerSelectionStrategy customerSelectionStrategy;
 	
 	public Payment(
+			ServerComputerId txComputer,
 			SQLServerApplication application,
 			BigDecimal amount,
 			short warehouseId,
 			short districtId,
 			CustomerSelectionStrategy selectionStrategy
 	) {
-		super(application);
+		super(application, txComputer);
 		
 		this.amount = amount;
 		this.warehouseId = warehouseId;

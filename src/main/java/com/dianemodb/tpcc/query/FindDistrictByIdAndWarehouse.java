@@ -13,14 +13,10 @@ public class FindDistrictByIdAndWarehouse extends SingleIndexQueryDistributionPl
 	private static final String QUERY = 
 			"SELECT * "
 			+ "FROM " + DistrictTable.TABLE_NAME 
-			+ " WHERE " + DistrictTable.PUBLIC_ID_COLUMNNAME + "=?";
+			+ " WHERE " + DistrictTable.ID_COLUMNNAME + "=?";
 
 	public FindDistrictByIdAndWarehouse(DistrictTable table) {
-		super(ID, QUERY, table, List.of(DistrictTable.PUBLIC_ID_COLUMN));
+		super(ID, QUERY, table, List.of(DistrictTable.ID_COLUMN));
 	}
 
-	@Override
-	public Multiplicity indexType() {
-		return Multiplicity.DISCRETE;
-	}
 }

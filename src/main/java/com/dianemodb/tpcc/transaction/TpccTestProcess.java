@@ -32,7 +32,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 	
 	@SuppressWarnings("unchecked")
-	protected static <R extends UserRecord> RecordWithVersion<R> singleFromResultList(Object result) {
+	public static <R extends UserRecord> RecordWithVersion<R> singleFromResultList(Object result) {
 		List<? extends RecordWithVersion<? extends UserRecord>> list = (List<? extends RecordWithVersion<? extends UserRecord>>) result;
 		return (RecordWithVersion<R> ) FunctionalUtil.singleResult(list);
 	}
@@ -53,11 +53,19 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 
 	protected final SQLServerApplication application;
+	private final ServerComputerId txComputer;
+	
 	protected ReadVersion readVersion;
 	protected TransactionId txId;
 
-	protected TpccTestProcess(SQLServerApplication application) {
+	protected TpccTestProcess(SQLServerApplication application, ServerComputerId txComputer) {
 		this.application = application;
+		this.txComputer = txComputer;
+	}
+	
+	@Override
+	protected ServerComputerId txMaintainingComputer() {
+		return txComputer;
 	}
 	
 	protected Result commit(List<Object> results) {
@@ -111,11 +119,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 
 	protected abstract Result startTx();
-	
-	@Override
-	protected ServerComputerId txMaintainingComputer() {
-		return null;
-	}
+
 	
 	protected <R extends UserRecord> Envelope update(RecordWithVersion<R> original, R updated) {
 		ModificationCollection modificationCollection = new ModificationCollection();

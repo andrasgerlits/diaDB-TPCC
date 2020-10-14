@@ -4,9 +4,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import com.dianemodb.ServerComputerId;
-import com.dianemodb.h2impl.SimpleIndexQueryPlan;
+import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
+import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -23,7 +25,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	
 	public static final String TABLE_NAME = "district";
 
-	public static final String PUBLIC_ID_COLUMNNAME = "d_id";
+	public static final String ID_COLUMNNAME = "d_id";
 	public static final String NAME_COLUMN_NAME = "d_name";
 	public static final String STREET_1_COLUMN_NAME = "d_street_1";
 	public static final String STREET_2_COLUMN_NAME = "d_street_2";
@@ -50,9 +52,9 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 					District::setNextOid
 			);
 
-	public static final RecordColumn<District, Byte> PUBLIC_ID_COLUMN = 
+	public static final RecordColumn<District, Byte> ID_COLUMN = 
 			new RecordColumn<>(
-					new ByteColumn(PUBLIC_ID_COLUMNNAME), 
+					new ByteColumn(ID_COLUMNNAME), 
 					District::getPublicId, 
 					District::setPublicId
 			);
@@ -77,16 +79,20 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 		);
 		
 		this.columns = super.columns();
-		columns.add(PUBLIC_ID_COLUMN);
+		columns.add(ID_COLUMN);
 		columns.add(WAREHOUSE_COLUMN);
 		columns.add(NEXT_OID_COLUMN);
 		
 		this.indices = 
 			List.of(
-				SimpleIndexQueryPlan.hashBasedIndex(
-						servers, 
-						TABLE_NAME, 
-						List.of(PUBLIC_ID_COLUMN)
+				new RangeBasedDistributedIndex<>(
+						servers,
+						this, 
+						List.of(WAREHOUSE_COLUMN, ID_COLUMN),
+						Map.of(
+							WAREHOUSE_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
+							ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1)
+						)
 				)
 			);
 	}
@@ -122,7 +128,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 
 	public District readFromResultSet(ResultSet rs) throws SQLException {
 		District district = setFieldsFromResultSet(rs);
-		district.setPublicId(rs.getByte(PUBLIC_ID_COLUMNNAME));
+		district.setPublicId(rs.getByte(ID_COLUMNNAME));
 		district.setWarehouseId(rs.getShort(WAREHOUSE_ID_COLUMNNAME));
 		district.setNextOid(rs.getInt(NEXT_OID_COLUMN_NAME));
 		return district;

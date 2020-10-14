@@ -12,15 +12,11 @@ public class FindWarehouseDetailsById extends SingleIndexQueryDistributionPlan<W
 	
 	private static final String QUERY = 
 			"SELECT * FROM " + WarehouseTable.TABLE_NAME 
-			+ " WHERE " + WarehouseTable.PUBLIC_ID_COLUMNNAME + "=?";
+			+ " WHERE " + WarehouseTable.ID_COLUMNNAME + "=?";
 
 
 	public FindWarehouseDetailsById(WarehouseTable table) {
 		super(ID, QUERY, table, List.of(table.getPublicIdColumn()));
 	}
 
-	@Override
-	public Multiplicity indexType() {
-		return Multiplicity.DISCRETE;
-	}
 }

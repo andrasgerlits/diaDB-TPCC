@@ -3,8 +3,12 @@ package com.dianemodb.tpcc.schema;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
+import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -59,7 +63,6 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 					OrderLine::setWarehouseId
 			);
 
-	
 	private static final List<RecordColumn<OrderLine, ?>> COLUMNS = 
 			List.of(
 				TX_ID(),
@@ -79,18 +82,36 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 	private final List<RecordColumn<OrderLine, ?>> columns;
 	private final Collection<DistributedIndex<OrderLine>> indices;
 	
-	public OrderLineTable() {
+	private final DistributedIndex<OrderLine> orderIdRangeIndex;
+	
+	public OrderLineTable(List<ServerComputerId> servers) {
 		super(ID, TABLE_NAME);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
-		this.indices = List.of();
+		orderIdRangeIndex = 
+				new RangeBasedDistributedIndex<>(
+						servers,
+						this, 
+						List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, ORDER_ID_COLUMN),
+						Map.of(
+							WAREHOUSE_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
+							DISTRICT_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
+							ORDER_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(20)
+						)
+				);
+
+		this.indices = List.of(orderIdRangeIndex);
 	}
 
 	@Override
 	public OrderLine newInstance(TransactionId txId, RecordId recordId) {
 		return new OrderLine(txId, recordId);
+	}
+
+	public DistributedIndex<OrderLine> getOrderIdRangeIndex() {
+		return orderIdRangeIndex;
 	}
 
 	@Override
@@ -116,4 +137,5 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 	protected Collection<DistributedIndex<OrderLine>> indices() {
 		return indices;
 	}
+
 }

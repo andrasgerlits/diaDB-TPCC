@@ -1,7 +1,5 @@
 package com.dianemodb.tpcc.query.neworder;
 
-import java.util.List;
-
 import com.dianemodb.sql.SingleIndexQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.Stock;
 import com.dianemodb.tpcc.schema.StockTable;
@@ -20,16 +18,8 @@ public class FindStockByItemAndWarehouseId extends SingleIndexQueryDistributionP
 			ID, 
 			QUERY, 
 			table, 
-			List.of(
-				StockTable.ITEM_ID_COLUMN, 
-				StockTable.WAREHOUSE_ID_COLUMN
-			)
+			table.getItemWarehouseIndex()
 		);
-	}
-
-	@Override
-	public Multiplicity indexType() {
-		return Multiplicity.DISCRETE;
 	}
 
 }

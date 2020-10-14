@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.dianemodb.ServerComputerId;
-import com.dianemodb.h2impl.SimpleIndexQueryPlan;
+import com.dianemodb.h2impl.UniqueHashCodeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -19,7 +19,7 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	
 	public static final String TABLE_NAME = "warehouse";
 	
-	public static final String PUBLIC_ID_COLUMNNAME = "w_id";
+	public static final String ID_COLUMNNAME = "w_id";
 	public static final String NAME_COLUMN_NAME = "w_name";
 	public static final String STREET_1_COLUMN_NAME = "w_street_1";
 	public static final String STREET_2_COLUMN_NAME = "w_street_2";
@@ -35,7 +35,7 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 
 	private List<RecordColumn<Warehouse, ?>> columns;
 
-	private final RecordColumn<Warehouse, Short> publicIdColumn;
+	private final RecordColumn<Warehouse, Short> idColumn;
 	
 	protected WarehouseTable(List<ServerComputerId> servers) {
 		super(
@@ -51,22 +51,22 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 			YTD_COLUMN_NAME
 		);
 		
-		this.publicIdColumn = 
+		this.idColumn = 
 				new RecordColumn<>(
-						new ShortColumn(PUBLIC_ID_COLUMNNAME), 
+						new ShortColumn(ID_COLUMNNAME), 
 						Warehouse::getPublicId,
 						Warehouse::setPublicId
 				);
 		
 		this.columns = new LinkedList<>(super.columns());
-		this.columns.add(publicIdColumn);
+		this.columns.add(idColumn);
 
 		this.indices = 
 				List.of(
-					SimpleIndexQueryPlan.hashBasedIndex(
+						new UniqueHashCodeBasedDistributedIndex<>(
 							servers, 
-							TABLE_NAME, 
-							List.of(publicIdColumn)
+							this, 
+							List.of(idColumn)
 					)
 				);
 	}
@@ -96,6 +96,6 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	}
 
 	public RecordColumn<Warehouse, Short> getPublicIdColumn() {
-		return publicIdColumn;
+		return idColumn;
 	}
 }

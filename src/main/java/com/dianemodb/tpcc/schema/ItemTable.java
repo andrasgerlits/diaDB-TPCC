@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.dianemodb.ServerComputerId;
-import com.dianemodb.h2impl.SimpleIndexQueryPlan;
+import com.dianemodb.h2impl.UniqueHashCodeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -29,12 +29,12 @@ public class ItemTable extends TpccBaseTable<Item> {
 	public static final String PRICE_COLUMN_NAME = "i_price";
 	public static final String DATA_COLUMN_NAME = "i_data";
 	
-	public static final RecordColumn<Item, Integer> PUBLIC_ID_COLUMN = 
+	public static final RecordColumn<Item, Integer> ID_COLUMN = 
 			new RecordColumn<>(new IntColumn(ID_COLUMN_NAME), Item::getItemId, Item::setItemId);
 
 	private static final List<RecordColumn<Item, ?>> COLUMNS = 
 			List.of(
-				PUBLIC_ID_COLUMN,
+				ID_COLUMN,
 				new RecordColumn<>(new IntColumn(IM_ID_COLUMN_NAME), Item::getIm, Item::setIm),
 				new RecordColumn<>(new StringColumn(NAME_COLUMN_NAME), Item::getName, Item::setName),
 				new RecordColumn<>(new BigDecimalColumn(PRICE_COLUMN_NAME, 5, 2), Item::getPrice, Item::setPrice),
@@ -44,6 +44,8 @@ public class ItemTable extends TpccBaseTable<Item> {
 	private final List<RecordColumn<Item, ?>> columns;
 
 	private final Collection<DistributedIndex<Item>> indices;
+
+	private final UniqueHashCodeBasedDistributedIndex<Item> idIndex;
 	
 	public ItemTable(List<ServerComputerId> servers) {
 		super(ID, TABLE_NAME);
@@ -51,14 +53,15 @@ public class ItemTable extends TpccBaseTable<Item> {
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
-		this.indices = 
-				List.of(
-					SimpleIndexQueryPlan.hashBasedIndex(
-							servers, 
-							TABLE_NAME, 
-							List.of(PUBLIC_ID_COLUMN)
-					)
-				);
+		this.idIndex = 			
+			new UniqueHashCodeBasedDistributedIndex<>(
+				servers, 
+				this, 
+				List.of(ID_COLUMN)
+			);
+
+		
+		this.indices = List.of(idIndex);
 	}
 
 	@Override
@@ -69,6 +72,10 @@ public class ItemTable extends TpccBaseTable<Item> {
 	@Override
 	public Class<Item> entityClass() {
 		return Item.class;
+	}
+	
+	public UniqueHashCodeBasedDistributedIndex<Item> getIdIndex() {
+		return idIndex;
 	}
 
 	@Override

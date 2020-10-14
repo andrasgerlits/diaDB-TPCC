@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.RecordWithVersion;
+import com.dianemodb.ServerComputerId;
 import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
@@ -70,6 +71,7 @@ public class NewOrder extends TpccTestProcess {
 	private final Short warehouseId;
 
 	public NewOrder(
+			ServerComputerId txComputer,
 			SQLServerApplication application,
 			
 			int customerId, 
@@ -80,7 +82,7 @@ public class NewOrder extends TpccTestProcess {
 			int allOrderLocal,
 			Map<Integer, Pair<Short, Short>> supplyingWarehouseAndQuantityByItemId
 	) {
-		super(application);
+		super(application, txComputer);
 		
 		this.customerId = customerId;
 		this.districtId = districtId;

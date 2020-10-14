@@ -3,9 +3,12 @@ package com.dianemodb.tpcc.schema;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.dianemodb.ServerComputerId;
-import com.dianemodb.h2impl.SimpleIndexQueryPlan;
+import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
+import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -15,7 +18,6 @@ import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
-import com.dianemodb.metaschema.distributed.UniqueHashCodeBasedDistributedIndex;
 import com.dianemodb.tpcc.entity.NewOrders;
 
 public class NewOrdersTable extends TpccBaseTable<NewOrders>{
@@ -50,6 +52,13 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 					NewOrders::setWarehouseId
 			);
 	
+	public static final RecordColumn<NewOrders, Short> CARRIER_ID_COLUMN =
+			new RecordColumn<>(
+					new ShortColumn(CARRIER_ID_COLUMN_NAME), 
+					NewOrders::getCarrierId, 
+					NewOrders::setCarrierId
+			);
+	
 	public static final List<RecordColumn<NewOrders, ?>> COLUMNS = 
 			List.of(
 				new RecordColumn<>(
@@ -69,11 +78,7 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 						NewOrders::getEntryTime, 
 						NewOrders::setEntryTime
 				),
-				new RecordColumn<>(
-						new ShortColumn(CARRIER_ID_COLUMN_NAME), 
-						NewOrders::getCarrierId, 
-						NewOrders::setCarrierId
-				),
+				CARRIER_ID_COLUMN,
 				new RecordColumn<>(
 						new ShortColumn(LINE_COLUMN_NAME), 
 						NewOrders::getLine, 
@@ -86,29 +91,41 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 				)
 			);
 
-	public static final List<RecordColumn<NewOrders, ?>> DISTRICT_WAREHOUSE_COLUMNS = 
+	public static final List<RecordColumn<NewOrders, ?>> DISTRICT_WAREHOUSE_CARRIER_COLUMNS = 
 			List.of(
 					NewOrdersTable.DISTRICT_ID_COLUMN,
-					NewOrdersTable.WAREHOUSE_ID_COLUMN
+					NewOrdersTable.WAREHOUSE_ID_COLUMN,
+					NewOrdersTable.CARRIER_ID_COLUMN
 				);
 
 	private final LinkedList<RecordColumn<NewOrders, ?>> columns;
 
 	private final Collection<DistributedIndex<NewOrders>> indices;
 	
+	private final RangeBasedDistributedIndex<NewOrders> compositeIndex;
+	
 	public NewOrdersTable(List<ServerComputerId> servers) {
 		super(ID, TABLE_NAME);
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
-		this.indices = 
-				List.of(
-					SimpleIndexQueryPlan.hashBasedIndex(
-							servers, 
-							TABLE_NAME, 
-							DISTRICT_WAREHOUSE_COLUMNS
-					)
-				);
+		compositeIndex = 				
+			new RangeBasedDistributedIndex<>(
+				servers,
+				this, 
+				List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, CARRIER_ID_COLUMN),
+				Map.of(
+					WAREHOUSE_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
+					DISTRICT_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
+					CARRIER_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(20)
+				)
+			);
+
+		this.indices = List.of(compositeIndex);
+	}
+	
+	public RangeBasedDistributedIndex<NewOrders> getCompositeIndex() {
+		return compositeIndex;
 	}
 
 	@Override

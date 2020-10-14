@@ -25,9 +25,4 @@ public class FindCustomerByLastNameDistrictAndWarehouse extends SingleIndexQuery
 			)
 		);
 	}
-
-	@Override
-	public Multiplicity indexType() {
-		return Multiplicity.DISCRETE;
-	}
 }

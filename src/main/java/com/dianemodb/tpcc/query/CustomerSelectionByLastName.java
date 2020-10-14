@@ -1,11 +1,11 @@
-package com.dianemodb.tpcc.transaction;
+package com.dianemodb.tpcc.query;
 
 import java.util.List;
 
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.tpcc.entity.Customer;
-import com.dianemodb.tpcc.query.FindCustomerByLastNameDistrictAndWarehouse;
+import com.dianemodb.tpcc.transaction.TpccTestProcess;
 
 public class CustomerSelectionByLastName implements CustomerSelectionStrategy {
 

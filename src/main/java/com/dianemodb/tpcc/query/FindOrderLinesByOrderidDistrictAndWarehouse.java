@@ -8,9 +8,11 @@ import com.dianemodb.tpcc.schema.OrderLineTable;
 
 public class FindOrderLinesByOrderidDistrictAndWarehouse extends SingleIndexQueryDistributionPlan<OrderLine> {
 
+	public static final String ID = "findOrderLineByIdDistrictAndWarehouse";
+
 	public FindOrderLinesByOrderidDistrictAndWarehouse(OrderLineTable table) {
 		super(
-			"findOrderLineByIdDistrictAndWarehouse", 
+			ID, 
 			"SELECT * FROM " + OrderLineTable.TABLE_NAME 
 			+ " WHERE " + OrderLineTable.ORDER_ID_COLUMN_NAME + "=?"
 					+ " AND " + OrderLineTable.DISTRICT_ID_COLUMN_NAME + "=?"
@@ -22,10 +24,5 @@ public class FindOrderLinesByOrderidDistrictAndWarehouse extends SingleIndexQuer
 				OrderLineTable.WAREHOUSE_ID_COLUMN
 			)
 		);
-	}
-
-	@Override
-	public Multiplicity indexType() {
-		return Multiplicity.DISCRETE;
 	}
 }

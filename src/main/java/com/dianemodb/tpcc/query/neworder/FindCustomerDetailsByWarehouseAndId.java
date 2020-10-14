@@ -8,21 +8,17 @@ public class FindCustomerDetailsByWarehouseAndId extends SingleIndexQueryDistrib
 
 	private static final String QUERY = 
 			"SELECT * FROM " + CustomerTable.TABLE_NAME 
-			+ " WHERE " + CustomerTable.PUBLIC_ID_COLUMN_NAME + "=? "
-					+ "AND " + CustomerTable.WAREHOUSE_ID_COLUMN_NAME+ "=?";
+			+ " WHERE " + CustomerTable.WAREHOUSE_ID_COLUMN_NAME+ "=? "
+					+ "AND " + CustomerTable.DISTRICT_ID_COLUMN_NAME + "=? "
+					+ "AND " + CustomerTable.ID_COLUMN_NAME + "=?";
 
 	public FindCustomerDetailsByWarehouseAndId(CustomerTable table) {
 		super(
 			"findCustomerDetails", 
 			QUERY, 
 			table, 
-			CustomerTable.ID_WAREHOUSE_INDEX_COLUMNS
+			table.getCompositeIndex()
 		);
-	}
-
-	@Override
-	public Multiplicity indexType() {
-		return Multiplicity.DISCRETE;
 	}
 
 }

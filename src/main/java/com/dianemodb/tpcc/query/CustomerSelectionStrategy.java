@@ -1,8 +1,9 @@
-package com.dianemodb.tpcc.transaction;
+package com.dianemodb.tpcc.query;
 
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.tpcc.entity.Customer;
+import com.dianemodb.tpcc.transaction.TpccTestProcess;
 
 public interface CustomerSelectionStrategy {
 		

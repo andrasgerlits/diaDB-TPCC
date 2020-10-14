@@ -3,8 +3,12 @@ package com.dianemodb.tpcc.schema;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
+import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -77,15 +81,29 @@ public class StockTable extends TpccBaseTable<Stock> {
 			);
 
 	private final LinkedList<RecordColumn<Stock, ?>> columns;
-	private final Collection<DistributedIndex<Stock>> indices; 
+	private final Collection<DistributedIndex<Stock>> indices;
 
-	public StockTable() {
+	private final RangeBasedDistributedIndex<Stock> itemWarehouseIndex;
+ 
+	public StockTable(List<ServerComputerId> servers) {
 		super(ID, TABLE_NAME);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
-		this.indices = List.of();
+		itemWarehouseIndex = 				
+				new RangeBasedDistributedIndex<>(
+						servers,
+						this, 
+						List.of(ITEM_ID_COLUMN, WAREHOUSE_ID_COLUMN),
+						Map.of(
+							ITEM_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
+							WAREHOUSE_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(1)
+						)
+				);
+
+		
+		this.indices = List.of(itemWarehouseIndex);
 	}
 
 
@@ -108,6 +126,10 @@ public class StockTable extends TpccBaseTable<Stock> {
 			Stock thing
 	) {
 		return null;
+	}
+	
+	public RangeBasedDistributedIndex<Stock> getItemWarehouseIndex() {
+		return itemWarehouseIndex;
 	}
 
 
