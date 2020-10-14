@@ -120,15 +120,6 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 	}
 
 	@Override
-	public ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			OrderLine thing
-	) {
-		return null;
-	}
-
-	@Override
 	protected List<RecordColumn<OrderLine, ?>> columns() {
 		return columns;
 	}
@@ -136,6 +127,11 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 	@Override
 	protected Collection<DistributedIndex<OrderLine>> indices() {
 		return indices;
+	}
+
+	@Override
+	protected DistributedIndex<OrderLine> getMaintainingComputerDecidingIndex() {
+		return orderIdRangeIndex;
 	}
 
 }

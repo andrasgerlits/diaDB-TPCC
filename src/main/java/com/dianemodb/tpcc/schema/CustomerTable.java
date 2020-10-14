@@ -6,8 +6,10 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.functional.FunctionalUtil;
 import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
 import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
@@ -22,8 +24,10 @@ import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
+import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.tpcc.entity.Customer;
+import com.dianemodb.tpcc.entity.District;
 
 public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 
@@ -228,15 +232,6 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 		return Customer.class;
 	}
 
-	@Override
-	public ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			Customer thing
-	) {
-		return null;
-	}
-	
 	public RangeBasedDistributedIndex<Customer> getCompositeIndex() {
 		return compositeIndex;
 	}
@@ -244,6 +239,11 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	@Override
 	protected List<RecordColumn<Customer, ?>> columns() {
 		return columns;
+	}
+	
+	@Override
+	protected DistributedIndex<Customer> getMaintainingComputerDecidingIndex() {
+		return compositeIndex;
 	}
 
 	@Override

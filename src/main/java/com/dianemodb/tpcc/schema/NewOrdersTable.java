@@ -139,15 +139,6 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	}
 
 	@Override
-	public ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			NewOrders thing
-	) {
-		return null;
-	}
-
-	@Override
 	protected List<RecordColumn<NewOrders, ?>> columns() {
 		return columns;
 	}
@@ -155,5 +146,10 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	@Override
 	protected Collection<DistributedIndex<NewOrders>> indices() {
 		return indices;
+	}
+
+	@Override
+	protected DistributedIndex<NewOrders> getMaintainingComputerDecidingIndex() {
+		return compositeIndex;
 	}
 }

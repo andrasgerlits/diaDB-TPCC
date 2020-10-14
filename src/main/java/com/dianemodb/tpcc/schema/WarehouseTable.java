@@ -10,7 +10,6 @@ import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.tpcc.entity.Warehouse;
@@ -33,9 +32,11 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 
 	private final Collection<DistributedIndex<Warehouse>> indices;
 
-	private List<RecordColumn<Warehouse, ?>> columns;
+	private final List<RecordColumn<Warehouse, ?>> columns;
 
 	private final RecordColumn<Warehouse, Short> idColumn;
+	
+	private final UniqueHashCodeBasedDistributedIndex<Warehouse> index;
 	
 	protected WarehouseTable(List<ServerComputerId> servers) {
 		super(
@@ -61,14 +62,14 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.add(idColumn);
 
-		this.indices = 
-				List.of(
-						new UniqueHashCodeBasedDistributedIndex<>(
-							servers, 
-							this, 
-							List.of(idColumn)
-					)
+		this.index = 
+				new UniqueHashCodeBasedDistributedIndex<>(
+						servers, 
+						this, 
+						List.of(idColumn)
 				);
+		
+		this.indices = List.of(index);
 	}
 
 	@Override
@@ -82,20 +83,16 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	}
 
 	@Override
-	public ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			Warehouse thing
-	) {
-		return null;
-	}
-
-	@Override
 	protected Collection<DistributedIndex<Warehouse>> indices() {
 		return indices;
 	}
 
 	public RecordColumn<Warehouse, Short> getPublicIdColumn() {
 		return idColumn;
+	}
+
+	@Override
+	protected DistributedIndex<Warehouse> getMaintainingComputerDecidingIndex() {
+		return index;
 	}
 }

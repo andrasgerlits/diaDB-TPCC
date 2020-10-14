@@ -3,15 +3,18 @@ package com.dianemodb.tpcc.schema;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
+import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.BigDecimalColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
@@ -42,33 +45,50 @@ public class HistoryTable extends TpccBaseTable<History> {
 	private static final String AMOUNT_COLUMN_NAME = "h_amount";
 	private static final String DATA_COLUMN_NAME = "h_data";
 
-	private static final List<RecordColumn<History, ?>> COLUMNS = 
-			List.of(
+	private static final RecordColumn<History, Integer> CUSTOMER_ID_COLUMN = 
 				new RecordColumn<>(
 					new IntColumn(CUSTOMER_ID_COLUMN_NAME), 
 					History::getCustomerId, 
 					History::setCustomerId
-				),
-				new RecordColumn<>(
-					new ShortColumn(CUSTOMER_DISTRICT_ID_COLUMN_NAME), 
-					History::getCustomerDistrictId,
-					History::setCustomerDistrictId
-				),
-				new RecordColumn<>(
+				);
+
+	private static final RecordColumn<History, Short> CUSTOMER_DISTRICT_ID_COLUMN = 				
+			new RecordColumn<>(
+				new ShortColumn(CUSTOMER_DISTRICT_ID_COLUMN_NAME), 
+				History::getCustomerDistrictId,
+				History::setCustomerDistrictId
+			);
+
+	private static final RecordColumn<History, Short> CUSTOMER_WAREHOUSE_COLUMN = 
+			new RecordColumn<>(
 					new ShortColumn(CUSTOMER_WAREHOUSE_ID_COLUMN_NAME), 
 					History::getCustomerWarehouseId,
 					History::setCustomerWarehouseId
-				),
-				new RecordColumn<>(
+			);
+
+	private static final RecordColumn<History, Short> DISTRICT_ID_COLUMN = 
+			new RecordColumn<>(
 					new ShortColumn(DISTRICT_ID_COLUMN_NAME), 
 					History::getDistrictId,
 					History::setDistrictId
-				),
-				new RecordColumn<>(
+			);
+
+	private static final RecordColumn<History, Short> WAREHOUSE_ID_COLUMN = 
+			new RecordColumn<>(
 					new ShortColumn(WAREHOUSE_ID_COLUMN_NAME), 
 					History::getWarehouseId,
 					History::setWarehouseId
-				),
+			);
+	
+	
+
+	private static final List<RecordColumn<History, ?>> COLUMNS = 
+			List.of(
+				CUSTOMER_ID_COLUMN,
+				CUSTOMER_DISTRICT_ID_COLUMN,
+				CUSTOMER_WAREHOUSE_COLUMN,
+				DISTRICT_ID_COLUMN,
+				WAREHOUSE_ID_COLUMN,
 				new RecordColumn<>(
 					new TimestampColumn(DATE_COLUMN_NAME), 
 					History::getDate,
@@ -90,13 +110,30 @@ public class HistoryTable extends TpccBaseTable<History> {
 
 	private final Collection<DistributedIndex<History>> indices;
 	
+	private final RangeBasedDistributedIndex<History> compositeIndex;
 	
 	public HistoryTable(Collection<ServerComputerId> servers) {
 		super(ID, TABLE_NAME);
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
-		
-		this.indices = List.of();
+
+		this.compositeIndex = 
+				new RangeBasedDistributedIndex<>(
+						servers,
+						this, 
+						List.of(
+							CUSTOMER_WAREHOUSE_COLUMN, 
+							CUSTOMER_DISTRICT_ID_COLUMN, 
+							CUSTOMER_ID_COLUMN
+						),
+						Map.of(
+							CUSTOMER_WAREHOUSE_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
+							CUSTOMER_DISTRICT_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
+							CUSTOMER_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(20)
+						)
+				);
+
+		this.indices = List.of(compositeIndex);
 	}
 
 	@Override
@@ -110,15 +147,6 @@ public class HistoryTable extends TpccBaseTable<History> {
 	}
 
 	@Override
-	public ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			History thing
-	) {
-		return null;
-	}
-	
-	@Override
 	protected List<RecordColumn<History, ?>> columns() {
 		return columns;
 	}
@@ -126,5 +154,10 @@ public class HistoryTable extends TpccBaseTable<History> {
 	@Override
 	protected Collection<DistributedIndex<History>> indices() {
 		return indices;
+	}
+
+	@Override
+	protected DistributedIndex<History> getMaintainingComputerDecidingIndex() {
+		return compositeIndex;
 	}
 }

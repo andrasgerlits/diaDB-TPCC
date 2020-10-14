@@ -12,7 +12,6 @@ import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.BigDecimalColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.tpcc.entity.Item;
@@ -79,15 +78,6 @@ public class ItemTable extends TpccBaseTable<Item> {
 	}
 
 	@Override
-	public ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			Item thing
-	) {
-		return null;
-	}
-
-	@Override
 	protected List<RecordColumn<Item, ?>> columns() {
 		return columns;
 	}
@@ -95,5 +85,10 @@ public class ItemTable extends TpccBaseTable<Item> {
 	@Override
 	protected Collection<DistributedIndex<Item>> indices() {
 		return indices;
+	}
+
+	@Override
+	protected DistributedIndex<Item> getMaintainingComputerDecidingIndex() {
+		return idIndex;
 	}
 }

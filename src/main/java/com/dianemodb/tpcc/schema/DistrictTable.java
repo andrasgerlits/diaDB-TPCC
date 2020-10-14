@@ -63,6 +63,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 
 	private final List<RecordColumn<District, ?>> columns;
 	private final Collection<DistributedIndex<District>> indices;
+	private final RangeBasedDistributedIndex<District> compositeIndex;
 	
 	protected DistrictTable(List<ServerComputerId> servers) {
 		super(
@@ -83,8 +84,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 		columns.add(WAREHOUSE_COLUMN);
 		columns.add(NEXT_OID_COLUMN);
 		
-		this.indices = 
-			List.of(
+		compositeIndex = 
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
@@ -93,8 +93,9 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 							WAREHOUSE_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
 							ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1)
 						)
-				)
-			);
+				);
+		
+		this.indices = List.of(compositeIndex);
 	}
 	
 	@Override
@@ -113,15 +114,6 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	}
 
 	@Override
-	public ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			District thing
-	) {
-		return null;
-	}
-
-	@Override
 	protected Collection<DistributedIndex<District>> indices() {
 		return indices;
 	}
@@ -132,6 +124,11 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 		district.setWarehouseId(rs.getShort(WAREHOUSE_ID_COLUMNNAME));
 		district.setNextOid(rs.getInt(NEXT_OID_COLUMN_NAME));
 		return district;
+	}
+
+	@Override
+	protected DistributedIndex<District> getMaintainingComputerDecidingIndex() {
+		return compositeIndex;
 	}
 
 }

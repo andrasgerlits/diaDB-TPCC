@@ -101,48 +101,36 @@ public class StockTable extends TpccBaseTable<Stock> {
 							WAREHOUSE_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(1)
 						)
 				);
-
 		
 		this.indices = List.of(itemWarehouseIndex);
 	}
-
 
 	@Override
 	public Stock newInstance(TransactionId txId, RecordId recordId) {
 		return new Stock(txId, recordId);
 	}
 
-
 	@Override
 	public Class<Stock> entityClass() {
 		return Stock.class;
 	}
 
-
-	@Override
-	public ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			Stock thing
-	) {
-		return null;
-	}
-	
 	public RangeBasedDistributedIndex<Stock> getItemWarehouseIndex() {
 		return itemWarehouseIndex;
 	}
-
 
 	@Override
 	protected List<RecordColumn<Stock, ?>> columns() {
 		return columns;
 	}
 
-
 	@Override
 	protected Collection<DistributedIndex<Stock>> indices() {
 		return indices;
 	}
 
-
+	@Override
+	protected DistributedIndex<Stock> getMaintainingComputerDecidingIndex() {
+		return itemWarehouseIndex;
+	}
 }

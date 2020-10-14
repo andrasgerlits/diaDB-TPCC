@@ -14,7 +14,6 @@ import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
@@ -125,15 +124,6 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 	public Class<Orders> entityClass() {
 		return Orders.class;
 	}
-
-	@Override
-	public ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			Orders thing
-	) {
-		return null;
-	}
 	
 	public DistributedIndex<Orders> getCompositeIndex() {
 		return compositeIndex;
@@ -147,5 +137,10 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 	@Override
 	protected Collection<DistributedIndex<Orders>> indices() {
 		return List.of(compositeIndex);
+	}
+
+	@Override
+	protected DistributedIndex<Orders> getMaintainingComputerDecidingIndex() {
+		return compositeIndex;
 	}
 }

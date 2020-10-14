@@ -2,11 +2,14 @@ package com.dianemodb.tpcc.schema;
 
 import java.util.List;
 
+import com.dianemodb.ServerComputerId;
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.RecordColumn;
+import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.metaschema.schema.UserRecordTable;
 
 public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTable<R> {
@@ -42,6 +45,17 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 	@Override
 	public RecordColumn<R, RecordId> getRecordIdColumn() {
 		return recordIdColumn;
+	}
+	
+	protected abstract DistributedIndex<R> getMaintainingComputerDecidingIndex();
+	
+	@Override
+	public final ServerComputerId chooseMaintainingComputer(
+			SQLServerApplication application,
+			List<ServerComputerId> computers, 
+			R thing
+	) {
+		return getMaintainingComputerDecidingIndex().getSingleMaintainingComputer(thing);
 	}
 
 	@Override
