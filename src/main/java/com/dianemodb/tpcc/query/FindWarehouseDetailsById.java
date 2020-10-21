@@ -16,7 +16,7 @@ public class FindWarehouseDetailsById extends SingleIndexQueryDistributionPlan<W
 
 
 	public FindWarehouseDetailsById(WarehouseTable table) {
-		super(ID, QUERY, table, List.of(table.getPublicIdColumn()));
+		super(ID, QUERY, table, List.of(table.getIdColumn()));
 	}
 
 }

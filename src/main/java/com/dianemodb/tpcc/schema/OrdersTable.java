@@ -5,18 +5,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.Topology;
 import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
 import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
+import com.dianemodb.h2impl.ServerComputerIdNarrowingRule;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
+import com.dianemodb.metaschema.ByteColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.entity.Orders;
 
 /*
@@ -52,9 +56,9 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 				Orders::setOrderId
 			);
 
-	public static final RecordColumn<Orders, Short> DISTRICT_ID_COLUMN = 
+	public static final RecordColumn<Orders, Byte> DISTRICT_ID_COLUMN = 
 			new RecordColumn<>(
-					new ShortColumn(DISTRICT_ID_COLUMN_NAME), 
+					new ByteColumn(DISTRICT_ID_COLUMN_NAME), 
 					Orders::getDistrictId, 
 					Orders::setDistrictId
 			);
@@ -96,22 +100,25 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 	
 	private final DistributedIndex<Orders> compositeIndex;
 	
-	public OrdersTable(List<ServerComputerId> servers) {
+	public OrdersTable(Topology servers) {
 		super(ID, TABLE_NAME);
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
+		
+		Map<RecordColumn<Orders,?>, ServerComputerIdNarrowingRule> indexRuleMap = 
+				DistrictTable.getDistrictBasedRoundRobinRules(
+						WAREHOUSE_ID_COLUMN, 
+						DISTRICT_ID_COLUMN
+				);
+		
+		indexRuleMap.put(CUSTOMER_ID_COLUMN, NullRule.INSTANCE);
 		
 		this.compositeIndex = 				
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
 						List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, CUSTOMER_ID_COLUMN),
-						Map.of(
-							WAREHOUSE_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-							DISTRICT_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-							// terminating
-							CUSTOMER_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(1)
-						)
+						indexRuleMap
 				);
 	}
 

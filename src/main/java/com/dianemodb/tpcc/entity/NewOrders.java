@@ -10,13 +10,19 @@ import com.dianemodb.tpcc.schema.NewOrdersTable;
 public class NewOrders extends UserBaseRecord {
 	
 	private int orderId;
-	private short districtId;
+	private byte districtId;
 	private short warehouseId;
 	private int customerId;
-	private Timestamp entryTime;
+	private long entryTime;
 	private short carrierId;
 	private short line;
 	private short allLocal;
+	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	private NewOrders() {
+		// required for serialization
+	}
 
 	public NewOrders(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, NewOrdersTable.ID);
@@ -30,11 +36,11 @@ public class NewOrders extends UserBaseRecord {
 		this.orderId = publicId;
 	}
 
-	public short getDistrictId() {
+	public byte getDistrictId() {
 		return districtId;
 	}
 
-	public void setDistrictId(short districtId) {
+	public void setDistrictId(byte districtId) {
 		this.districtId = districtId;
 	}
 
@@ -55,11 +61,11 @@ public class NewOrders extends UserBaseRecord {
 	}
 
 	public Timestamp getEntryTime() {
-		return entryTime;
+		return new Timestamp(entryTime);
 	}
 
 	public void setEntryTime(Timestamp entryTime) {
-		this.entryTime = entryTime;
+		this.entryTime = entryTime.getTime();
 	}
 
 	public short getCarrierId() {
@@ -94,7 +100,7 @@ public class NewOrders extends UserBaseRecord {
 		result = prime * result + carrierId;
 		result = prime * result + customerId;
 		result = prime * result + districtId;
-		result = prime * result + ((entryTime == null) ? 0 : entryTime.hashCode());
+		result = prime * result + (int) (entryTime ^ (entryTime >>> 32));
 		result = prime * result + line;
 		result = prime * result + orderId;
 		result = prime * result + warehouseId;
@@ -118,10 +124,7 @@ public class NewOrders extends UserBaseRecord {
 			return false;
 		if (districtId != other.districtId)
 			return false;
-		if (entryTime == null) {
-			if (other.entryTime != null)
-				return false;
-		} else if (!entryTime.equals(other.entryTime))
+		if (entryTime != other.entryTime)
 			return false;
 		if (line != other.line)
 			return false;

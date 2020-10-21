@@ -5,17 +5,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.dianemodb.ServerComputerId;
-import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
-import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.Topology;
+import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
+import com.dianemodb.h2impl.ServerComputerIdNarrowingRule;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.BigDecimalColumn;
+import com.dianemodb.metaschema.ByteColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
@@ -39,9 +39,6 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 	public static final String AMOUNT_COLUMN_NAME = "ol_amount";
 	public static final String DIST_INFO_COLUMN_NAME = "ol_dist_info";
 	
-	public static final RecordColumn<OrderLine, TransactionId> TX_ID_COLUMN = TX_ID();
-	public static final RecordColumn<OrderLine, RecordId> RECORD_ID_COLUMN = RECORD_ID();
-
 	public static final RecordColumn<OrderLine, Integer> ORDER_ID_COLUMN =
 			new RecordColumn<>(
 					new IntColumn(ORDER_ID_COLUMN_NAME), 
@@ -49,9 +46,9 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 					OrderLine::setOrderId
 			);
 	
-	public static final RecordColumn<OrderLine, Short> DISTRICT_ID_COLUMN = 
+	public static final RecordColumn<OrderLine, Byte> DISTRICT_ID_COLUMN = 
 			new RecordColumn<>(
-					new ShortColumn(DISTRICT_ID_COLUMN_NAME), 
+					new ByteColumn(DISTRICT_ID_COLUMN_NAME), 
 					OrderLine::getDistrictId, 
 					OrderLine::setDistrictId
 			);
@@ -65,8 +62,6 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 
 	private static final List<RecordColumn<OrderLine, ?>> COLUMNS = 
 			List.of(
-				TX_ID(),
-				RECORD_ID(),
 				ORDER_ID_COLUMN,
 				DISTRICT_ID_COLUMN,
 				WAREHOUSE_ID_COLUMN,
@@ -84,22 +79,26 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 	
 	private final DistributedIndex<OrderLine> orderIdRangeIndex;
 	
-	public OrderLineTable(List<ServerComputerId> servers) {
+	public OrderLineTable(Topology servers) {
 		super(ID, TABLE_NAME);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
+		
+		Map<RecordColumn<OrderLine,?>, ServerComputerIdNarrowingRule> indexRuleMap = 
+				DistrictTable.getDistrictBasedRoundRobinRules(
+						WAREHOUSE_ID_COLUMN, 
+						DISTRICT_ID_COLUMN
+				);
+		
+		indexRuleMap.put(ORDER_ID_COLUMN, NullRule.INSTANCE);
 		
 		orderIdRangeIndex = 
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
 						List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, ORDER_ID_COLUMN),
-						Map.of(
-							WAREHOUSE_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-							DISTRICT_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-							ORDER_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(20)
-						)
+						indexRuleMap
 				);
 
 		this.indices = List.of(orderIdRangeIndex);

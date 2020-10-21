@@ -10,13 +10,19 @@ import com.dianemodb.tpcc.schema.OrdersTable;
 public class Orders extends UserBaseRecord {
 	
 	private int orderId;
-	private short districtId;
+	private byte districtId;
 	private short warehouseId;
 	private int customerId;
-	private Timestamp entryDate;
+	private long entryDate;
 	private short carrierId;
 	private short orderLineCount;
 	private short allLocal;
+	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	private Orders() {
+		// required for serialization
+	}
 
 	public Orders(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, OrdersTable.ID);
@@ -30,11 +36,11 @@ public class Orders extends UserBaseRecord {
 		this.orderId = publicId;
 	}
 
-	public short getDistrictId() {
+	public byte getDistrictId() {
 		return districtId;
 	}
 
-	public void setDistrictId(short districtId) {
+	public void setDistrictId(byte districtId) {
 		this.districtId = districtId;
 	}
 
@@ -55,11 +61,11 @@ public class Orders extends UserBaseRecord {
 	}
 
 	public Timestamp getEntryDate() {
-		return entryDate;
+		return new Timestamp(entryDate);
 	}
 
 	public void setEntryDate(Timestamp entryDate) {
-		this.entryDate = entryDate;
+		this.entryDate = entryDate.getTime();
 	}
 
 	public short getCarrierId() {
@@ -87,6 +93,14 @@ public class Orders extends UserBaseRecord {
 	}
 
 	@Override
+	public String toString() {
+		return "Orders [publicId=" + orderId + ", districtId=" + districtId + ", warehouseId=" + warehouseId
+				+ ", customerId=" + customerId + ", entryDate=" + getEntryDate() + ", carrierId=" + carrierId
+				+ ", orderLineCount=" + orderLineCount + ", allLocal=" + allLocal + ", txId=" + txId + ", recordId="
+				+ recordId + "]";
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
@@ -94,9 +108,9 @@ public class Orders extends UserBaseRecord {
 		result = prime * result + carrierId;
 		result = prime * result + customerId;
 		result = prime * result + districtId;
-		result = prime * result + ((entryDate == null) ? 0 : entryDate.hashCode());
-		result = prime * result + orderLineCount;
+		result = prime * result + (int) (entryDate ^ (entryDate >>> 32));
 		result = prime * result + orderId;
+		result = prime * result + orderLineCount;
 		result = prime * result + warehouseId;
 		return result;
 	}
@@ -118,25 +132,14 @@ public class Orders extends UserBaseRecord {
 			return false;
 		if (districtId != other.districtId)
 			return false;
-		if (entryDate == null) {
-			if (other.entryDate != null)
-				return false;
-		} else if (!entryDate.equals(other.entryDate))
-			return false;
-		if (orderLineCount != other.orderLineCount)
+		if (entryDate != other.entryDate)
 			return false;
 		if (orderId != other.orderId)
+			return false;
+		if (orderLineCount != other.orderLineCount)
 			return false;
 		if (warehouseId != other.warehouseId)
 			return false;
 		return true;
-	}
-
-	@Override
-	public String toString() {
-		return "Orders [publicId=" + orderId + ", districtId=" + districtId + ", warehouseId=" + warehouseId
-				+ ", customerId=" + customerId + ", entryDate=" + entryDate + ", carrierId=" + carrierId
-				+ ", orderLineCount=" + orderLineCount + ", allLocal=" + allLocal + ", txId=" + txId + ", recordId="
-				+ recordId + "]";
 	}
 }

@@ -3,19 +3,22 @@ package com.dianemodb.tpcc.schema;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.Topology;
+import com.dianemodb.UserRecord;
 import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
+import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
+import com.dianemodb.h2impl.ServerComputerIdNarrowingRule;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.ByteColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.tpcc.entity.District;
@@ -47,7 +50,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 
 	private static final RecordColumn<District, Integer> NEXT_OID_COLUMN = 
 			new RecordColumn<>(
-					new IntColumn(WAREHOUSE_ID_COLUMNNAME), 
+					new IntColumn(NEXT_OID_COLUMN_NAME), 
 					District::getNextOid, 
 					District::setNextOid
 			);
@@ -55,17 +58,33 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	public static final RecordColumn<District, Byte> ID_COLUMN = 
 			new RecordColumn<>(
 					new ByteColumn(ID_COLUMNNAME), 
-					District::getPublicId, 
-					District::setPublicId
+					District::getId, 
+					District::setId
 			);
 	
 	public static final UserRecordTableId ID = new UserRecordTableId(DISTRICT_TABLE_ID);
+	
+	public static <R extends UserRecord> Map<RecordColumn<R, ?>, ServerComputerIdNarrowingRule> getDistrictBasedRoundRobinRules(
+			RecordColumn<R, Short> warehouseColumn, 
+			RecordColumn<R, Byte> districtIdColumn
+	) {
+		return new HashMap<>(
+				Map.of(
+					// warehouse per parent-group
+					warehouseColumn, new GroupLevelBasedIdNarrowingRule(1),
+					
+					// round-robin per district
+					districtIdColumn, new IntegerRangeBasedIdNarrowingRule(1)
+				)
+			);
+	}
+	
 
 	private final List<RecordColumn<District, ?>> columns;
 	private final Collection<DistributedIndex<District>> indices;
 	private final RangeBasedDistributedIndex<District> compositeIndex;
 	
-	protected DistrictTable(List<ServerComputerId> servers) {
+	public DistrictTable(Topology servers) {
 		super(
 			TABLE_NAME, 
 			ID, 
@@ -89,15 +108,12 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 						servers,
 						this, 
 						List.of(WAREHOUSE_COLUMN, ID_COLUMN),
-						Map.of(
-							WAREHOUSE_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-							ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1)
-						)
+						getDistrictBasedRoundRobinRules(WAREHOUSE_COLUMN, ID_COLUMN)
 				);
 		
 		this.indices = List.of(compositeIndex);
 	}
-	
+
 	@Override
 	public List<RecordColumn<District, ?>> columns() {
 		return columns;
@@ -120,7 +136,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 
 	public District readFromResultSet(ResultSet rs) throws SQLException {
 		District district = setFieldsFromResultSet(rs);
-		district.setPublicId(rs.getByte(ID_COLUMNNAME));
+		district.setId(rs.getByte(ID_COLUMNNAME));
 		district.setWarehouseId(rs.getShort(WAREHOUSE_ID_COLUMNNAME));
 		district.setNextOid(rs.getInt(NEXT_OID_COLUMN_NAME));
 		return district;
@@ -130,5 +146,11 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	protected DistributedIndex<District> getMaintainingComputerDecidingIndex() {
 		return compositeIndex;
 	}
+
+	public DistributedIndex<District> getCompositeIndex() {
+		return compositeIndex;
+	}
+	
+	
 
 }

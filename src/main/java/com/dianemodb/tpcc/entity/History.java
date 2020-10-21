@@ -11,13 +11,19 @@ import com.dianemodb.tpcc.schema.HistoryTable;
 public class History extends UserBaseRecord {
 
 	private int customerId;
-	private short customerDistrictId;
+	private byte customerDistrictId;
 	private short customerWarehouseId;
-	private short districtId;
+	private Byte districtId;
 	private short warehouseId;
-	private Timestamp date;
-	private BigDecimal amount;
+	private long date;
+	private String amount;
 	private String data;
+	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	private History() {
+		// required for serialization
+	}
 
 	public History(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, HistoryTable.ID);
@@ -31,11 +37,11 @@ public class History extends UserBaseRecord {
 		this.customerId = customerId;
 	}
 
-	public short getCustomerDistrictId() {
+	public byte getCustomerDistrictId() {
 		return customerDistrictId;
 	}
 
-	public void setCustomerDistrictId(short customerDistrictId) {
+	public void setCustomerDistrictId(byte customerDistrictId) {
 		this.customerDistrictId = customerDistrictId;
 	}
 
@@ -47,11 +53,11 @@ public class History extends UserBaseRecord {
 		this.customerWarehouseId = customerWarehouseId;
 	}
 
-	public short getDistrictId() {
+	public byte getDistrictId() {
 		return districtId;
 	}
 
-	public void setDistrictId(short districtId) {
+	public void setDistrictId(byte districtId) {
 		this.districtId = districtId;
 	}
 
@@ -64,19 +70,19 @@ public class History extends UserBaseRecord {
 	}
 
 	public Timestamp getDate() {
-		return date;
+		return new Timestamp(date);
 	}
 
 	public void setDate(Timestamp date) {
-		this.date = date;
+		this.date = date.getTime();
 	}
 
 	public BigDecimal getAmount() {
-		return amount;
+		return newBigDecimal(amount);
 	}
 
 	public void setAmount(BigDecimal amount) {
-		this.amount = amount;
+		this.amount = amount.toPlainString();
 	}
 
 	public String getData() {
@@ -96,7 +102,7 @@ public class History extends UserBaseRecord {
 		result = prime * result + customerId;
 		result = prime * result + customerWarehouseId;
 		result = prime * result + ((data == null) ? 0 : data.hashCode());
-		result = prime * result + ((date == null) ? 0 : date.hashCode());
+		result = prime * result + (int) (date ^ (date >>> 32));
 		result = prime * result + districtId;
 		result = prime * result + warehouseId;
 		return result;
@@ -127,10 +133,7 @@ public class History extends UserBaseRecord {
 				return false;
 		} else if (!data.equals(other.data))
 			return false;
-		if (date == null) {
-			if (other.date != null)
-				return false;
-		} else if (!date.equals(other.date))
+		if (date != other.date)
 			return false;
 		if (districtId != other.districtId)
 			return false;
@@ -143,7 +146,7 @@ public class History extends UserBaseRecord {
 	public String toString() {
 		return "History [customerId=" + customerId + ", customerDistrictId=" + customerDistrictId
 				+ ", customerWarehouseId=" + customerWarehouseId + ", districtId=" + districtId + ", warehouseId="
-				+ warehouseId + ", date=" + date + ", amount=" + amount + ", data=" + data + ", txId=" + txId
+				+ warehouseId + ", date=" + getDate() + ", amount=" + amount + ", data=" + data + ", txId=" + txId
 				+ ", recordId=" + recordId + "]";
 	}
 

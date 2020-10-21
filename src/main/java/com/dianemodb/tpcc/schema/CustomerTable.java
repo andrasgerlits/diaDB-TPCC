@@ -6,28 +6,24 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import com.dianemodb.ServerComputerId;
-import com.dianemodb.functional.FunctionalUtil;
-import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
-import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.Topology;
+import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
+import com.dianemodb.h2impl.ServerComputerIdNarrowingRule;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.BigDecimalColumn;
+import com.dianemodb.metaschema.ByteColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.LongColumn;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
-import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.tpcc.entity.Customer;
-import com.dianemodb.tpcc.entity.District;
 
 public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 
@@ -67,9 +63,9 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 					Customer::setPublicId
 			);
 
-	public static final RecordColumn<Customer, Short> DISTRICT_ID_COLUMN =
+	public static final RecordColumn<Customer, Byte> DISTRICT_ID_COLUMN =
 			new RecordColumn<>(
-					new ShortColumn(DISTRICT_ID_COLUMN_NAME), 
+					new ByteColumn(DISTRICT_ID_COLUMN_NAME), 
 					Customer::getDistrictId,
 					Customer::setDistrictId
 			);
@@ -167,7 +163,7 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	
 	public static final RecordColumn<Customer, String> DATA_COLUMN =
 			new RecordColumn<>(
-					new StringColumn(DATA_COLUMN_NAME), 
+					new StringColumn(DATA_COLUMN_NAME, 500), 
 					Customer::getData,
 					Customer::setData
 			);
@@ -179,7 +175,7 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	private final List<RecordColumn<Customer, ?>> columns;
 	private final RangeBasedDistributedIndex<Customer> compositeIndex;
 	
-	public CustomerTable(List<ServerComputerId> servers) {
+	public CustomerTable(Topology servers) {
 		super(
 			TABLE_NAME, 
 			ID, 
@@ -190,21 +186,25 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 			ZIP_COLUMN_NAME
 		);
 		
+		Map<RecordColumn<Customer,?>, ServerComputerIdNarrowingRule> indexRuleMap = 
+				DistrictTable.getDistrictBasedRoundRobinRules(
+						WAREHOUSE_ID_COLUMN, 
+						DISTRICT_ID_COLUMN
+				);
+		indexRuleMap.put(ID_COLUMN, NullRule.INSTANCE);
+		
 		compositeIndex = 
 			new RangeBasedDistributedIndex<>(
 				servers,
 				this, 
 				List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, ID_COLUMN),
-				Map.of(
-					WAREHOUSE_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-					DISTRICT_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-					ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(1)
-				)
+				indexRuleMap
 			);
 		
 		this.indices = List.of(compositeIndex);
 		
 		columns = new LinkedList<>(super.columns());
+		columns.add(ID_COLUMN);
 		columns.add(DISTRICT_ID_COLUMN);
 		columns.add(WAREHOUSE_ID_COLUMN);
 		columns.add(FIRST_NAME_COLUMN);

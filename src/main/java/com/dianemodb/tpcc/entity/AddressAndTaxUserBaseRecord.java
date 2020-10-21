@@ -10,9 +10,15 @@ public abstract class AddressAndTaxUserBaseRecord extends LocationBasedUserRecor
 	
 	private String name;
 	
-	private BigDecimal tax;
-	private BigDecimal ytd;
+	private String tax;
+	private String ytd;
 	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	protected AddressAndTaxUserBaseRecord() {
+		// required for serialization
+	}
+
 	protected AddressAndTaxUserBaseRecord(
 			TransactionId txId, 
 			RecordId recordId, 
@@ -30,18 +36,18 @@ public abstract class AddressAndTaxUserBaseRecord extends LocationBasedUserRecor
 	}
 
 	public BigDecimal getTax() {
-		return tax;
+		return newBigDecimal(tax);
 	}
 
 	public void setTax(BigDecimal tax) {
-		this.tax = tax;
+		this.tax = tax.toPlainString();
 	}
 
 	public BigDecimal getYtd() {
-		return ytd;
+		return newBigDecimal(ytd);
 	}
 
 	public void setYtd(BigDecimal ytd) {
-		this.ytd = ytd;
+		this.ytd = ytd.toPlainString();
 	}
 }

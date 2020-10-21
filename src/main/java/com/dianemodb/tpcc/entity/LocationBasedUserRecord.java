@@ -12,6 +12,12 @@ public abstract class LocationBasedUserRecord extends UserBaseRecord {
 	private String city;
 	private String state;
 	private String zip;
+	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	protected LocationBasedUserRecord() {
+		// required for serialization
+	}
 
 	public LocationBasedUserRecord(
 			TransactionId txId, 

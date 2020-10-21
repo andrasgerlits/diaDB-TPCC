@@ -46,6 +46,12 @@ public class Stock extends UserBaseRecord {
 	private short remoteCnt;
 	private String data;
 	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	private Stock() {
+		// required for serialization
+	}
+	
 	public Stock(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, StockTable.ID);
 	}

@@ -11,15 +11,21 @@ import com.dianemodb.tpcc.schema.OrderLineTable;
 public class OrderLine extends UserBaseRecord {
 	
 	private int orderId;
-	private short districtId;
+	private byte districtId;
 	private short warehouseId;
 	private short lineNumber;
 	private short itemId;
 	private short supplyWarehouseId;
-	private Timestamp deliveryDate;
+	private long deliveryDate;
 	private short quantity;
-	private BigDecimal amount;
+	private String amount;
 	private String distInfo;
+	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	private OrderLine() {
+		// required for serialization
+	}
 	
 	public OrderLine(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, OrderLineTable.ID);
@@ -33,11 +39,11 @@ public class OrderLine extends UserBaseRecord {
 		this.orderId = orderId;
 	}
 
-	public short getDistrictId() {
+	public byte getDistrictId() {
 		return districtId;
 	}
 
-	public void setDistrictId(short districtId) {
+	public void setDistrictId(byte districtId) {
 		this.districtId = districtId;
 	}
 
@@ -74,11 +80,11 @@ public class OrderLine extends UserBaseRecord {
 	}
 
 	public Timestamp getDeliveryDate() {
-		return deliveryDate;
+		return new Timestamp(deliveryDate);
 	}
 
 	public void setDeliveryDate(Timestamp deliveryDate) {
-		this.deliveryDate = deliveryDate;
+		this.deliveryDate = deliveryDate.getTime();
 	}
 
 	public short getQuantity() {
@@ -90,11 +96,11 @@ public class OrderLine extends UserBaseRecord {
 	}
 
 	public BigDecimal getAmount() {
-		return amount;
+		return newBigDecimal(amount);
 	}
 
 	public void setAmount(BigDecimal amount) {
-		this.amount = amount;
+		this.amount = amount.toPlainString();
 	}
 
 	public String getDistInfo() {
@@ -105,12 +111,13 @@ public class OrderLine extends UserBaseRecord {
 		this.distInfo = distInfo;
 	}
 
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + ((amount == null) ? 0 : amount.hashCode());
-		result = prime * result + ((deliveryDate == null) ? 0 : deliveryDate.hashCode());
+		result = prime * result + (int) (deliveryDate ^ (deliveryDate >>> 32));
 		result = prime * result + ((distInfo == null) ? 0 : distInfo.hashCode());
 		result = prime * result + districtId;
 		result = prime * result + itemId;
@@ -136,10 +143,7 @@ public class OrderLine extends UserBaseRecord {
 				return false;
 		} else if (!amount.equals(other.amount))
 			return false;
-		if (deliveryDate == null) {
-			if (other.deliveryDate != null)
-				return false;
-		} else if (!deliveryDate.equals(other.deliveryDate))
+		if (deliveryDate != other.deliveryDate)
 			return false;
 		if (distInfo == null) {
 			if (other.distInfo != null)

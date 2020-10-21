@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="error">
+
+	<Appenders>
+		<Console name="stdlogs" target="SYSTEM_OUT">
+			<PatternLayout pattern="[%X{id}] [%X{env}] %-5level %logger{36} - %msg%n" />
+		</Console>
+<!-- 
+  		<RollingFile  
+  			name="stdlogs" 
+  			fileName="target/out.log" 
+  			filePattern="target/out-%d{HH_mm_ss}.log.gz" 
+  			append="true" 
+		>
+           <PatternLayout pattern="[%X{id}] [%X{env}] [%X{txId}] %msg%n" />
+           <SizeBasedTriggeringPolicy size="1000 MB" />
+        </RollingFile>
+
+ -->
+  		<RollingFile  
+  			name="sql-times" 
+  			fileName="target/sql-perf.log" 
+  			filePattern="target/sql-%d{HH_mm_ss}.log.gz" 
+  			append="true" 
+		>
+           <PatternLayout pattern="%-15X{id} %-30X{env} %msg%n" />
+           <SizeBasedTriggeringPolicy size="1000 MB" />
+        </RollingFile>
+        
+  		<RollingFile  
+  			name="performance" 
+  			fileName="target/perf.log" 
+  			append="false"
+  			filePattern="target/perf-%d{HH_mm_ss}.log.gz"  
+		>
+           <PatternLayout pattern="%-15X{id} %-30X{env} %msg%n" />
+           <SizeBasedTriggeringPolicy size="1000 MB" />
+        </RollingFile >
+<!-- 
+         <RollingFile  
+         	name="test-client" 
+         	fileName="target/client.log" 
+         	append="false"
+  			filePattern="target/client-%d{HH_mm_ss}.log.gz" 
+       	>
+           <PatternLayout pattern="%msg%n" />
+           <SizeBasedTriggeringPolicy size="1000 MB" />
+        </RollingFile >
+ -->
+ 		
+ 		<Console name="test-client" target="SYSTEM_OUT">
+			<PatternLayout pattern="%msg%n" />
+		</Console>
+		
+  		<RollingFile  
+  			name="computer-inputs" 
+  			fileName="target/in_outputs.log" 
+  			append="true"
+  			filePattern="target/in_out-%d{HH_mm_ss}.log.gz" 
+		>
+<!-- 		
+           <PatternLayout pattern="[%d{HH:mm:ss,SSS}] [%X{id}] %msg%n" />
+-->
+           <PatternLayout pattern="[%X{id}] %msg%n" />
+           <SizeBasedTriggeringPolicy size="1000 MB" />
+        </RollingFile >
+        
+  		<RollingFile  
+  			name="input" 
+  			fileName="target/input_bin.log" 
+  			append="false"
+  			filePattern="target/input_bin-%d{HH_mm_ss}.log.gz" 
+		>
+           <PatternLayout pattern="%msg%n" />
+           <SizeBasedTriggeringPolicy size="1000 MB" />
+        </RollingFile >
+        
+    	<Async name="async">
+			<AppenderRef ref="stdlogs" />
+		</Async>
+
+	</Appenders>
+	<Loggers>
+		<Root level="info">
+			<AppenderRef ref="stdlogs" />
+		</Root>
+		
+		<Logger name="kafka" level="warn"/>
+		<Logger name="org.apache" level="warn"/>
+		
+		<Logger name="com.dianemodb.tpcc" level="debug"/>
+<!-- 
+		<Logger name="com.dianemodb.runner.InitializerRunner" level="debug"/>
+ -->
+		<Logger name="com.dianemodb.runner" level="info" additivity="false">
+			<AppenderRef ref="test-client" />
+		</Logger>
+		
+		<Logger name="com.dianemodb.integration.test.IntegrationTestProcessManager" level="info" additivity="false">
+			<AppenderRef ref="test-client" />
+		</Logger>
+		
+		<Logger name="com.dianemodb.ModificationCollection" level="info"/>
+		
+		<!-- LOGS AT DEBUG -->
+		<Logger name="com.dianemodb.OutputChannel" level="info" additivity="false">
+			<AppenderRef ref="computer-inputs" />
+		</Logger>
+		
+		<!-- LOGS AT TRACE -->
+		<Logger name="com.dianemodb.ServerEvent" level="trace" additivity="false">
+			<AppenderRef ref="input"/>
+		</Logger>
+				
+		<Logger name="com.dianemodb.Computer" level="info" additivity="false">
+			<AppenderRef ref="performance"/>
+		</Logger>
+
+		<!-- log SQL times at debug -->
+ 		<Logger name="com.dianemodb.integration.sqlwrapper" level="info" additivity="false">
+			<AppenderRef ref="sql-times" />
+		</Logger>
+		
+		<!-- Query execution times -->
+<!-- 				
+		
+		<Logger name="com.dianemodb.kafka.KafkaServerClient" level="war"/>
+		<Logger name="com.dianemodb.kafka.EventAggregator" level="debug"/>
+		<Logger name="com.dianemodb.integration.test" level="info"/>
+		 	
+		
+		<Logger name="com.dianemodb.ComputerImpl" level="info"/>
+		
+		
+		<Logger name="com.dianemodb.Computer" level="warn"/>
+ 		<Logger name="com.dianemodb.serverh2impl.SQLAwareMessageHandler" level="info"/>
+		<Logger name="com.dianemodb.integration.test.KafkaStartTest" level="info"/>
+		<Logger name="com.dianemodb.integration.test.ProcessManager" level="info"/>
+		<Logger name="com.dianemodb.integration.test.TestProcess" level="info"/>
+		<Logger name="com.dianemodb.serverh2impl.H2VersionStoreServiceImpl" level="info"/>
+		
+		
+ 		
+ 		
+		<Logger name="com.dianemodb.kafka.EventAggregator" level="info"/>
+ -->
+<!-- 
+TEST LOGGERS
+		<Logger name="com.dianemodb.integration.test" level="debug"/>
+		
+
+		<AppenderRef ref="Console" />
+		</Logger>
+
+		<Logger name="com.dianemodb.integration.test.AbstractDbTestCase" level="warn">
+			<AppenderRef ref="Console" />		
+		</Logger>
+		
+		<Logger name="com.dianemodb.integration.test.KafkaStartTest" level="warn">
+			<AppenderRef ref="Console" />
+		</Logger>
+		
+ -->	
+		
+<!-- 
+CHATTY LOGGERS, explicitly disabled
+ -->		
+<!-- 
+INPUT/OUTPUT LOGGER
+
+		<Logger name="com.dianemodb.h2impl.RecordChange" level="debug"/>
+		<Logger name="com.dianemodb.sql.SQLRecordStore" level="debug"/>
+ -->
+
+<!-- 		
+		<Logger name="com.dianemodb.sql.SQLRecordStore" level="debug">
+			<AppenderRef ref="Console" />
+		</Logger>
+		<Logger name="com.dianemodb.event.version.TransitiveClosureEvent" level="debug">
+			<AppenderRef ref="Console" />
+		</Logger>
+		<Logger name="com.dianemodb.serverh2impl.H2TxStoreImpl" level="debug">
+			<AppenderRef ref="Console" />
+		</Logger>
+		
+		<Logger name="com.dianemodb.event.version.TokenPassingEvent" level="debug">
+			<AppenderRef ref="Console" />
+		</Logger>
+		
+		
+			<AppenderRef ref="Console" />
+		</Logger>
+		
+		<Logger name="com.dianemodb.metaschema" level="warn" />		
+		<Logger name="com.dianemodb.kryo.KryoSerializer" level="warn" />
+		<Logger name="com.dianemodb.serverh2impl" level="warn" />
+		<Logger name="com.dianemodb.integration.test" level="debug"/>
+		<Logger name="com.dianemodb.integration" level="debug"/>
+		<Logger name="com.dianemodb.event.tx" level="debug"/>
+ -->
+ 
+ <!-- 
+SQL benchmark LOGGER
+
+ -->
+		
+		
+<!-- 		
+		<Logger name="org.I0Itec.zkclient" level="info"/>
+		<Logger name="org.apache.zookeeper" level="info"/>
+ -->
+
+	</Loggers>
+</Configuration>

@@ -1,5 +1,7 @@
 package com.dianemodb.tpcc.query.delivery;
 
+import static com.dianemodb.tpcc.schema.NewOrdersTable.*;
+
 import java.util.List;
 
 import com.dianemodb.RecordWithVersion;
@@ -11,14 +13,18 @@ import com.dianemodb.tpcc.schema.NewOrdersTable;
 public class FindNewOrderWithLowestOrderIdByDistrictAndWarehouse extends SingleIndexQueryDistributionPlan<NewOrders>{
 
 	public static final String ID = "findNewOrdersByDistrictAndWarehouse";
+
+	// select the lowest order-id for the district of the warehouse
+	private static final String MAX_ORDER_ID_QUERY = 
+			"SELECT mt.* FROM " + TABLE_NAME + " mt "
+			+ " WHERE mt." + DISTRICT_ID_COLUMN_NAME + "=? AND mt." + WAREHOUSE_ID_COLUMN_NAME +"=? "			
+			+ " GROUP BY " + DISTRICT_ID_COLUMN_NAME + "," + WAREHOUSE_ID_COLUMN_NAME 
+			+ " HAVING mt." + ORDER_ID_COLUMN_NAME + "= MIN(" + ORDER_ID_COLUMN_NAME + ")" ;
 	
 	public FindNewOrderWithLowestOrderIdByDistrictAndWarehouse(NewOrdersTable table) {
 		super(
 			ID, 
-			"SELECT * FROM " + NewOrdersTable.TABLE_NAME 
-			+ " WHERE " + NewOrdersTable.DISTRICT_ID_COLUMN_NAME + "=?"
-				+ " AND " + NewOrdersTable.WAREHOUSE_ID_COLUMN_NAME + "=?"
-				+ " AND " + NewOrdersTable.CARRIER_ID_COLUMN_NAME + "=?", 
+			MAX_ORDER_ID_QUERY, 
 			table, 
 			table.getCompositeIndex()
 		);

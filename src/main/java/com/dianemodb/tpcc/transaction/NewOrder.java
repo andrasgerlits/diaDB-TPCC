@@ -21,6 +21,7 @@ import com.dianemodb.ServerComputerId;
 import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.District;
 import com.dianemodb.tpcc.entity.Item;
@@ -38,11 +39,9 @@ import com.dianemodb.tpcc.query.payment.FindCustomerByIdDistrictAndWarehouse;
 
 public class NewOrder extends TpccTestProcess {
 
-	private static final String BRAND_SIGNAL_KEY = "ORIGINAL";
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(NewOrder.class.getName());
 	
-	private static Function<Stock, String> getDistrictInfo(short districtNumber) {
+	private static Function<Stock, String> getDistrictInfo(byte districtNumber) {
 		switch(districtNumber) {
 	        case 1: return s ->  s.getDist1();
 	        case 2: return s ->  s.getDist2();
@@ -64,7 +63,7 @@ public class NewOrder extends TpccTestProcess {
 	}
 	
 	private final Integer customerId;	
-	private final Short districtId;
+	private final Byte districtId;
 	private final int numberOfItems;
 	private final Map<Integer, Pair<Short, Short>> supplyingWarehouseAndQuantityByItemId;
 	
@@ -75,7 +74,7 @@ public class NewOrder extends TpccTestProcess {
 			SQLServerApplication application,
 			
 			int customerId, 
-			short districtId, 
+			byte districtId, 
 			short warehouseId,
 			
 			int numberOfItems,
@@ -275,8 +274,8 @@ public class NewOrder extends TpccTestProcess {
 			Item item = itemByIdAndWarehouseId.get(stockEntry.getKey());
 			
 			boolean isBrand = 
-					hasString(item.getData(), BRAND_SIGNAL_KEY) 
-						&& hasString(originalStock.getData(), BRAND_SIGNAL_KEY);
+					hasString(item.getData(), Constants.BRAND_SIGNAL_KEY) 
+						&& hasString(originalStock.getData(), Constants.BRAND_SIGNAL_KEY);
 			
 			short supplyingWarehouse = stockEntry.getKey().getValue();
 			short quantity = supplyingWarehouseAndQuantityByItemId.get(item.getItemId()).getValue();

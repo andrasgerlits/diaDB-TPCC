@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.Topology;
 import com.dianemodb.h2impl.UniqueHashCodeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
@@ -46,7 +46,7 @@ public class ItemTable extends TpccBaseTable<Item> {
 
 	private final UniqueHashCodeBasedDistributedIndex<Item> idIndex;
 	
-	public ItemTable(List<ServerComputerId> servers) {
+	public ItemTable(Topology servers) {
 		super(ID, TABLE_NAME);
 		
 		this.columns = new LinkedList<>(super.columns());
@@ -58,7 +58,6 @@ public class ItemTable extends TpccBaseTable<Item> {
 				this, 
 				List.of(ID_COLUMN)
 			);
-
 		
 		this.indices = List.of(idIndex);
 	}

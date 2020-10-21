@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.Topology;
 import com.dianemodb.h2impl.UniqueHashCodeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
@@ -38,7 +38,7 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	
 	private final UniqueHashCodeBasedDistributedIndex<Warehouse> index;
 	
-	protected WarehouseTable(List<ServerComputerId> servers) {
+	public WarehouseTable(Topology servers) {
 		super(
 			TABLE_NAME,
 			ID,
@@ -76,6 +76,11 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	public Warehouse newInstance(TransactionId txId, RecordId recordId) {
 		return new Warehouse(txId, recordId);
 	}
+	
+	@Override
+	public List<RecordColumn<Warehouse, ?>> columns() {
+		return columns;
+	}
 
 	@Override
 	public Class<Warehouse> entityClass() {
@@ -87,7 +92,7 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 		return indices;
 	}
 
-	public RecordColumn<Warehouse, Short> getPublicIdColumn() {
+	public RecordColumn<Warehouse, Short> getIdColumn() {
 		return idColumn;
 	}
 

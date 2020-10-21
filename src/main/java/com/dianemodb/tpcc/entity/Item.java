@@ -12,8 +12,14 @@ public class Item extends UserBaseRecord {
 	private int itemId;
 	private int im;
 	private String name;
-	private BigDecimal price;
+	private String price;
 	private String data;
+	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	private Item() {
+		//required for serialization;
+	}
 	
 	public Item(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, ItemTable.ID);
@@ -44,11 +50,11 @@ public class Item extends UserBaseRecord {
 	}
 
 	public BigDecimal getPrice() {
-		return price;
+		return newBigDecimal(price);
 	}
 
 	public void setPrice(BigDecimal price) {
-		this.price = price;
+		this.price = price.toPlainString();
 	}
 
 	public String getData() {

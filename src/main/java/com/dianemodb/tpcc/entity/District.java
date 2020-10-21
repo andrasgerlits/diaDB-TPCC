@@ -8,7 +8,13 @@ public class District extends AddressAndTaxUserBaseRecord {
 	
 	private short warehouseId;
 	private int nextOid;
-	private byte publicId;
+	private byte id;
+	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	private District() {
+		// required for serialization
+	}
 	
 	public District(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, DistrictTable.ID);
@@ -30,12 +36,12 @@ public class District extends AddressAndTaxUserBaseRecord {
 		this.nextOid = nextOid;
 	}
 
-	public byte getPublicId() {
-		return publicId;
+	public byte getId() {
+		return id;
 	}
 
-	public void setPublicId(byte publicId) {
-		this.publicId = publicId;
+	public void setId(byte publicId) {
+		this.id = publicId;
 	}
 
 	@Override
@@ -43,7 +49,7 @@ public class District extends AddressAndTaxUserBaseRecord {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + nextOid;
-		result = prime * result + publicId;
+		result = prime * result + id;
 		result = prime * result + warehouseId;
 		return result;
 	}
@@ -59,7 +65,7 @@ public class District extends AddressAndTaxUserBaseRecord {
 		District other = (District) obj;
 		if (nextOid != other.nextOid)
 			return false;
-		if (publicId != other.publicId)
+		if (id != other.id)
 			return false;
 		if (warehouseId != other.warehouseId)
 			return false;
@@ -68,7 +74,7 @@ public class District extends AddressAndTaxUserBaseRecord {
 
 	@Override
 	public String toString() {
-		return "District [publicId=" + publicId + ", warehouseId=" + warehouseId + ", getName()=" + getName()
+		return "District [id=" + id + ", warehouseId=" + warehouseId + ", getName()=" + getName()
 				+ ", getStreet1()=" + getStreet1() + ", getStreet2()=" + getStreet2() + ", getCity()=" + getCity()
 				+ ", getZip()=" + getZip() + ", getTax()=" + getTax() + ", getYtd()=" + getYtd() + ", getState()="
 				+ getState() + ", txId()=" + txId() + ", recordId()=" + recordId() + "]";

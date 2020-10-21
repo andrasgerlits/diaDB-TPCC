@@ -92,7 +92,7 @@ public class Payment extends TpccTestProcess {
 						customer.getPublicId(), 
 						customer.getDistrictId(), 
 						customer.getWarehouseId(), 
-						districtWithVersion.getRecord().getPublicId(), 
+						districtWithVersion.getRecord().getId(), 
 						warehouseWithVersion.getRecord().getPublicId(), 
 						amount.floatValue(), 
 						timestamp.toString(), 

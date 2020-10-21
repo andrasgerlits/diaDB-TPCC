@@ -10,31 +10,37 @@ import com.dianemodb.tpcc.schema.CustomerTable;
 public class Customer extends LocationBasedUserRecord {
 	
 	private int publicId;
-	private short districtId;
+	private byte districtId;
 	private short warehouseId;
 	private String firstName;
 	private String middleName;
 	private String lastName;
 	private String phone;
-	private Timestamp since;
+	private long since;
 	private String credit;
 	private long creditLimit;
-	private BigDecimal discount;
-	private BigDecimal balance;
-	private BigDecimal ytdPayment;
+	private String discount;
+	private String balance;
+	private String ytdPayment;
 	private short paymentCnt;
 	private short deliveryCnt;
 	private String data;
+	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	private Customer() {
+		// required for serialization
+	}
 
 	public Customer(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, CustomerTable.ID);
 	}
 
-	public short getDistrictId() {
+	public byte getDistrictId() {
 		return districtId;
 	}
 
-	public void setDistrictId(short districtId) {
+	public void setDistrictId(byte districtId) {
 		this.districtId = districtId;
 	}
 
@@ -79,11 +85,11 @@ public class Customer extends LocationBasedUserRecord {
 	}
 
 	public Timestamp getSince() {
-		return since;
+		return new Timestamp(since);
 	}
 
 	public void setSince(Timestamp since) {
-		this.since = since;
+		this.since = since.getTime();
 	}
 
 	public String getCredit() {
@@ -103,27 +109,27 @@ public class Customer extends LocationBasedUserRecord {
 	}
 
 	public BigDecimal getDiscount() {
-		return discount;
+		return newBigDecimal(discount);
 	}
 
 	public void setDiscount(BigDecimal discount) {
-		this.discount = discount;
+		this.discount = discount.toPlainString();
 	}
 
 	public BigDecimal getBalance() {
-		return balance;
+		return newBigDecimal(balance);
 	}
 
 	public void setBalance(BigDecimal balance) {
-		this.balance = balance;
+		this.balance = balance.toPlainString();
 	}
 
 	public BigDecimal getYtdPayment() {
-		return ytdPayment;
+		return newBigDecimal(ytdPayment);
 	}
 
 	public void setYtdPayment(BigDecimal ytdPayment) {
-		this.ytdPayment = ytdPayment;
+		this.ytdPayment = ytdPayment.toPlainString();
 	}
 
 	public short getPaymentCnt() {
@@ -175,7 +181,7 @@ public class Customer extends LocationBasedUserRecord {
 		result = prime * result + paymentCnt;
 		result = prime * result + ((phone == null) ? 0 : phone.hashCode());
 		result = prime * result + publicId;
-		result = prime * result + ((since == null) ? 0 : since.hashCode());
+		result = prime * result + (int) (since ^ (since >>> 32));
 		result = prime * result + warehouseId;
 		result = prime * result + ((ytdPayment == null) ? 0 : ytdPayment.hashCode());
 		return result;
@@ -240,10 +246,7 @@ public class Customer extends LocationBasedUserRecord {
 			return false;
 		if (publicId != other.publicId)
 			return false;
-		if (since == null) {
-			if (other.since != null)
-				return false;
-		} else if (!since.equals(other.since))
+		if (since != other.since)
 			return false;
 		if (warehouseId != other.warehouseId)
 			return false;
@@ -257,18 +260,11 @@ public class Customer extends LocationBasedUserRecord {
 
 	@Override
 	public String toString() {
-		return "Customer [districtId=" + districtId + ", warehouseId=" + warehouseId + ", firstName=" + firstName
-				+ ", middleName=" + middleName + ", lastName=" + lastName + ", phone=" + phone + ", since=" + since
-				+ ", credit=" + credit + ", creditLimit=" + creditLimit + ", discount=" + discount + ", balance="
-				+ balance + ", ytdPayment=" + ytdPayment + ", paymentCnt=" + paymentCnt + ", deliveryCnt=" + deliveryCnt
-				+ ", data=" + data + ", txId=" + txId + ", recordId=" + recordId + ", getDistrictId()="
-				+ getDistrictId() + ", getWarehouseId()=" + getWarehouseId() + ", getFirstName()=" + getFirstName()
-				+ ", getMiddleName()=" + getMiddleName() + ", getLastName()=" + getLastName() + ", getPhone()="
-				+ getPhone() + ", getSince()=" + getSince() + ", getCredit()=" + getCredit() + ", getCreditLimit()="
-				+ getCreditLimit() + ", getDiscount()=" + getDiscount() + ", getBalance()=" + getBalance()
-				+ ", getYtdPayment()=" + getYtdPayment() + ", getPaymentCnt()=" + getPaymentCnt()
-				+ ", getDeliveryCnt()=" + getDeliveryCnt() + ", getData()=" + getData() + ", getPublicId()="
-				+ publicId + ", getStreet1()=" + getStreet1() + ", getStreet2()=" + getStreet2() + ", getCity()="
-				+ getCity() + ", getZip()=" + getZip() + ", getState()=" + getState() + "]";
+		return "Customer [publicId=" + publicId + ", districtId=" + districtId + ", warehouseId=" + warehouseId
+				+ ", firstName=" + firstName + ", middleName=" + middleName + ", lastName=" + lastName + ", phone="
+				+ phone + ", since=" + since + ", credit=" + credit + ", creditLimit=" + creditLimit + ", discount="
+				+ discount + ", balance=" + balance + ", ytdPayment=" + ytdPayment + ", paymentCnt=" + paymentCnt
+				+ ", deliveryCnt=" + deliveryCnt + ", data=" + data + "]";
 	}
+
 }

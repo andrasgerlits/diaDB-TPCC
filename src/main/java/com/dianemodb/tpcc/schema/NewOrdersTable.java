@@ -5,16 +5,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.dianemodb.ServerComputerId;
-import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
-import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.Topology;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
+import com.dianemodb.h2impl.ServerComputerIdNarrowingRule;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
+import com.dianemodb.metaschema.ByteColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
@@ -24,7 +23,7 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 
 	public static final UserRecordTableId ID = new UserRecordTableId(NEW_ORDERS_TABLE_ID);
 	
-	public static final String TABLE_NAME = "orders";
+	public static final String TABLE_NAME = "new_orders";
 	
 	public static final String ORDER_ID_COLUMN_NAME = "o_id";
 	public static final String DISTRICT_ID_COLUMN_NAME = "o_d_id";
@@ -38,9 +37,9 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	public static final RecordColumn<NewOrders, TransactionId> TX_ID_COLUMN = TX_ID();
 	public static final RecordColumn<NewOrders, RecordId> RECORD_ID_COLUMN = RECORD_ID();
 
-	public static final RecordColumn<NewOrders, Short> DISTRICT_ID_COLUMN = 				
+	public static final RecordColumn<NewOrders, Byte> DISTRICT_ID_COLUMN = 				
 			new RecordColumn<>(
-					new ShortColumn(DISTRICT_ID_COLUMN_NAME), 
+					new ByteColumn(DISTRICT_ID_COLUMN_NAME), 
 					NewOrders::getDistrictId, 
 					NewOrders::setDistrictId
 			);
@@ -91,34 +90,29 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 				)
 			);
 
-	public static final List<RecordColumn<NewOrders, ?>> DISTRICT_WAREHOUSE_CARRIER_COLUMNS = 
-			List.of(
-					NewOrdersTable.DISTRICT_ID_COLUMN,
-					NewOrdersTable.WAREHOUSE_ID_COLUMN,
-					NewOrdersTable.CARRIER_ID_COLUMN
-				);
-
 	private final LinkedList<RecordColumn<NewOrders, ?>> columns;
 
 	private final Collection<DistributedIndex<NewOrders>> indices;
 	
 	private final RangeBasedDistributedIndex<NewOrders> compositeIndex;
 	
-	public NewOrdersTable(List<ServerComputerId> servers) {
+	public NewOrdersTable(Topology servers) {
 		super(ID, TABLE_NAME);
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
+		
+		Map<RecordColumn<NewOrders,?>, ServerComputerIdNarrowingRule> indexRuleMap = 
+				DistrictTable.getDistrictBasedRoundRobinRules(
+						WAREHOUSE_ID_COLUMN, 
+						DISTRICT_ID_COLUMN
+				);
 		
 		compositeIndex = 				
 			new RangeBasedDistributedIndex<>(
 				servers,
 				this, 
-				List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, CARRIER_ID_COLUMN),
-				Map.of(
-					WAREHOUSE_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-					DISTRICT_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-					CARRIER_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(20)
-				)
+				List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN),
+				indexRuleMap
 			);
 
 		this.indices = List.of(compositeIndex);

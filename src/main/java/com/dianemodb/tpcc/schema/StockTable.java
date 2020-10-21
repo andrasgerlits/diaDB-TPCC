@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.Topology;
 import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
 import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
@@ -15,7 +15,6 @@ import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.LongColumn;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
@@ -25,7 +24,7 @@ public class StockTable extends TpccBaseTable<Stock> {
 
 	public static final UserRecordTableId ID = new UserRecordTableId(STOCK_TABLE_ID);
 	
-	public static final String TABLE_NAME = "item";
+	public static final String TABLE_NAME = "stock";
 	
 	public static final String ITEM_ID_COLUMN_NAME = "s_i_id";
 	public static final String WAREHOUSE_ID_COLUMN_NAME = "s_w_id";
@@ -85,7 +84,7 @@ public class StockTable extends TpccBaseTable<Stock> {
 
 	private final RangeBasedDistributedIndex<Stock> itemWarehouseIndex;
  
-	public StockTable(List<ServerComputerId> servers) {
+	public StockTable(Topology servers) {
 		super(ID, TABLE_NAME);
 		
 		this.columns = new LinkedList<>(super.columns());
@@ -97,8 +96,8 @@ public class StockTable extends TpccBaseTable<Stock> {
 						this, 
 						List.of(ITEM_ID_COLUMN, WAREHOUSE_ID_COLUMN),
 						Map.of(
-							ITEM_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-							WAREHOUSE_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(1)
+							WAREHOUSE_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
+							ITEM_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(1)
 						)
 				);
 		

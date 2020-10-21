@@ -5,14 +5,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.dianemodb.ServerComputerId;
-import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
-import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.Topology;
+import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
+import com.dianemodb.h2impl.ServerComputerIdNarrowingRule;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.BigDecimalColumn;
+import com.dianemodb.metaschema.ByteColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
@@ -52,9 +53,9 @@ public class HistoryTable extends TpccBaseTable<History> {
 					History::setCustomerId
 				);
 
-	private static final RecordColumn<History, Short> CUSTOMER_DISTRICT_ID_COLUMN = 				
+	private static final RecordColumn<History, Byte> CUSTOMER_DISTRICT_ID_COLUMN = 				
 			new RecordColumn<>(
-				new ShortColumn(CUSTOMER_DISTRICT_ID_COLUMN_NAME), 
+				new ByteColumn(CUSTOMER_DISTRICT_ID_COLUMN_NAME), 
 				History::getCustomerDistrictId,
 				History::setCustomerDistrictId
 			);
@@ -66,9 +67,9 @@ public class HistoryTable extends TpccBaseTable<History> {
 					History::setCustomerWarehouseId
 			);
 
-	private static final RecordColumn<History, Short> DISTRICT_ID_COLUMN = 
+	private static final RecordColumn<History, Byte> DISTRICT_ID_COLUMN = 
 			new RecordColumn<>(
-					new ShortColumn(DISTRICT_ID_COLUMN_NAME), 
+					new ByteColumn(DISTRICT_ID_COLUMN_NAME), 
 					History::getDistrictId,
 					History::setDistrictId
 			);
@@ -112,10 +113,18 @@ public class HistoryTable extends TpccBaseTable<History> {
 	
 	private final RangeBasedDistributedIndex<History> compositeIndex;
 	
-	public HistoryTable(Collection<ServerComputerId> servers) {
+	public HistoryTable(Topology servers) {
 		super(ID, TABLE_NAME);
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
+
+		Map<RecordColumn<History,?>, ServerComputerIdNarrowingRule> indexRuleMap = 
+				DistrictTable.getDistrictBasedRoundRobinRules(
+						CUSTOMER_WAREHOUSE_COLUMN, 
+						CUSTOMER_DISTRICT_ID_COLUMN
+				);
+		
+		indexRuleMap.put(CUSTOMER_ID_COLUMN, NullRule.INSTANCE);
 
 		this.compositeIndex = 
 				new RangeBasedDistributedIndex<>(
@@ -126,11 +135,7 @@ public class HistoryTable extends TpccBaseTable<History> {
 							CUSTOMER_DISTRICT_ID_COLUMN, 
 							CUSTOMER_ID_COLUMN
 						),
-						Map.of(
-							CUSTOMER_WAREHOUSE_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-							CUSTOMER_DISTRICT_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-							CUSTOMER_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(20)
-						)
+						indexRuleMap
 				);
 
 		this.indices = List.of(compositeIndex);

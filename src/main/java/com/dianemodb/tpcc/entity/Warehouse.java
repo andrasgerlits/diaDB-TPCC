@@ -8,6 +8,12 @@ public class Warehouse extends AddressAndTaxUserBaseRecord {
 	
 	private short publicId;
 	
+	@Deprecated
+	@SuppressWarnings({ "unused"})
+	private Warehouse() {
+		// required for serialization
+	}
+	
 	public Warehouse(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, WarehouseTable.ID);
 	}

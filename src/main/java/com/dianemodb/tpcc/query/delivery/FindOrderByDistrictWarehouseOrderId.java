@@ -12,7 +12,7 @@ public class FindOrderByDistrictWarehouseOrderId extends SingleIndexQueryDistrib
 			"SELECT ";
 	
 	public FindOrderByDistrictWarehouseOrderId(OrdersTable table ) {
-		super(ID, QUERY, table, OrdersTable.ID_INDEX_COLUMNS);
+		super(ID, QUERY, table, table.getCompositeIndex());
 	}
 
 }

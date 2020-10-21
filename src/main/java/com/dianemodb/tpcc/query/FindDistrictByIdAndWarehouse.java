@@ -1,7 +1,5 @@
 package com.dianemodb.tpcc.query;
 
-import java.util.List;
-
 import com.dianemodb.sql.SingleIndexQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.District;
 import com.dianemodb.tpcc.schema.DistrictTable;
@@ -13,10 +11,11 @@ public class FindDistrictByIdAndWarehouse extends SingleIndexQueryDistributionPl
 	private static final String QUERY = 
 			"SELECT * "
 			+ "FROM " + DistrictTable.TABLE_NAME 
-			+ " WHERE " + DistrictTable.ID_COLUMNNAME + "=?";
+			+ " WHERE " + DistrictTable.WAREHOUSE_ID_COLUMNNAME + "=?"
+				+ " AND " + DistrictTable.ID_COLUMNNAME + "=?";
 
 	public FindDistrictByIdAndWarehouse(DistrictTable table) {
-		super(ID, QUERY, table, List.of(DistrictTable.ID_COLUMN));
+		super(ID, QUERY, table, table.getCompositeIndex());
 	}
 
 }

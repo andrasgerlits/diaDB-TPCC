@@ -2,26 +2,23 @@ package com.dianemodb.tpcc.transaction;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.Record;
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.ServerComputerId;
-import com.dianemodb.UserRecord;
 import com.dianemodb.functional.FunctionalUtil;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
-import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.NewOrders;
 import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.entity.Orders;
+import com.dianemodb.tpcc.init.TpccDataInitializer;
 import com.dianemodb.tpcc.query.FindOrderLinesByOrderidDistrictAndWarehouse;
 import com.dianemodb.tpcc.query.delivery.FindNewOrderWithLowestOrderIdByDistrictAndWarehouse;
 import com.dianemodb.tpcc.query.delivery.FindOrderByDistrictWarehouseOrderId;
@@ -31,47 +28,39 @@ public class Delivery extends TpccTestProcess {
 
 	private final short warehouseId;
 	private final short carrierId;
+	private final short districtId; 
 	
-	private List<RecordWithVersion<NewOrders>> newOrders; 
+	private List<RecordWithVersion<NewOrders>> newOrders;
 	
 	protected Delivery(
 			SQLServerApplication application, 
 			ServerComputerId txComputer,
 			short warehouseId,
-			short carrierId
+			short carrierId,
+			short districtId
 	) {
 		super(application, txComputer);
 		this.warehouseId = warehouseId;
-		this.carrierId = carrierId;
+		this.carrierId = TpccDataInitializer.randomCarrierId();
+		this.districtId = districtId;
 	}
-
 
 	@Override
 	protected Result startTx() {
-		List<Envelope> queries = 
-			IntStream.range(0, Constants.DISTRICT_PER_WAREHOUSE)
-				.mapToObj(
-					i -> 						
-						query(
-							FindNewOrderWithLowestOrderIdByDistrictAndWarehouse.ID,
-							List.of( (short) i, warehouseId, carrierId)
-						)
-				)
-				.collect(Collectors.toList());
+		Envelope query = 						
+				query(
+					FindNewOrderWithLowestOrderIdByDistrictAndWarehouse.ID,
+					List.of( districtId, warehouseId )
+				);
 		
-		return of(queries, this::process);
+		return of(query, this::process);
 	}
 
-
-	private Result process(List<? extends Object> results) {
+	@SuppressWarnings("unchecked")
+	private Result process(Object result) {
 		// select orders for each new_order found
-		List<List<RecordWithVersion<NewOrders>>> resultsLists = (List<List<RecordWithVersion<NewOrders>>>) results;
-		
-		 this.newOrders = 
-				resultsLists.stream()
-					.flatMap(Collection::stream)
-					.collect(Collectors.toList());
-		
+		 this.newOrders = (List<RecordWithVersion<NewOrders>>) result;
+
 		 List<Envelope> orderQueries = 
 				 newOrders.stream()
 					.flatMap(
@@ -158,5 +147,4 @@ public class Delivery extends TpccTestProcess {
 			this::commit
 		);
 	}
-
 }
