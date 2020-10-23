@@ -99,7 +99,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 				modificationCollection.addInsert(orderLine, application);
 			}
 		}
-		
+/*		
 		if(LOGGER.isInfoEnabled()) {
 			LOGGER.info(
 				"Order number {} / {}",
@@ -107,7 +107,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 				numberOfBatches()
 			);
 		}
-
+*/
 		return modificationCollection;
 	}
 

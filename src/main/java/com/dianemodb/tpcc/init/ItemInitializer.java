@@ -51,7 +51,7 @@ public class ItemInitializer extends TpccDataInitializer {
 			modificationCollection.addInsert(item, application);
 		}
 		
-		LOGGER.info("Item batch {}, number {}", batchNumber + 1, (batchNumber + 1) * ITEM_PER_TX );
+		//LOGGER.info("Item batch {}, number {}", batchNumber + 1, (batchNumber + 1) * ITEM_PER_TX );
 		
 		return modificationCollection;
 	}

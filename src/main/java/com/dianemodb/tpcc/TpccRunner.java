@@ -107,7 +107,7 @@ public class TpccRunner extends ExampleRunner {
 							"-t", getTopologyFile(),
 							"-b", AbstractServerTestCase.getBootstrapUrl(),
 							"-id", initNodeId ,
-							"-tx", String.valueOf(200)
+							"-tx", String.valueOf(2000)
 					}					
 				);
 		

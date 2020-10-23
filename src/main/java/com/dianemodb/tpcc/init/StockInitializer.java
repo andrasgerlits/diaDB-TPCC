@@ -64,7 +64,7 @@ public class StockInitializer extends TpccDataInitializer {
 			modificationCollection.addInsert(stock, application);
 		}
 		
-		LOGGER.info("Stock batch {} / {}", batchNumber, numberOfBatches() );
+		//LOGGER.info("Stock batch {} / {}", batchNumber, numberOfBatches() );
 		return modificationCollection;
 	}
 

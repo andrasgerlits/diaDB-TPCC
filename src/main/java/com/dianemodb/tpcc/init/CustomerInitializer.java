@@ -86,6 +86,7 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 			modificationCollection.addInsert(customer, application);
 		}
 
+		/*
 		if(LOGGER.isInfoEnabled()) {
 			LOGGER.info(
 				"Customer number {} / {}",
@@ -93,6 +94,7 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 				numberOfBatches()
 			);
 		}
+		*/
 
 		return modificationCollection;
 	}

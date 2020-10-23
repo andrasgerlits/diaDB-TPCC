@@ -1,6 +1,9 @@
 package com.dianemodb.tpcc.init;
 
 import java.math.BigDecimal;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.functional.ByteUtil;
@@ -11,6 +14,8 @@ import com.dianemodb.tpcc.entity.LocationBasedUserRecord;
 
 public abstract class TpccDataInitializer {
 
+	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TpccDataInitializer.class.getName());
+	
 	protected static String randomString(int minLength, int maxLength) {
 		return ByteUtil.randomString(minLength, maxLength);
 	}
@@ -90,13 +95,15 @@ public abstract class TpccDataInitializer {
 		record.setName(randomName());
 		record.setTax(randomFloat(10, 20));
 	}
-
-
+	
 	protected final SQLServerApplication application;
 	private int numberProcessed = 0;
+	private long startTime = -1;
+	private final String itemTypeName;
 
 	public TpccDataInitializer(SQLServerApplication application) {
-		this.application = application;		
+		this.application = application;
+		this.itemTypeName = getClass().getSimpleName();
 	}
 	
 	public abstract int numberOfBatches();
@@ -106,7 +113,37 @@ public abstract class TpccDataInitializer {
 	}
 	
 	public ModificationCollection process(TransactionId txId) {
-		return createModificationCollection(txId, numberProcessed++);
+		long hours = 0;
+		long minutes = 0;
+		long seconds = 0;
+		
+		if(startTime == -1) {
+			startTime = System.currentTimeMillis();
+		}
+		else {
+			long totalTime = System.currentTimeMillis() - startTime;
+			float averageTime = totalTime / numberProcessed;
+			
+			long remaininNumber = (long) (averageTime * ( numberOfBatches() - numberProcessed ));
+			
+			hours = TimeUnit.MILLISECONDS.toHours(remaininNumber);
+			minutes = TimeUnit.MILLISECONDS.toMinutes(remaininNumber) % 60;
+			seconds = TimeUnit.MILLISECONDS.toSeconds(remaininNumber) % 60;			
+		}
+		
+		ModificationCollection modificationCollection  = createModificationCollection(txId, numberProcessed++);
+		
+		LOGGER.info(
+				"{} {} / {} \t\t {}:{}:{}", 
+				itemTypeName, 
+				numberProcessed, 
+				numberOfBatches(), 
+				hours, 
+				minutes, 
+				seconds
+		);
+		
+		return modificationCollection;
 	}
 	
 	protected abstract ModificationCollection createModificationCollection(TransactionId txId, int batchNumber);

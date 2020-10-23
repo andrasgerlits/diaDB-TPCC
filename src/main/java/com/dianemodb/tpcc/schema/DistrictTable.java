@@ -11,6 +11,7 @@ import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
 import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
 import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.h2impl.ServerComputerIdNarrowingRule;
 import com.dianemodb.id.RecordId;
@@ -70,11 +71,9 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	) {
 		return new HashMap<>(
 				Map.of(
-					// warehouse per parent-group
-					warehouseColumn, new GroupLevelBasedIdNarrowingRule(1),
-					
-					// round-robin per district
-					districtIdColumn, new IntegerRangeBasedIdNarrowingRule(1)
+					// round-robin per warehouse
+					warehouseColumn, new IntegerRangeBasedIdNarrowingRule(1),
+					districtIdColumn, NullRule.INSTANCE
 				)
 			);
 	}
