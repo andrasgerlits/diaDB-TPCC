@@ -1,11 +1,10 @@
 package com.dianemodb.tpcc.transaction;
 
-import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.ServerComputerId;
-import com.dianemodb.functional.FunctionalUtil;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.entity.Customer;
@@ -20,46 +19,43 @@ public class OrderStatus extends TpccTestProcess {
 	
 	private final short warehouseId;
 	private final short districtId;
-	private final int customerId;
 	
 	public OrderStatus(
+			Random random,
 			ServerComputerId txComputer, 
 			SQLServerApplication application, 
-			CustomerSelectionStrategy customerSelectionStrategy,
 			short warehouseId,
-			short districtId,
-			int customerId
+			byte districtId
 	) {
-		super(application, txComputer);
-		this.customerSelectionStrategy = customerSelectionStrategy;
+		super(random, application, txComputer, 5000);
 		this.warehouseId = warehouseId;
 		this.districtId = districtId;
-		this.customerId = customerId;
-	}
 
+		this.customerSelectionStrategy = randomStrategy(random, warehouseId, districtId);
+	}
+	
 	@Override
 	protected Result startTx() {
 		Envelope customerQuery = customerSelectionStrategy.customerQuery(this);
+		return of(customerQuery, this::processCustomer);
+		
+	}
+
+	private Result processCustomer(Object result) {
+		RecordWithVersion<Customer> customer = 
+				customerSelectionStrategy.getCustomerFromResult(result);
 		
 		Envelope maxOrderIdQuery =
 				query(
 					FindMaxOrderIdForCustomer.ID, 
-					List.of(warehouseId, districtId, customerId)
+					List.of(warehouseId, districtId, customer.getRecord().getPublicId())
 				);
 		
-		return of(List.of(customerQuery, maxOrderIdQuery), this::update);
+		return of(maxOrderIdQuery, r -> this.update(r, customer));
 	}
 
-	private Result update(List<Object> results) {
-		Iterator<Object> resultIter = results.iterator();
-		
-		RecordWithVersion<Customer> customer = 
-				customerSelectionStrategy.getCustomerFromResult(resultIter.next());
-		
-		RecordWithVersion<Orders> order = 
-				FunctionalUtil.singleResult(
-						(List<RecordWithVersion<Orders>>)resultIter.next()
-				);
+	private Result update(Object results, RecordWithVersion<Customer> customerRecord) {
+		RecordWithVersion<Orders> order = TpccTestProcess.singleFromResultList(results);
 		int orderId = order.getRecord().getOrderId();
 		
 		Envelope findOrderLinesQuery = 

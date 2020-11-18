@@ -2,10 +2,13 @@ package com.dianemodb.tpcc.init;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
+import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.Constants;
@@ -22,20 +25,6 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 				* Constants.DISTRICT_PER_WAREHOUSE 
 				* Constants.CUSTOMER_PER_DISTRICT 
 				/ ITEM_PER_BATCH;
-	
-	public static final String[] LAST_NAMES = 
-			{
-				"BAR", 
-				"OUGH T", 
-				"ABLE", 
-				"PRI", 
-				"PRES", 
-				"ESE", 
-				"AN TI", 
-				"CALLY", 
-				"ATION ", 
-				"EIN G"
-			};
 
 	public CustomerInitializer(SQLServerApplication application) {
 		super(application, Constants.CUSTOMER_PER_DISTRICT);
@@ -47,8 +36,8 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 	}
 
 	@Override
-	protected ModificationCollection createModificationCollection(TransactionId txId, int batchNumber) {
-		ModificationCollection modificationCollection = new ModificationCollection();
+	protected List<UserRecord> createModificationCollection(TransactionId txId, int batchNumber) {
+		List<UserRecord> records = new LinkedList<>();
 		
 		short warehouseId = -1;
 		byte districtId = -1;
@@ -76,14 +65,14 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 			customer.setFirstName(randomString(8, 16));
 			
 			if(customerId <= 1000) {
-				customer.setLastName(randomValue(LAST_NAMES));
+				customer.setLastName(randomValue(Constants.LAST_NAMES));
 			}
 			
 			customer.setWarehouseId(warehouseId);
 			customer.setDistrictId(districtId);
 			customer.setPublicId(customerId);
 			
-			modificationCollection.addInsert(customer, application);
+			records.add(customer);
 		}
 
 		/*
@@ -96,6 +85,6 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 		}
 		*/
 
-		return modificationCollection;
+		return records;
 	}
 }

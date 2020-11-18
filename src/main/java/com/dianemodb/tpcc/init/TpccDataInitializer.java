@@ -1,14 +1,16 @@
 package com.dianemodb.tpcc.init;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.LoggerFactory;
 
-import com.dianemodb.ModificationCollection;
+import com.dianemodb.UserRecord;
 import com.dianemodb.functional.ByteUtil;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.AddressAndTaxUserBaseRecord;
 import com.dianemodb.tpcc.entity.LocationBasedUserRecord;
 
@@ -16,35 +18,35 @@ public abstract class TpccDataInitializer {
 
 	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TpccDataInitializer.class.getName());
 	
-	protected static String randomString(int minLength, int maxLength) {
+	public static String randomString(int minLength, int maxLength) {
 		return ByteUtil.randomString(minLength, maxLength);
 	}
 
-	protected static BigDecimal randomFloat(int lower, int upper) {
+	public static BigDecimal randomFloat(int lower, int upper) {
 		return new BigDecimal(randomInt(lower, upper)).divide(new BigDecimal(100));
 	}
 
-	protected static int randomInt(int lower, int upper) {
+	public static int randomInt(int lower, int upper) {
 		return ByteUtil.randomInt(lower, upper);
 	}
 	
-	protected static String randomStreet() {
+	public static String randomStreet() {
 		return randomCity();
 	}
 
-	protected static String randomState() {
+	public static String randomState() {
 		return randomString(2, 2);
 	}
 
-	protected static String randomCity() {
+	public static String randomCity() {
 		return randomString(10, 20);
 	}
 
-	protected static String randomName() {
+	public static String randomName() {
 		return randomString(6, 10);
 	}
 	
-	protected static String randomZip() {
+	public static String randomZip() {
 		return randomString(9, 9);
 	}
 	
@@ -52,7 +54,19 @@ public abstract class TpccDataInitializer {
 		return (short) randomInt(1,  10);
 	}
 	
-	protected static String randomValue(String...string) {
+	public static short randomWarehouseId() {
+		return (short) randomInt(0, Constants.NUMBER_OF_WAREHOUSES);
+	}
+	
+	public static int randomCustomerId() {
+		return randomInt(0, Constants.CUSTOMER_PER_DISTRICT);
+	}
+	
+	public static int randomItemId() {
+		return randomInt(0, Constants.ITEM_NUMBER);
+	}
+	
+	public static String randomValue(String...string) {
 		// pick a random value from the specified array
 		return string[randomInt(0, string.length -1 )];
 	}
@@ -81,7 +95,7 @@ public abstract class TpccDataInitializer {
 		return result;
 	}
 	
-	protected static void randomLocationValues(LocationBasedUserRecord record) {
+	public static void randomLocationValues(LocationBasedUserRecord record) {
 		record.setCity(randomCity());
 		record.setState(randomState());
 		record.setStreet1(randomStreet());
@@ -89,7 +103,7 @@ public abstract class TpccDataInitializer {
 		record.setZip(randomZip());		
 	}
 	
-	protected static void randomValues(AddressAndTaxUserBaseRecord record) {
+	public static void randomValues(AddressAndTaxUserBaseRecord record) {
 		randomLocationValues(record);
 		
 		record.setName(randomName());
@@ -112,7 +126,7 @@ public abstract class TpccDataInitializer {
 		return numberProcessed < numberOfBatches();
 	}
 	
-	public ModificationCollection process(TransactionId txId) {
+	public List<UserRecord> process(TransactionId txId) {
 		long hours = 0;
 		long minutes = 0;
 		long seconds = 0;
@@ -131,7 +145,7 @@ public abstract class TpccDataInitializer {
 			seconds = TimeUnit.MILLISECONDS.toSeconds(remaininNumber) % 60;			
 		}
 		
-		ModificationCollection modificationCollection  = createModificationCollection(txId, numberProcessed++);
+		List<UserRecord> records = createModificationCollection(txId, numberProcessed++);
 		
 		LOGGER.info(
 				"{} {} / {} \t\t {}:{}:{}", 
@@ -143,9 +157,9 @@ public abstract class TpccDataInitializer {
 				seconds
 		);
 		
-		return modificationCollection;
+		return records;
 	}
 	
-	protected abstract ModificationCollection createModificationCollection(TransactionId txId, int batchNumber);
-	
+	protected abstract List<UserRecord> createModificationCollection(TransactionId txId, int batchNumber);
+
 }

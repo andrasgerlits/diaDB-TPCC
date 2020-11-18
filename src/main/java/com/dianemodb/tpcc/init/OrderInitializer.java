@@ -2,10 +2,13 @@ package com.dianemodb.tpcc.init;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
+import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.Constants;
@@ -35,8 +38,8 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 	}
 
 	@Override
-	protected ModificationCollection createModificationCollection(TransactionId txId, int batchNumber) {
-		ModificationCollection modificationCollection = new ModificationCollection();
+	protected List<UserRecord> createModificationCollection(TransactionId txId, int batchNumber) {
+		List<UserRecord> records = new LinkedList<>();
 		
 		short warehouseId = -1;
 		byte districtId = -1;
@@ -60,7 +63,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 				newOrder.setDistrictId(districtId);
 				newOrder.setOrderId(orderId);
 				
-				modificationCollection.addInsert(newOrder, application);
+				records.add(newOrder);
 			}
 			
 			Orders order = new Orders(txId, null);
@@ -73,7 +76,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 			order.setOrderId(orderId);
 			order.setOrderLineCount(orderLineCount);
 			
-			modificationCollection.addInsert(order, application);
+			records.add(order);
 			
 			for(short j = 0; j < orderLineCount; j++) {
 				OrderLine orderLine = new OrderLine(txId, null);
@@ -96,7 +99,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 				}
 				orderLine.setAmount(amount);
 				
-				modificationCollection.addInsert(orderLine, application);
+				records.add(orderLine);
 			}
 		}
 /*		
@@ -108,7 +111,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 			);
 		}
 */
-		return modificationCollection;
+		return records;
 	}
 
 }

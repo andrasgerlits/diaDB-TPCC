@@ -23,7 +23,20 @@ public class Constants {
 	public static final int MSG_MAX_WAIT_MS = 10;
 	
 	public static final String BRAND_SIGNAL_KEY = "ORIGINAL";
-
-
-
+	
+	
+	public static final String[] LAST_NAMES = 
+			{
+				"BAR", 
+				"OUGH T", 
+				"ABLE", 
+				"PRI", 
+				"PRES", 
+				"ESE", 
+				"AN TI", 
+				"CALLY", 
+				"ATION ", 
+				"EIN G"
+			};
+	
 }

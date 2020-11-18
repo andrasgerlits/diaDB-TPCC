@@ -1,6 +1,7 @@
 package com.dianemodb.tpcc.transaction;
 
 import java.util.List;
+import java.util.Random;
 
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.ServerComputerId;
@@ -8,6 +9,7 @@ import com.dianemodb.functional.FunctionalUtil;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.entity.District;
+import com.dianemodb.tpcc.init.TpccDataInitializer;
 import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
 import com.dianemodb.tpcc.query.FindOrderLinesByOrderIdRangeDistrictAndWarehouse;
 
@@ -17,16 +19,16 @@ public class StockLevel extends TpccTestProcess {
 	private final int stockThreshold;
 
 	protected StockLevel(
+			Random random, 
 			SQLServerApplication application, 
 			ServerComputerId txComputer,
 			short warehouseId,
-			short districtId, 
-			int stockThreshold
+			short districtId
 	) {
-		super(application, txComputer);
+		super(random, application, txComputer, 5000);
 		this.warehouseId = warehouseId;
 		this.districtId = districtId;
-		this.stockThreshold = stockThreshold;
+		this.stockThreshold = TpccDataInitializer.randomInt(10,20);
 	}
 
 	@Override

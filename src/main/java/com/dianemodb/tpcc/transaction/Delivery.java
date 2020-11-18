@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,13 +34,13 @@ public class Delivery extends TpccTestProcess {
 	private List<RecordWithVersion<NewOrders>> newOrders;
 	
 	protected Delivery(
+			Random random,
 			SQLServerApplication application, 
 			ServerComputerId txComputer,
 			short warehouseId,
-			short carrierId,
 			short districtId
 	) {
-		super(application, txComputer);
+		super(random, application, txComputer, 5000);
 		this.warehouseId = warehouseId;
 		this.carrierId = TpccDataInitializer.randomCarrierId();
 		this.districtId = districtId;

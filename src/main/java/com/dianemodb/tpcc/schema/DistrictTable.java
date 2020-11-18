@@ -9,7 +9,6 @@ import java.util.Map;
 
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
-import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
 import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
 import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;

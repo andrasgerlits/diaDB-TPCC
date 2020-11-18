@@ -1,6 +1,7 @@
 package com.dianemodb.tpcc.query;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.message.Envelope;
@@ -37,6 +38,11 @@ public class CustomerSelectionById implements CustomerSelectionStrategy {
 				List.of(customerId, districtId, warehouseId),
 				process
 			);
+	}
+
+	@Override
+	public Optional<Integer> maybeCustomerId() {
+		return Optional.of(customerId);
 	}
 
 }

@@ -1,8 +1,11 @@
 package com.dianemodb.tpcc.init;
 
 import java.math.BigDecimal;
+import java.util.LinkedList;
+import java.util.List;
 
 import com.dianemodb.ModificationCollection;
+import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.Constants;
@@ -15,10 +18,10 @@ public class DistrictInitializer extends TpccDataInitializer {
 	}
 
 	@Override
-	protected ModificationCollection createModificationCollection(TransactionId txId, int batchNumber) {
+	protected List<UserRecord> createModificationCollection(TransactionId txId, int batchNumber) {
 		short warehouseId = (short) batchNumber;
 		
-		ModificationCollection modificationCollection = new ModificationCollection();
+		List<UserRecord> records = new LinkedList<>();
 		for( byte i = 0; i < Constants.DISTRICT_PER_WAREHOUSE; i++ ) {
 			District district = new District(txId, null);
 			randomValues(district);
@@ -28,10 +31,10 @@ public class DistrictInitializer extends TpccDataInitializer {
 			district.setId(i);
 			district.setWarehouseId(warehouseId);
 			
-			modificationCollection.addInsert(district, application);
+			records.add(district);
 		}
 		
-		return modificationCollection;
+		return records;
 	}
 
 	@Override

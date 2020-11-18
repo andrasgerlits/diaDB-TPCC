@@ -2,17 +2,18 @@ package com.dianemodb.tpcc;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+
+import org.slf4j.LoggerFactory;
 
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
+import com.dianemodb.functional.FunctionalUtil;
 import com.dianemodb.integration.AbstractServerTestCase;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.distributed.UserRecordQueryStep;
 import com.dianemodb.metaschema.schema.UserRecordTable;
-import com.dianemodb.runner.ClientRunner;
+import com.dianemodb.runner.AbstractTestRunner;
 import com.dianemodb.runner.ExampleRunner;
-import com.dianemodb.runner.InitializerRunner;
 import com.dianemodb.runner.InstanceRunner;
 import com.dianemodb.sql.SQLApplicationImpl;
 import com.dianemodb.tpcc.query.FindCustomerByLastNameDistrictAndWarehouse;
@@ -36,8 +37,11 @@ import com.dianemodb.tpcc.schema.OrderLineTable;
 import com.dianemodb.tpcc.schema.OrdersTable;
 import com.dianemodb.tpcc.schema.StockTable;
 import com.dianemodb.tpcc.schema.WarehouseTable;
+import com.dianemodb.tpcc.transaction.TpccClientRunner;
 
-public class TpccRunner extends ExampleRunner {
+public class TpccRunner extends AbstractTestRunner {
+	
+	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TpccRunner.class.getName());
 
 	public static SQLServerApplication createApplication(Topology topology) {
 		
@@ -49,12 +53,13 @@ public class TpccRunner extends ExampleRunner {
 		WarehouseTable warehouseTable = new WarehouseTable(topology);
 		DistrictTable districtTable = new DistrictTable(topology);
 		StockTable stockTable = new StockTable(topology);
+		HistoryTable historyTable = new HistoryTable(topology);
 		
 		List<UserRecordTable<? extends UserRecord>> recordTables = 
 				List.of(
-					new CustomerTable(topology),
+					customerTable,
 					districtTable, 
-					new HistoryTable(topology),
+					historyTable,
 					itemTable,
 					newOrdersTable,
 					orderLineTable,
@@ -87,59 +92,57 @@ public class TpccRunner extends ExampleRunner {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		new TpccRunner();
+		new TpccRunner(1, false);
 	}
 	
-	public TpccRunner() throws Exception {
-		super();
+	public TpccRunner(int numberOfInstances, boolean reInitData) throws Exception {
+		super(numberOfInstances, reInitData, ExampleRunner.SMALL_SINGLE_LEVEL_TOPOLOGY);
 	}
 	
-	protected String getTopologyFile() {
-		return ExampleRunner.SMALL_SINGLE_LEVEL_TOPOLOGY;
-	}
-	
-	protected InitializerRunner createInitializer(int numberOfRecords, final String initNodeId) throws Exception {
+	@Override
+	protected TpccInitializerRunner createInitializer(final String initNodeId) {
 		// insert the initial data into the DB
-		TpccInitializerRunner initRunner = 
-				TpccInitializerRunner.init(
+		return FunctionalUtil.doOrPropagate(
+			() -> TpccInitializerRunner.init(
 					new String[] {
 							// use default kafka properties
-							"-t", getTopologyFile(),
+							"-t", topologyFile,
 							"-b", AbstractServerTestCase.getBootstrapUrl(),
 							"-id", initNodeId ,
 							"-tx", String.valueOf(2000)
 					}					
-				);
-		
-		return initRunner;
-	}
-	
-	@Override
-	protected ClientRunner createClient(
-			int writerPercent, 
-			int txPerClient, 
-			int numberOfRecords, 
-			String idString
-	)
-	throws Exception 
-	{
-		// listen all'a you, sabotage!
-		return null;
+				)
+			);
 	}
 
-	protected InstanceRunner createComputerInstanceRunner(CompletableFuture<Void>[] finishers, int idBase, int i) throws Exception {
-		InstanceRunner instance =
+	@Override
+	protected InstanceRunner createComputerInstanceRunner(int idBase, int i, boolean wipeSchema) {
+		return FunctionalUtil.doOrPropagate(() -> 
 				InstanceRunner.init(
 					new String[] {
 						// start everything
 						//"-i", "0,1,2", 
-						"-t", getTopologyFile(),
+						"-t", topologyFile,
 						"-" + InstanceRunner.SUBDIRECTORY_SWITCH, "server_" + idBase
 					},
-					t -> createApplication(t)
-				);
-		
-		return instance;
+					t -> createApplication(t),
+					reInitData
+				)
+			);
+	}
+
+	@Override
+	protected TpccClientRunner createClient(String idString) {
+		return FunctionalUtil.doOrPropagate(
+				() -> TpccClientRunner.init(
+							new String[] {
+								"-t", topologyFile,
+								"-id", idString,
+								"-b", AbstractServerTestCase.getBootstrapUrl()
+							},
+							t -> createApplication(t)
+						)
+			);
 	}
 
 }

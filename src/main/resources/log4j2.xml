@@ -88,7 +88,7 @@
 		<Logger name="kafka" level="warn"/>
 		<Logger name="org.apache" level="warn"/>
 		
-		<Logger name="com.dianemodb.tpcc" level="debug"/>
+		<Logger name="com.dianemodb.tpcc" level="info"/>
 <!-- 
 		<Logger name="com.dianemodb.runner.InitializerRunner" level="debug"/>
  -->
@@ -108,7 +108,7 @@
 		</Logger>
 		
 		<!-- LOGS AT TRACE -->
-		<Logger name="com.dianemodb.ServerEvent" level="trace" additivity="false">
+		<Logger name="com.dianemodb.ServerEvent" level="info" additivity="false">
 			<AppenderRef ref="input"/>
 		</Logger>
 				
@@ -192,7 +192,6 @@ INPUT/OUTPUT LOGGER
 		</Logger>
 		
 		<Logger name="com.dianemodb.metaschema" level="warn" />		
-		<Logger name="com.dianemodb.kryo.KryoSerializer" level="warn" />
 		<Logger name="com.dianemodb.serverh2impl" level="warn" />
 		<Logger name="com.dianemodb.integration.test" level="debug"/>
 		<Logger name="com.dianemodb.integration" level="debug"/>

@@ -3,7 +3,9 @@ package com.dianemodb.tpcc.transaction;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.RecordWithVersion;
@@ -20,28 +22,60 @@ import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
 public class Payment extends TpccTestProcess {
 	
 	private final BigDecimal amount;
-	protected final short warehouseId;
-	protected final short districtId;
+	
+	/*
+	 * The customer must be selected for the warehouse/district, but might not
+	 */
+	protected final short homeWarehouseId;
+	protected final byte homeDistrictId;
 	protected final CustomerSelectionStrategy customerSelectionStrategy;
+	protected final boolean isHomePayment;
 	
 	public Payment(
+			Random random,
 			ServerComputerId txComputer,
 			SQLServerApplication application,
-			BigDecimal amount,
 			short warehouseId,
-			short districtId,
-			CustomerSelectionStrategy selectionStrategy
+			byte districtId
 	) {
-		super(application, txComputer);
+		super(random, application, txComputer, 5000);
 		
-		this.amount = amount;
-		this.warehouseId = warehouseId;
-		this.districtId = districtId;
-		this.customerSelectionStrategy = selectionStrategy;
+		this.customerSelectionStrategy = randomStrategy(random, warehouseId, districtId);
+		isHomePayment = random.nextInt(85) + 1 <= 85;
+		amount = new BigDecimal(random.nextInt(4999) + 1);
+		
+		this.homeWarehouseId = warehouseId;
+		this.homeDistrictId = districtId;
 	}
 
 	@Override
 	protected Result startTx() {
+		Envelope customerQuery = customerSelectionStrategy.customerQuery(this);
+		
+		if(isHomePayment) {
+			List<Envelope> envelopeList = new LinkedList<>(); 
+			envelopeList.add(customerQuery);
+			envelopeList.addAll(warehouseDistrictQueries(homeWarehouseId, homeDistrictId));
+			return of(envelopeList, this::selectCustomerUpdateRecords);
+		}
+		else {
+			return of(customerQuery, this::queryDistrictWarehouse);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private Result queryDistrictWarehouse(Object results) {
+		RecordWithVersion<Customer> customerRecord = (RecordWithVersion<Customer>) results;
+		
+		short warehouseId = customerRecord.getRecord().getWarehouseId();			
+		byte districtId = customerRecord.getRecord().getDistrictId();
+				
+		List<Envelope> envelopeList = warehouseDistrictQueries(warehouseId, districtId);
+		
+		return of(envelopeList, l -> this.updateRecords(l, customerRecord));
+	}
+
+	private List<Envelope> warehouseDistrictQueries(short warehouseId, byte districtId) {
 		Envelope queryWarehouseEnvelope = 
 				query(
 					FindWarehouseDetailsById.ID, 
@@ -54,27 +88,34 @@ public class Payment extends TpccTestProcess {
 					List.of(districtId)
 				);
 		
-		Envelope customerQuery = customerSelectionStrategy.customerQuery(this);
-		
-		return of(
+		List<Envelope> envelopeList = 
 				List.of(
 					queryWarehouseEnvelope, 
-					queryDistrictEnvelope, 
-					customerQuery
-				), 
-				this::updateRecords
-			);
+					queryDistrictEnvelope 
+				);
+		return envelopeList;
 	}
 	
-	private Result updateRecords(List<Object> results) {
+	private Result selectCustomerUpdateRecords(List<Object> results) {
+		Iterator<Object> resultIter = results.iterator();
+		
+		RecordWithVersion<Customer> customerWithVersion = customerSelectionStrategy.getCustomerFromResult(resultIter.next());
+		RecordWithVersion<Warehouse> warehouseWithVersion = singleFromResultList(resultIter.next());
+		RecordWithVersion<District> districtWithVersion = singleFromResultList(resultIter.next());
+		
+		List<Object> resultList = List.of(warehouseWithVersion, districtWithVersion);
+		
+		return updateRecords(resultList, customerWithVersion);
+	}
+	
+	private Result updateRecords(List<Object> results, RecordWithVersion<Customer> customerWithVersion) {
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+
+		ModificationCollection modificationCollection = new ModificationCollection();
 
 		Iterator<Object> resultIter = results.iterator();
 		RecordWithVersion<Warehouse> warehouseWithVersion = singleFromResultList(resultIter.next());
 		RecordWithVersion<District> districtWithVersion = singleFromResultList(resultIter.next());
-		RecordWithVersion<Customer> customerWithVersion = customerSelectionStrategy.getCustomerFromResult(resultIter.next());
-
-		ModificationCollection modificationCollection = new ModificationCollection();
 
 		Warehouse updatedWarehouse = warehouseWithVersion.getRecord().shallowClone(application, txId);
 		updatedWarehouse.setYtd(updatedWarehouse.getYtd().add(amount));

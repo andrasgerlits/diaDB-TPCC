@@ -1,6 +1,7 @@
 package com.dianemodb.tpcc.transaction;
 
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -17,6 +18,11 @@ import com.dianemodb.id.TransactionId;
 import com.dianemodb.integration.test.TestProcess;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.tpcc.Constants;
+import com.dianemodb.tpcc.init.TpccDataInitializer;
+import com.dianemodb.tpcc.query.CustomerSelectionById;
+import com.dianemodb.tpcc.query.CustomerSelectionByLastName;
+import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
 import com.dianemodb.version.ReadVersion;
 import com.dianemodb.workflow.query.QueryWorkflow;
 import com.dianemodb.workflow.query.QueryWorkflowInput;
@@ -37,7 +43,24 @@ public abstract class TpccTestProcess extends TestProcess {
 		return (RecordWithVersion<R> ) FunctionalUtil.singleResult(list);
 	}
 	
-	public static Envelope query(String queryId, List<?> parameters, TpccTestProcess testProcess) {
+	protected static CustomerSelectionStrategy randomStrategy(Random random, short warehouseId, byte districtId) {
+		// 0-5 -> 60%
+		if(random.nextInt(10) < 6) {
+			String randomLastName = TpccDataInitializer.randomValue(Constants.LAST_NAMES);
+			return new CustomerSelectionByLastName(randomLastName, warehouseId, districtId);
+		}
+		else {
+			int customerId = random.nextInt(Constants.CUSTOMER_PER_DISTRICT);
+			return new CustomerSelectionById(warehouseId, districtId, customerId);
+		}
+	}
+
+	
+	public static Envelope query(
+			String queryId, 
+			List<?> parameters, 
+			TpccTestProcess testProcess
+	) {
 		QueryWorkflowInput wfInput = 
 				new QueryWorkflowInput(
 						queryId, 
@@ -52,15 +75,31 @@ public abstract class TpccTestProcess extends TestProcess {
 		return new Envelope(testProcess.txId.getComputerId(), queryEvent);				
 	}
 
+	protected final Random random;
 	protected final SQLServerApplication application;
 	private final ServerComputerId txComputer;
+	private final int maxTimeInMs;
+	private final long startTime;
 	
 	protected ReadVersion readVersion;
 	protected TransactionId txId;
 
-	protected TpccTestProcess(SQLServerApplication application, ServerComputerId txComputer) {
+	protected TpccTestProcess(
+			Random random, 
+			SQLServerApplication application, 
+			ServerComputerId txComputer, 
+			int maxTimeInMs
+	) {
+		this.random = random;
 		this.application = application;
 		this.txComputer = txComputer;
+		this.maxTimeInMs = maxTimeInMs;
+		
+		this.startTime = System.currentTimeMillis();
+	}
+	
+	public boolean isLate() {
+		return System.currentTimeMillis() - startTime < maxTimeInMs;
 	}
 	
 	@Override

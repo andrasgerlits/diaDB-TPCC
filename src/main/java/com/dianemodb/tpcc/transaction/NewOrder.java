@@ -3,10 +3,12 @@ package com.dianemodb.tpcc.transaction;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,7 @@ import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.entity.Stock;
 import com.dianemodb.tpcc.entity.Warehouse;
+import com.dianemodb.tpcc.init.TpccDataInitializer;
 import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
 import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
 import com.dianemodb.tpcc.query.neworder.FindItemById;
@@ -58,37 +61,52 @@ public class NewOrder extends TpccTestProcess {
    	}
 	
 	private static boolean isUsedItemIdValue(int itemId) {
-		//FIXME figure out which values are used or not
-		return true;
+		// higher than the highest ID
+		return itemId > Constants.ITEM_NUMBER - 1;
 	}
 	
-	private final Integer customerId;	
-	private final Byte districtId;
-	private final int numberOfItems;
+	private final int customerId;	
+	private final Short customerWarehouseId;
+	private final byte customerDistrictId;
 	private final Map<Integer, Pair<Short, Short>> supplyingWarehouseAndQuantityByItemId;
 	
-	private final Short warehouseId;
-
 	public NewOrder(
+			Random random, 
 			ServerComputerId txComputer,
 			SQLServerApplication application,
-			
-			int customerId, 
-			byte districtId, 
-			short warehouseId,
-			
-			int numberOfItems,
-			int allOrderLocal,
-			Map<Integer, Pair<Short, Short>> supplyingWarehouseAndQuantityByItemId
+
+			short homeWarehouseId,
+			byte homeDistrictId
 	) {
-		super(application, txComputer);
+		super(random, application, txComputer, 5000);
 		
-		this.customerId = customerId;
-		this.districtId = districtId;
-		this.warehouseId = warehouseId;
+		this.customerId = TpccDataInitializer.randomCustomerId();
+		this.customerDistrictId = homeDistrictId;
+		this.customerWarehouseId = homeWarehouseId;
 		
-		this.numberOfItems = numberOfItems;
-		this.supplyingWarehouseAndQuantityByItemId = supplyingWarehouseAndQuantityByItemId;
+		int orderLineCount = TpccDataInitializer.randomInt(5, 15);
+		
+		boolean wrongItemInput = random.nextInt(100) == 0;
+		
+		supplyingWarehouseAndQuantityByItemId = new HashMap<>();
+		
+		for(int i = 0; i < orderLineCount; i++) {
+			short warehouseId = random.nextInt(100) == 0 ? 
+					TpccDataInitializer.randomWarehouseId() 
+					: homeWarehouseId;
+			
+			int itemId;
+			if(i == orderLineCount - 1 && wrongItemInput) {
+				itemId = Short.MAX_VALUE;
+			}
+			else {
+				itemId = TpccDataInitializer.randomItemId();
+			}
+			
+			short quantity = (short) (random.nextInt(10) + 1);
+			
+			supplyingWarehouseAndQuantityByItemId.put(itemId, Pair.of(warehouseId, quantity));
+		}
 	}
 	
 	@Override
@@ -96,19 +114,19 @@ public class NewOrder extends TpccTestProcess {
 		Envelope queryCustomerEnvelope = 
 				query(
 					FindCustomerByIdDistrictAndWarehouse.ID, 
-					List.of(customerId, warehouseId, districtId)
+					List.of(customerId, customerWarehouseId, customerDistrictId)
 				);
 
 		Envelope queryWarehouseEnvelope = 
 				query(
 					FindWarehouseDetailsById.ID, 
-					List.of(warehouseId)
+					List.of(customerWarehouseId)
 				);
 		
 		Envelope queryDistrictEnvelope =
 				query(
 					FindDistrictByIdAndWarehouse.ID, 
-					List.of(districtId)
+					List.of(customerWarehouseId, customerDistrictId)
 				);
 		
 		Envelope queryItemEnvelope = 
@@ -165,21 +183,28 @@ public class NewOrder extends TpccTestProcess {
 		
 		Orders order = new Orders(txId, null);
 		order.setOrderId(orderId);
-		order.setDistrictId(districtId);
-		order.setWarehouseId(warehouseId);
+		order.setDistrictId(customerDistrictId);
+		order.setWarehouseId(customerWarehouseId);
 		order.setCustomerId(customerId);
 		order.setEntryDate(timestamp);
-		order.setOrderLineCount((short) numberOfItems);
+		
+		short totalNumber = 
+				(short) supplyingWarehouseAndQuantityByItemId.values()
+							.stream()
+							.mapToInt(Pair::getValue)
+							.sum();
+		
+		order.setOrderLineCount((short) totalNumber );
 		order.setAllLocal( (short) ( allOrderLocal() ? 1 : 0 ) );
 		
-		modificationCollection.addInsert(order, application);
+		modificationCollection.addInsert(order);
 		
 		NewOrders newOrder = new NewOrders(txId, null);
 		newOrder.setOrderId(orderId);
-		newOrder.setDistrictId(districtId);
-		newOrder.setWarehouseId(warehouseId);
+		newOrder.setDistrictId(customerDistrictId);
+		newOrder.setWarehouseId(customerWarehouseId);
 		
-		modificationCollection.addInsert(newOrder, application);
+		modificationCollection.addInsert(newOrder);
 
 		List<RecordWithVersion<Item>> items = (List<RecordWithVersion<Item>>) resultIter.next();
 		
@@ -298,16 +323,16 @@ public class NewOrder extends TpccTestProcess {
 
 			OrderLine newOrderLine = new OrderLine(txId, null);
 			newOrderLine.setOrderId(orderId);
-			newOrderLine.setDistrictId(districtId);
+			newOrderLine.setDistrictId(customerDistrictId);
 			newOrderLine.setWarehouseId(supplyingWarehouse);
 			newOrderLine.setLineNumber(i);
 			newOrderLine.setItemId((short) item.getItemId());
 			newOrderLine.setSupplyWarehouseId(supplyingWarehouse);
 			newOrderLine.setQuantity((short) quantity);
 			newOrderLine.setAmount(amount);
-			newOrderLine.setDistInfo(getDistrictInfo(this.districtId).apply(originalStock));
+			newOrderLine.setDistInfo(getDistrictInfo(customerDistrictId).apply(originalStock));
 			
-			modificationCollection.addInsert(newOrderLine, application);
+			modificationCollection.addInsert(newOrderLine);
 		}
 	}
 	
@@ -315,6 +340,6 @@ public class NewOrder extends TpccTestProcess {
 		return supplyingWarehouseAndQuantityByItemId.values()
 					.stream()
 					.map(Pair::getKey)
-					.allMatch( sw -> sw == warehouseId);
+					.allMatch( sw -> sw == customerWarehouseId);
 	}
 }

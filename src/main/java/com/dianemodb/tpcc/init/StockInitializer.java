@@ -1,8 +1,12 @@
 package com.dianemodb.tpcc.init;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
+import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.Constants;
@@ -23,8 +27,8 @@ public class StockInitializer extends TpccDataInitializer {
 	}
 
 	@Override
-	protected ModificationCollection createModificationCollection(TransactionId txId, int batchNumber) {
-		ModificationCollection modificationCollection = new ModificationCollection();
+	protected List<UserRecord> createModificationCollection(TransactionId txId, int batchNumber) {
+		List<UserRecord> records = new LinkedList<>();
 		
 		for( int i = 0 ; i < ITEM_PER_TX; i++ ) {
 			int totalOffset = batchNumber * ITEM_PER_TX + i;
@@ -61,11 +65,11 @@ public class StockInitializer extends TpccDataInitializer {
 			
 			stock.setData(data);
 			
-			modificationCollection.addInsert(stock, application);
+			records.add(stock);
 		}
 		
 		//LOGGER.info("Stock batch {} / {}", batchNumber, numberOfBatches() );
-		return modificationCollection;
+		return records;
 	}
 
 }

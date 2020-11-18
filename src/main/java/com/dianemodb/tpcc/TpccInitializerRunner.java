@@ -10,9 +10,9 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.slf4j.LoggerFactory;
 
-import com.dianemodb.ModificationCollection;
 import com.dianemodb.ServerComputerId;
 import com.dianemodb.Topology;
+import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.runner.InitializerRunner;
 import com.dianemodb.tpcc.init.CustomerInitializer;
@@ -25,6 +25,8 @@ import com.dianemodb.tpcc.init.WarehouseInitializer;
 
 public class TpccInitializerRunner extends InitializerRunner {
 	
+	private static final String NUMBER_OF_TX_SWITCH = "tx";
+
 	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TpccInitializerRunner.class.getName());
 	
 	private final List<TpccDataInitializer> initializers;
@@ -63,7 +65,7 @@ public class TpccInitializerRunner extends InitializerRunner {
 	
 	public static TpccInitializerRunner init(String[] args) throws Exception {
 		Options options = getCommonOptions();
-		options.addRequiredOption("tx", "tx_number", true, "Number of transactions to use to create records");
+		options.addRequiredOption(NUMBER_OF_TX_SWITCH, "tx_number", true, "Number of transactions to use to create records");
 		
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = parser.parse(options, args);
@@ -74,7 +76,7 @@ public class TpccInitializerRunner extends InitializerRunner {
 					cmd.getOptionValue("b"), 
 					getTopicId(cmd), 
 					readTopologyFromFile(cmd.getOptionValue("t")),
-					Integer.valueOf(cmd.getOptionValue("tx"))			
+					Integer.valueOf(cmd.getOptionValue(NUMBER_OF_TX_SWITCH))			
 				);
 		
 		return runner;
@@ -86,7 +88,7 @@ public class TpccInitializerRunner extends InitializerRunner {
 	}
 
 	@Override
-	protected ModificationCollection createModificationCollection(TransactionId txId) {
+	protected List<UserRecord> createRecords(TransactionId txId) {
 		assert hasNext();
 		
 		if(!currentInitializer.hasNext()) {
@@ -95,7 +97,8 @@ public class TpccInitializerRunner extends InitializerRunner {
 			LOGGER.info("Processing " + currentInitializer.getClass().getSimpleName());
 		}
 		
-		return currentInitializer.process(txId);
+		List<UserRecord> records = currentInitializer.process(txId);
+		return records;
 	}
 	
 
