@@ -7,15 +7,10 @@ import com.dianemodb.tpcc.schema.DistrictTable;
 public class FindDistrictByIdAndWarehouse extends SingleIndexQueryDistributionPlan<District> {
 	
 	public static final String ID = "findDistrictById";
-	
-	private static final String QUERY = 
-			"SELECT * "
-			+ "FROM " + DistrictTable.TABLE_NAME 
-			+ " WHERE " + DistrictTable.WAREHOUSE_ID_COLUMNNAME + "=?"
-				+ " AND " + DistrictTable.ID_COLUMNNAME + "=?";
 
 	public FindDistrictByIdAndWarehouse(DistrictTable table) {
-		super(ID, QUERY, table, table.getCompositeIndex());
+		// warehouse, district
+		super(ID, table, table.getCompositeIndex());
 	}
 
 }

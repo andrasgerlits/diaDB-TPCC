@@ -23,10 +23,6 @@ public class Payment extends TpccTestProcess {
 	
 	private final BigDecimal amount;
 	
-	/*
-	 * The customer must be selected for the warehouse/district, but might not
-	 */
-	protected final short homeWarehouseId;
 	protected final byte homeDistrictId;
 	protected final CustomerSelectionStrategy customerSelectionStrategy;
 	protected final boolean isHomePayment;
@@ -38,13 +34,12 @@ public class Payment extends TpccTestProcess {
 			short warehouseId,
 			byte districtId
 	) {
-		super(random, application, txComputer, 5000);
+		super(random, application, txComputer, 5000, 3000, 12000, warehouseId);
 		
 		this.customerSelectionStrategy = randomStrategy(random, warehouseId, districtId);
 		isHomePayment = random.nextInt(85) + 1 <= 85;
 		amount = new BigDecimal(random.nextInt(4999) + 1);
 		
-		this.homeWarehouseId = warehouseId;
 		this.homeDistrictId = districtId;
 	}
 
@@ -55,7 +50,7 @@ public class Payment extends TpccTestProcess {
 		if(isHomePayment) {
 			List<Envelope> envelopeList = new LinkedList<>(); 
 			envelopeList.add(customerQuery);
-			envelopeList.addAll(warehouseDistrictQueries(homeWarehouseId, homeDistrictId));
+			envelopeList.addAll(warehouseDistrictQueries(terminalWarehouseId, homeDistrictId));
 			return of(envelopeList, this::selectCustomerUpdateRecords);
 		}
 		else {
@@ -85,7 +80,7 @@ public class Payment extends TpccTestProcess {
 		Envelope queryDistrictEnvelope =
 				query(
 					FindDistrictByIdAndWarehouse.ID, 
-					List.of(districtId)
+					List.of(warehouseId, districtId)
 				);
 		
 		List<Envelope> envelopeList = 

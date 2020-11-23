@@ -9,15 +9,8 @@ public class FindCustomerByIdDistrictAndWarehouse extends SingleIndexQueryDistri
 	public static final String ID = "findCustomerById";
 
 	public FindCustomerByIdDistrictAndWarehouse(CustomerTable table) {
-		super(
-			ID, 
-			"SELECT * FROM " + CustomerTable.TABLE_NAME
-			+ " WHERE " + CustomerTable.WAREHOUSE_ID_COLUMN_NAME + "=?"
-				+ " AND " + CustomerTable.DISTRICT_ID_COLUMN_NAME + "=?" 
-				+ " AND " + CustomerTable.ID_COLUMN_NAME + "=?",
-			table, 
-			table.getCompositeIndex()
-		);
+		// warehouse, district, id
+		super(ID, table, table.getCompositeIndex());
 	}
 
 }

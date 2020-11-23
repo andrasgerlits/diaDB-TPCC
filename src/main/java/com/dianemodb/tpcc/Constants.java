@@ -3,7 +3,7 @@ package com.dianemodb.tpcc;
 public class Constants {
 
 	// 200 -> 40GB
-	public static final int NUMBER_OF_WAREHOUSES = 100;
+	public static final int NUMBER_OF_WAREHOUSES = 10;
 	
 	public static final int STOCK_PER_WAREHOUSE = 100000;
 	public static final int ORDER_LINE_PER_WAREHOUSE = 300000;
@@ -24,19 +24,21 @@ public class Constants {
 	
 	public static final String BRAND_SIGNAL_KEY = "ORIGINAL";
 	
+	public static final int TERMINAL_PER_WAREHOUSE = 10;
+	
 	
 	public static final String[] LAST_NAMES = 
 			{
 				"BAR", 
-				"OUGH T", 
+				"OUGHT", 
 				"ABLE", 
 				"PRI", 
 				"PRES", 
 				"ESE", 
-				"AN TI", 
+				"ANTI", 
 				"CALLY", 
 				"ATION ", 
-				"EIN G"
+				"EING"
 			};
 	
 }

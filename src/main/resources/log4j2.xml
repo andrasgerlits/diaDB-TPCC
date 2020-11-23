@@ -88,15 +88,19 @@
 		<Logger name="kafka" level="warn"/>
 		<Logger name="org.apache" level="warn"/>
 		
+		<Logger name="com.dianemodb" level="info"/>
+		
+		<Logger name="com.dianemodb.integration.test.ProcessManager" level="info"/>
 		<Logger name="com.dianemodb.tpcc" level="info"/>
+		
 <!-- 
-		<Logger name="com.dianemodb.runner.InitializerRunner" level="debug"/>
+		<Logger name="com.dianemodb.ComputerImpl" level="info"/>
+
+		<Logger name="com.dianemodb.tpcc.transaction.TpccProcessManager" level="debug" additivity="false">
+			<AppenderRef ref="test-client" />
+		</Logger>		
  -->
 		<Logger name="com.dianemodb.runner" level="info" additivity="false">
-			<AppenderRef ref="test-client" />
-		</Logger>
-		
-		<Logger name="com.dianemodb.integration.test.IntegrationTestProcessManager" level="info" additivity="false">
 			<AppenderRef ref="test-client" />
 		</Logger>
 		

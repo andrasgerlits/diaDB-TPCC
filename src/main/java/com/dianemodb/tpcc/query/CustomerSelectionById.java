@@ -35,7 +35,7 @@ public class CustomerSelectionById implements CustomerSelectionStrategy {
 	public Envelope customerQuery(TpccTestProcess process) {
 		return TpccTestProcess.query(
 				FindCustomerByIdDistrictAndWarehouse.ID, 
-				List.of(customerId, districtId, warehouseId),
+				List.of(warehouseId, districtId, customerId),
 				process
 			);
 	}

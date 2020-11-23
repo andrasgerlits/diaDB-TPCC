@@ -9,14 +9,7 @@ public class FindCustomerByLastNameDistrictAndWarehouse extends SingleIndexQuery
 	public static final String ID = "findCustomerByLastName";
 
 	public FindCustomerByLastNameDistrictAndWarehouse(CustomerTable table) {
-		super(
-			ID, 
-			"SELECT * FROM " + CustomerTable.TABLE_NAME 
-				+ " WHERE " + CustomerTable.LAST_NAME_COLUMN_NAME + "=? "
-					+ "AND " + CustomerTable.WAREHOUSE_ID_COLUMN_NAME + "=? "
-					+ "AND " + CustomerTable.DISTRICT_ID_COLUMN_NAME + "=?", 
-			table, 
-			table.getCompositeIndex()
-		);
+		// warehouse, district, last-name
+		super(ID, table, table.getLastNameIndex());
 	}
 }

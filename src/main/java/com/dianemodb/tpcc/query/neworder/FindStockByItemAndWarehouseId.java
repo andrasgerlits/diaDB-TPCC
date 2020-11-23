@@ -10,8 +10,8 @@ public class FindStockByItemAndWarehouseId extends SingleIndexQueryDistributionP
 	
 	private static final String QUERY = 
 			"SELECT * FROM " + StockTable.TABLE_NAME 
-			+ " WHERE " + StockTable.ITEM_ID_COLUMN_NAME + "=? "
-					+ "AND " + StockTable.WAREHOUSE_ID_COLUMN_NAME+ "=?";
+			+ " WHERE " + StockTable.WAREHOUSE_ID_COLUMN_NAME+ "=? "
+					+ "AND " + StockTable.ITEM_ID_COLUMN_NAME+ "=?";
 	
 	public FindStockByItemAndWarehouseId(StockTable table) {
 		super(

@@ -17,7 +17,6 @@ public class OrderStatus extends TpccTestProcess {
 
 	private final CustomerSelectionStrategy customerSelectionStrategy;
 	
-	private final short warehouseId;
 	private final short districtId;
 	
 	public OrderStatus(
@@ -27,8 +26,7 @@ public class OrderStatus extends TpccTestProcess {
 			short warehouseId,
 			byte districtId
 	) {
-		super(random, application, txComputer, 5000);
-		this.warehouseId = warehouseId;
+		super(random, application, txComputer, 5000, 2000, 10000, warehouseId);
 		this.districtId = districtId;
 
 		this.customerSelectionStrategy = randomStrategy(random, warehouseId, districtId);
@@ -48,7 +46,7 @@ public class OrderStatus extends TpccTestProcess {
 		Envelope maxOrderIdQuery =
 				query(
 					FindMaxOrderIdForCustomer.ID, 
-					List.of(warehouseId, districtId, customer.getRecord().getPublicId())
+					List.of(terminalWarehouseId, districtId, customer.getRecord().getPublicId())
 				);
 		
 		return of(maxOrderIdQuery, r -> this.update(r, customer));
@@ -61,11 +59,10 @@ public class OrderStatus extends TpccTestProcess {
 		Envelope findOrderLinesQuery = 
 				query(
 					FindOrderLinesByOrderidDistrictAndWarehouse.ID,
-					List.of(orderId, districtId, warehouseId)
+					List.of(orderId, districtId, terminalWarehouseId)
 				);
 		
 		// if something needs to be done with the resulting info, override "commit()"
 		return of(List.of(findOrderLinesQuery), this::commit);
 	}
-	
 }

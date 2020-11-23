@@ -10,7 +10,6 @@ import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
 import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
 import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
-import com.dianemodb.h2impl.ServerComputerIdNarrowingRule;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -20,6 +19,7 @@ import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
 import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.entity.Orders;
 
@@ -99,6 +99,7 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 	private final List<RecordColumn<Orders, ?>> columns;
 	
 	private final DistributedIndex<Orders> compositeIndex;
+	private final DistributedIndex<Orders> customerIndex;
 	
 	public OrdersTable(Topology servers) {
 		super(ID, TABLE_NAME);
@@ -111,9 +112,17 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 						DISTRICT_ID_COLUMN
 				);
 		
-		indexRuleMap.put(CUSTOMER_ID_COLUMN, NullRule.INSTANCE);
+		indexRuleMap.put(ORDER_ID_COLUMN, NullRule.INSTANCE);
 		
 		this.compositeIndex = 				
+				new RangeBasedDistributedIndex<>(
+						servers,
+						this, 
+						List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, ORDER_ID_COLUMN),
+						indexRuleMap
+				);
+		
+		this.customerIndex = 
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
@@ -132,6 +141,10 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 		return Orders.class;
 	}
 	
+	public DistributedIndex<Orders> getCompositeCustomerIndex() {
+		return customerIndex;
+	}
+	
 	public DistributedIndex<Orders> getCompositeIndex() {
 		return compositeIndex;
 	}
@@ -143,7 +156,7 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 
 	@Override
 	protected Collection<DistributedIndex<Orders>> indices() {
-		return List.of(compositeIndex);
+		return List.of(compositeIndex, customerIndex);
 	}
 
 	@Override

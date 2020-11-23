@@ -65,8 +65,7 @@ public class NewOrder extends TpccTestProcess {
 		return itemId > Constants.ITEM_NUMBER - 1;
 	}
 	
-	private final int customerId;	
-	private final Short customerWarehouseId;
+	private final int customerId;
 	private final byte customerDistrictId;
 	private final Map<Integer, Pair<Short, Short>> supplyingWarehouseAndQuantityByItemId;
 	
@@ -78,11 +77,10 @@ public class NewOrder extends TpccTestProcess {
 			short homeWarehouseId,
 			byte homeDistrictId
 	) {
-		super(random, application, txComputer, 5000);
+		super(random, application, txComputer, 5000, 18000, 12000, homeWarehouseId);
 		
 		this.customerId = TpccDataInitializer.randomCustomerId();
 		this.customerDistrictId = homeDistrictId;
-		this.customerWarehouseId = homeWarehouseId;
 		
 		int orderLineCount = TpccDataInitializer.randomInt(5, 15);
 		
@@ -114,21 +112,22 @@ public class NewOrder extends TpccTestProcess {
 		Envelope queryCustomerEnvelope = 
 				query(
 					FindCustomerByIdDistrictAndWarehouse.ID, 
-					List.of(customerId, customerWarehouseId, customerDistrictId)
+					List.of(terminalWarehouseId, customerDistrictId, customerId)
 				);
 
 		Envelope queryWarehouseEnvelope = 
 				query(
 					FindWarehouseDetailsById.ID, 
-					List.of(customerWarehouseId)
+					List.of(terminalWarehouseId)
 				);
 		
 		Envelope queryDistrictEnvelope =
 				query(
 					FindDistrictByIdAndWarehouse.ID, 
-					List.of(customerWarehouseId, customerDistrictId)
+					List.of(terminalWarehouseId, customerDistrictId)
 				);
 		
+		// PERFORM this results in as many queries as items
 		Envelope queryItemEnvelope = 
 				query(
 					FindItemById.ID, 
@@ -184,7 +183,7 @@ public class NewOrder extends TpccTestProcess {
 		Orders order = new Orders(txId, null);
 		order.setOrderId(orderId);
 		order.setDistrictId(customerDistrictId);
-		order.setWarehouseId(customerWarehouseId);
+		order.setWarehouseId(terminalWarehouseId);
 		order.setCustomerId(customerId);
 		order.setEntryDate(timestamp);
 		
@@ -202,7 +201,7 @@ public class NewOrder extends TpccTestProcess {
 		NewOrders newOrder = new NewOrders(txId, null);
 		newOrder.setOrderId(orderId);
 		newOrder.setDistrictId(customerDistrictId);
-		newOrder.setWarehouseId(customerWarehouseId);
+		newOrder.setWarehouseId(terminalWarehouseId);
 		
 		modificationCollection.addInsert(newOrder);
 
@@ -340,6 +339,6 @@ public class NewOrder extends TpccTestProcess {
 		return supplyingWarehouseAndQuantityByItemId.values()
 					.stream()
 					.map(Pair::getKey)
-					.allMatch( sw -> sw == customerWarehouseId);
+					.allMatch( sw -> sw == terminalWarehouseId);
 	}
 }

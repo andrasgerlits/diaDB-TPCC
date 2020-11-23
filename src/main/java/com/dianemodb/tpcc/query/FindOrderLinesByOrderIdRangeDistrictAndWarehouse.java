@@ -1,5 +1,11 @@
 package com.dianemodb.tpcc.query;
 
+import java.util.List;
+
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.dianemodb.metaschema.distributed.Condition;
+import com.dianemodb.metaschema.distributed.Operator;
 import com.dianemodb.sql.SingleIndexQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.schema.OrderLineTable;
@@ -8,14 +14,21 @@ public class FindOrderLinesByOrderIdRangeDistrictAndWarehouse extends SingleInde
 
 	public static final String ID = "findOrderLinesByOrderIdRange";
 	
-	private static final String QUERY = 
-			"SELECT * FROM " + OrderLineTable.TABLE_NAME 
-				+ " WHERE " + OrderLineTable.WAREHOUSE_ID_COLUMN_NAME + " =? "
-					+ " AND " + OrderLineTable.DISTRICT_ID_COLUMN_NAME + " =? "
-					+ " AND " + OrderLineTable.ORDER_ID_COLUMN_NAME + " >= ? "
-					+ "AND " + OrderLineTable.ORDER_ID_COLUMN_NAME + " <= ?";
-	
 	public FindOrderLinesByOrderIdRangeDistrictAndWarehouse(OrderLineTable table) {
-		super(ID, QUERY, table, table.getOrderIdRangeIndex().getUserRecordColumns());
+		super(
+			ID, 
+			table, 
+			table.getOrderIdRangeIndex(), 
+			new Condition<OrderLine>(
+					List.of(
+						Pair.of(OrderLineTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
+						Pair.of(OrderLineTable.DISTRICT_ID_COLUMN, Operator.EQ),
+						
+						// order-id >= ? AND order-id <= ?
+						Pair.of(OrderLineTable.ORDER_ID_COLUMN, Operator.GTE),
+						Pair.of(OrderLineTable.ORDER_ID_COLUMN, Operator.LTE)
+					)
+			)
+		);
 	}
 }

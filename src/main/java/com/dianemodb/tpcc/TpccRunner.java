@@ -15,6 +15,7 @@ import com.dianemodb.metaschema.schema.UserRecordTable;
 import com.dianemodb.runner.AbstractTestRunner;
 import com.dianemodb.runner.ExampleRunner;
 import com.dianemodb.runner.InstanceRunner;
+import com.dianemodb.runner.KafkaClientRunner;
 import com.dianemodb.sql.SQLApplicationImpl;
 import com.dianemodb.tpcc.query.FindCustomerByLastNameDistrictAndWarehouse;
 import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
@@ -92,7 +93,9 @@ public class TpccRunner extends AbstractTestRunner {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		new TpccRunner(1, false);
+		new TpccRunner(1, true).run();
+
+		//new TpccRunner(1, false).run();
 	}
 	
 	public TpccRunner(int numberOfInstances, boolean reInitData) throws Exception {
@@ -123,7 +126,7 @@ public class TpccRunner extends AbstractTestRunner {
 						// start everything
 						//"-i", "0,1,2", 
 						"-t", topologyFile,
-						"-" + InstanceRunner.SUBDIRECTORY_SWITCH, "server_" + idBase
+						"-" + InstanceRunner.SUBDIRECTORY_SWITCH, KafkaClientRunner.ABSOLUTE_ROOT_DIRECTORY + "server_" + idBase
 					},
 					t -> createApplication(t),
 					reInitData
@@ -133,6 +136,8 @@ public class TpccRunner extends AbstractTestRunner {
 
 	@Override
 	protected TpccClientRunner createClient(String idString) {
+		return null;
+/*
 		return FunctionalUtil.doOrPropagate(
 				() -> TpccClientRunner.init(
 							new String[] {
@@ -143,6 +148,7 @@ public class TpccRunner extends AbstractTestRunner {
 							t -> createApplication(t)
 						)
 			);
+*/
 	}
 
 }

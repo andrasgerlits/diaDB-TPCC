@@ -27,7 +27,6 @@ import com.dianemodb.tpcc.query.payment.FindCustomerByIdDistrictAndWarehouse;
 
 public class Delivery extends TpccTestProcess {
 
-	private final short warehouseId;
 	private final short carrierId;
 	private final short districtId; 
 	
@@ -35,13 +34,12 @@ public class Delivery extends TpccTestProcess {
 	
 	protected Delivery(
 			Random random,
-			SQLServerApplication application, 
 			ServerComputerId txComputer,
+			SQLServerApplication application, 
 			short warehouseId,
 			short districtId
 	) {
-		super(random, application, txComputer, 5000);
-		this.warehouseId = warehouseId;
+		super(random, application, txComputer, 5000, 2000, 5000, warehouseId);
 		this.carrierId = TpccDataInitializer.randomCarrierId();
 		this.districtId = districtId;
 	}
@@ -51,7 +49,7 @@ public class Delivery extends TpccTestProcess {
 		Envelope query = 						
 				query(
 					FindNewOrderWithLowestOrderIdByDistrictAndWarehouse.ID,
-					List.of( districtId, warehouseId )
+					List.of( districtId, terminalWarehouseId )
 				);
 		
 		return of(query, this::process);
@@ -71,19 +69,19 @@ public class Delivery extends TpccTestProcess {
 							Envelope orderQuery = 
 								query(
 									FindOrderByDistrictWarehouseOrderId.ID, 
-									List.of(no.getDistrictId(), warehouseId, no.getOrderId())
+									List.of(terminalWarehouseId, no.getDistrictId(), no.getOrderId())
 								);
 							
 							Envelope customerQuery = 
 								query(
 									FindCustomerByIdDistrictAndWarehouse.ID, 
-									List.of(no.getCustomerId(), no.getDistrictId(), warehouseId)
+									List.of(terminalWarehouseId, no.getDistrictId(), no.getCustomerId())
 								);
 							
 							Envelope orderLinesQuery =
 								query(
 									FindOrderLinesByOrderidDistrictAndWarehouse.ID,
-									List.of(no.getOrderId(), no.getDistrictId(), no.getWarehouseId())
+									List.of(no.getWarehouseId(), no.getDistrictId(), no.getOrderId())
 								);
 							
 							return Stream.of(orderQuery, customerQuery, orderLinesQuery);

@@ -46,7 +46,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	protected static CustomerSelectionStrategy randomStrategy(Random random, short warehouseId, byte districtId) {
 		// 0-5 -> 60%
 		if(random.nextInt(10) < 6) {
-			String randomLastName = TpccDataInitializer.randomValue(Constants.LAST_NAMES);
+			String randomLastName = TpccDataInitializer.randomLastName();
 			return new CustomerSelectionByLastName(randomLastName, warehouseId, districtId);
 		}
 		else {
@@ -66,7 +66,7 @@ public abstract class TpccTestProcess extends TestProcess {
 						queryId, 
 						testProcess.txId, 
 						testProcess.readVersion, 
-						List.of(parameters)
+						parameters
 				);
 		
 		ExecuteWorkflowEvent queryEvent = 
@@ -79,6 +79,23 @@ public abstract class TpccTestProcess extends TestProcess {
 	protected final SQLServerApplication application;
 	private final ServerComputerId txComputer;
 	private final int maxTimeInMs;
+	protected final short terminalWarehouseId;
+	
+	/**
+	 * Keying time is the time spent before the first request is made from the 
+	 * client to the server after the terminal has been taken out of the pool.
+	 * 
+	 * This is the epoch time at which point the first request can be made for 
+	 * the process, so "creation time + keying time" 
+	 * */
+	private final long initialRequestStartTime;
+	
+	/**
+	 * Think time is the time spent after the answer was received by the client
+	 * and before the terminal was returned to the free pool. 
+	 */
+	private final int thinkTimeInMs;
+	
 	private final long startTime;
 	
 	protected ReadVersion readVersion;
@@ -88,14 +105,24 @@ public abstract class TpccTestProcess extends TestProcess {
 			Random random, 
 			SQLServerApplication application, 
 			ServerComputerId txComputer, 
-			int maxTimeInMs
+			int maxTimeInMs,
+			int keyingTimeInMs, 
+			int meanThinkTimeInMs,
+			short warehouseId
 	) {
 		this.random = random;
 		this.application = application;
 		this.txComputer = txComputer;
 		this.maxTimeInMs = maxTimeInMs;
+
+		this.terminalWarehouseId = warehouseId;
+		
+		this.thinkTimeInMs = (int) (-1 * Math.log(random.nextDouble()) * meanThinkTimeInMs);
 		
 		this.startTime = System.currentTimeMillis();
+		this.initialRequestStartTime = keyingTimeInMs + startTime;
+		
+		LOGGER.debug("Starting {} in {} ms", this, keyingTimeInMs);
 	}
 	
 	public boolean isLate() {
@@ -116,6 +143,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 	
 	protected Result evaluateCommit(Object result) {
+		LOGGER.debug("committed warehouse-id {} tx-id {} read-version {}", terminalWarehouseId, txId, readVersion);
 		return TestProcess.FINISHED;
 	}
 	
@@ -142,7 +170,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	
 	@Override
 	public NextStep start() {
-		return NextStep.ofSingle(startTransaction(), this::startInternal);
+		return ofSingle(startTransaction(), this::startInternal, initialRequestStartTime);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -151,8 +179,7 @@ public abstract class TpccTestProcess extends TestProcess {
 		txId = pair.getKey();
 		readVersion = pair.getValue();
 
-		LOGGER.debug("tx-id {} read-version {}", txId, readVersion);
-		
+		LOGGER.debug("started warehouse-id {} tx-id {} read-version {}", terminalWarehouseId, txId, readVersion);
 		
 		return startTx();
 	}
@@ -165,5 +192,21 @@ public abstract class TpccTestProcess extends TestProcess {
 		modificationCollection.addUpdate(original, updated);
 		
 		return modifyEvent(modificationCollection);		
+	}
+	
+	public long getInitialRequestStartTime() {
+		return initialRequestStartTime;
+	}
+	
+	public long getStartTime() {
+		return startTime;
+	}
+	
+	public long getThinkTimeInMs() {
+		return thinkTimeInMs;
+	}
+
+	public Short getWarehouseId() {
+		return terminalWarehouseId;
 	}
 }

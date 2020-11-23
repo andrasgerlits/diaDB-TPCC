@@ -94,7 +94,7 @@ public class StockTable extends TpccBaseTable<Stock> {
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
-						List.of(ITEM_ID_COLUMN, WAREHOUSE_ID_COLUMN),
+						List.of(WAREHOUSE_ID_COLUMN, ITEM_ID_COLUMN),
 						Map.of(
 							WAREHOUSE_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
 							ITEM_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(1)

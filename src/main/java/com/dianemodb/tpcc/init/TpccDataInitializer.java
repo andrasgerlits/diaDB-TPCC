@@ -3,6 +3,7 @@ package com.dianemodb.tpcc.init;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +48,7 @@ public abstract class TpccDataInitializer {
 	}
 	
 	public static String randomZip() {
-		return randomString(9, 9);
+		return randomString(4, 4) + "11111";
 	}
 	
 	public static short randomCarrierId() {
@@ -108,6 +109,27 @@ public abstract class TpccDataInitializer {
 		
 		record.setName(randomName());
 		record.setTax(randomFloat(10, 20));
+	}
+	
+	public static String randomLastName() {
+		int id = randomInt(0, Constants.CUSTOMER_PER_DISTRICT);
+		return generateLastName(id);
+	}
+	
+	public static String generateLastName(int customerId) {
+		String idString = String.valueOf(customerId);	
+		String name = 
+			idString.chars()
+				.mapToObj( 
+					c -> {
+						int p = Integer.valueOf(String.valueOf( (char) c ));
+						assert p >=0 && p < 10 : p + " " + c;
+						return Constants.LAST_NAMES[p]; 
+					}
+				)
+				.collect(Collectors.joining());
+		
+		return name;
 	}
 	
 	protected final SQLServerApplication application;

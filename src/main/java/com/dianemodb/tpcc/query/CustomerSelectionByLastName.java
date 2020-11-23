@@ -41,7 +41,7 @@ public class CustomerSelectionByLastName implements CustomerSelectionStrategy {
 	public Envelope customerQuery(TpccTestProcess process) {
 		return TpccTestProcess.query(
 				FindCustomerByLastNameDistrictAndWarehouse.ID, 
-				List.of(lastName, warehouseId, districtId),
+				List.of(warehouseId, districtId, lastName),
 				process
 			);
 	}

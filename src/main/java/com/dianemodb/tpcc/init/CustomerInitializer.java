@@ -65,7 +65,7 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 			customer.setFirstName(randomString(8, 16));
 			
 			if(customerId <= 1000) {
-				customer.setLastName(randomValue(Constants.LAST_NAMES));
+				customer.setLastName(generateLastName(customerId));
 			}
 			
 			customer.setWarehouseId(warehouseId);

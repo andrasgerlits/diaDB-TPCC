@@ -97,7 +97,11 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	}
 
 	@Override
-	protected DistributedIndex<Warehouse> getMaintainingComputerDecidingIndex() {
+	public DistributedIndex<Warehouse> getMaintainingComputerDecidingIndex() {
+		return index;
+	}
+
+	public DistributedIndex<Warehouse> getIdIndex() {
 		return index;
 	}
 }

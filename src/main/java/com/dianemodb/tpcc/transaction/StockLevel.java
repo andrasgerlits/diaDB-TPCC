@@ -14,19 +14,18 @@ import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
 import com.dianemodb.tpcc.query.FindOrderLinesByOrderIdRangeDistrictAndWarehouse;
 
 public class StockLevel extends TpccTestProcess {
-	private final short warehouseId;
+	
 	private final short districtId;
 	private final int stockThreshold;
 
 	protected StockLevel(
 			Random random, 
-			SQLServerApplication application, 
 			ServerComputerId txComputer,
+			SQLServerApplication application, 
 			short warehouseId,
 			short districtId
 	) {
-		super(random, application, txComputer, 5000);
-		this.warehouseId = warehouseId;
+		super(random, application, txComputer, 5000, 2000, 5000, warehouseId);
 		this.districtId = districtId;
 		this.stockThreshold = TpccDataInitializer.randomInt(10,20);
 	}
@@ -36,7 +35,7 @@ public class StockLevel extends TpccTestProcess {
 		Envelope districtQuery = 
 				query(
 					FindDistrictByIdAndWarehouse.ID,
-					List.of(districtId, warehouseId)
+					List.of(terminalWarehouseId, districtId)
 				);
 		
 		return of(List.of(districtQuery), this::findOrderLines);
@@ -50,7 +49,7 @@ public class StockLevel extends TpccTestProcess {
 		Envelope queryStock = 
 				query(
 					FindOrderLinesByOrderIdRangeDistrictAndWarehouse.ID,
-					List.of(nextOid, nextOid - 20, districtId, warehouseId)
+					List.of(terminalWarehouseId, districtId, nextOid, nextOid - 20)
 				);
 		
 		return of(List.of(queryStock), this::commit);
