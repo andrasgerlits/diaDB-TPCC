@@ -18,6 +18,7 @@ import com.dianemodb.tpcc.entity.Warehouse;
 import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
 import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
 import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
+import com.dianemodb.tpcc.schema.CustomerTable;
 
 public class Payment extends TpccTestProcess {
 	
@@ -34,7 +35,7 @@ public class Payment extends TpccTestProcess {
 			short warehouseId,
 			byte districtId
 	) {
-		super(random, application, txComputer, 5000, 3000, 12000, warehouseId);
+		super(random, application, txComputer, 3000, 12000, warehouseId);
 		
 		this.customerSelectionStrategy = randomStrategy(random, warehouseId, districtId);
 		isHomePayment = random.nextInt(85) + 1 <= 85;
@@ -49,8 +50,8 @@ public class Payment extends TpccTestProcess {
 		
 		if(isHomePayment) {
 			List<Envelope> envelopeList = new LinkedList<>(); 
-			envelopeList.add(customerQuery);
 			envelopeList.addAll(warehouseDistrictQueries(terminalWarehouseId, homeDistrictId));
+			envelopeList.add(customerQuery);
 			return of(envelopeList, this::selectCustomerUpdateRecords);
 		}
 		else {
@@ -94,9 +95,9 @@ public class Payment extends TpccTestProcess {
 	private Result selectCustomerUpdateRecords(List<Object> results) {
 		Iterator<Object> resultIter = results.iterator();
 		
-		RecordWithVersion<Customer> customerWithVersion = customerSelectionStrategy.getCustomerFromResult(resultIter.next());
 		RecordWithVersion<Warehouse> warehouseWithVersion = singleFromResultList(resultIter.next());
 		RecordWithVersion<District> districtWithVersion = singleFromResultList(resultIter.next());
+		RecordWithVersion<Customer> customerWithVersion = customerSelectionStrategy.getCustomerFromResult(resultIter.next());
 		
 		List<Object> resultList = List.of(warehouseWithVersion, districtWithVersion);
 		
@@ -109,13 +110,13 @@ public class Payment extends TpccTestProcess {
 		ModificationCollection modificationCollection = new ModificationCollection();
 
 		Iterator<Object> resultIter = results.iterator();
+		
 		RecordWithVersion<Warehouse> warehouseWithVersion = singleFromResultList(resultIter.next());
-		RecordWithVersion<District> districtWithVersion = singleFromResultList(resultIter.next());
-
 		Warehouse updatedWarehouse = warehouseWithVersion.getRecord().shallowClone(application, txId);
 		updatedWarehouse.setYtd(updatedWarehouse.getYtd().add(amount));
 		modificationCollection.addUpdate(warehouseWithVersion, updatedWarehouse);
 		
+		RecordWithVersion<District> districtWithVersion = singleFromResultList(resultIter.next());				
 		District updatedDistrict = districtWithVersion.getRecord().shallowClone(application, txId);
 		updatedDistrict.setYtd(updatedDistrict.getYtd().add(amount));
 		modificationCollection.addUpdate(districtWithVersion, updatedDistrict);
@@ -134,7 +135,10 @@ public class Payment extends TpccTestProcess {
 						timestamp.toString(), 
 						customer.getData()
 				);
-
+		
+		if(updatedData.length() > CustomerTable.DATA_LENGTH) {
+			updatedData = updatedData.substring(0, CustomerTable.DATA_LENGTH);
+		}
 
 		Customer updatedCustomer = customer.shallowClone(application, txId);
 		updatedCustomer.setBalance(updatedCustomer.getBalance().add(amount));

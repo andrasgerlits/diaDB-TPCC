@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.dianemodb.Topology;
-import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
-import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
 import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
@@ -20,7 +18,6 @@ import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
-import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.entity.Orders;
 
 /*

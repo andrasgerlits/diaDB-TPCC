@@ -1,6 +1,7 @@
 package com.dianemodb.tpcc.schema;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Map;
 import com.dianemodb.Topology;
 import com.dianemodb.h2impl.GroupLevelBasedIdNarrowingRule;
 import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
@@ -18,6 +20,8 @@ import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
+import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.entity.Stock;
 
 public class StockTable extends TpccBaseTable<Stock> {
@@ -90,15 +94,17 @@ public class StockTable extends TpccBaseTable<Stock> {
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
+		// stock lives on the same computer as the warehouse
+		Map<RecordColumn<Stock,?>, ServerComputerIdNarrowingRule> indexRuleMap = new HashMap<>();
+		indexRuleMap.put(WAREHOUSE_ID_COLUMN, DistrictTable.getWarehouseDistributionRule());
+		indexRuleMap.put(ITEM_ID_COLUMN, NullRule.INSTANCE);
+		
 		itemWarehouseIndex = 				
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
 						List.of(WAREHOUSE_ID_COLUMN, ITEM_ID_COLUMN),
-						Map.of(
-							WAREHOUSE_ID_COLUMN, new GroupLevelBasedIdNarrowingRule(1),
-							ITEM_ID_COLUMN, new IntegerRangeBasedIdNarrowingRule(1)
-						)
+						indexRuleMap
 				);
 		
 		this.indices = List.of(itemWarehouseIndex);

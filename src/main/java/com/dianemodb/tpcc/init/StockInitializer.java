@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
-import com.dianemodb.ModificationCollection;
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.SQLServerApplication;
@@ -19,11 +18,15 @@ public class StockInitializer extends TpccDataInitializer {
 	}
 
 	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(StockInitializer.class.getName());
+	
 	private static final int ITEM_PER_TX = 1000;
+	
+	private static final int TOTAL_NUMBER_OF_BATCHES = 
+			Constants.STOCK_PER_WAREHOUSE * Constants.NUMBER_OF_WAREHOUSES / ITEM_PER_TX;
 
 	@Override
 	public int numberOfBatches() {
-		return Constants.STOCK_PER_WAREHOUSE * Constants.NUMBER_OF_WAREHOUSES / ITEM_PER_TX;
+		return TOTAL_NUMBER_OF_BATCHES;
 	}
 
 	@Override
@@ -31,13 +34,17 @@ public class StockInitializer extends TpccDataInitializer {
 		List<UserRecord> records = new LinkedList<>();
 		
 		for( int i = 0 ; i < ITEM_PER_TX; i++ ) {
-			int totalOffset = batchNumber * ITEM_PER_TX + i;
+			int totalOffset = batchNumber + (TOTAL_NUMBER_OF_BATCHES * i);
+			
+			int[][] numbers =  calculatePositions(totalOffset, Constants.STOCK_PER_WAREHOUSE);
+			short warehouseId = (short) numbers[0][0];
+			int itemId = numbers[0][1];
 			
 			Stock stock = new Stock(txId, null);
-			stock.setWarehouseId( (short) (totalOffset % Constants.NUMBER_OF_WAREHOUSES));
+			stock.setWarehouseId( warehouseId );
 			
 			stock.setQuantity((short) randomInt(10, 100));
-			stock.setItemId(randomInt(0, Constants.ITEM_NUMBER));
+			stock.setItemId(itemId);
 			
 			stock.setDist1(randomString(24,24));
 			stock.setDist2(randomString(24,24));

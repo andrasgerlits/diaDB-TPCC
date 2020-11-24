@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
-import com.dianemodb.ModificationCollection;
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.SQLServerApplication;

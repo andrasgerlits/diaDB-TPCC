@@ -15,7 +15,6 @@ import com.dianemodb.integration.AbstractServerTestCase;
 import com.dianemodb.integration.test.ProcessManager;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.runner.AbstractClientRunner;
-import com.dianemodb.runner.DiaDBRunner;
 import com.dianemodb.runner.ExampleRunner;
 
 public class TpccClientRunner extends AbstractClientRunner {
@@ -51,14 +50,13 @@ public class TpccClientRunner extends AbstractClientRunner {
 				String bootstrapUrl = cmd.getOptionValue("b", AbstractServerTestCase.getBootstrapUrl());
 				
 				Topology topology = readTopologyFromFile(topologyFileName);
-				SQLServerApplication application = DiaDBRunner.createApplication(topology);
-				
+
 				return new TpccClientRunner(
 								getKafkaServerProperties(cmd), 
 								bootstrapUrl, 
 								getTopicId(cmd), 
 								topology, 
-								application
+								f.apply(topology)
 						);
 			}
 		);

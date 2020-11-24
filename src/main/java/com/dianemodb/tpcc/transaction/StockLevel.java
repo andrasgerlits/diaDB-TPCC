@@ -15,7 +15,7 @@ import com.dianemodb.tpcc.query.FindOrderLinesByOrderIdRangeDistrictAndWarehouse
 
 public class StockLevel extends TpccTestProcess {
 	
-	private final short districtId;
+	private final byte districtId;
 	private final int stockThreshold;
 
 	protected StockLevel(
@@ -23,9 +23,9 @@ public class StockLevel extends TpccTestProcess {
 			ServerComputerId txComputer,
 			SQLServerApplication application, 
 			short warehouseId,
-			short districtId
+			byte districtId
 	) {
-		super(random, application, txComputer, 5000, 2000, 5000, warehouseId);
+		super(random, application, txComputer, 2000, 5000, warehouseId);
 		this.districtId = districtId;
 		this.stockThreshold = TpccDataInitializer.randomInt(10,20);
 	}

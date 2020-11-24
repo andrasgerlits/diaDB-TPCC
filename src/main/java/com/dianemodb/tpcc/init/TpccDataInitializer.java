@@ -72,6 +72,12 @@ public abstract class TpccDataInitializer {
 		return string[randomInt(0, string.length -1 )];
 	}
 	
+	/**
+	 * <p>
+	 * Using the known number of records on each parent-level, returns the id of 
+	 * the parent as the first parameter, with 0 being the highest parent and the 
+	 * offset since the start of the current parent as the second param.
+	 * */
 	public static int[][] calculatePositions(int index, int...numberInBatch) {
 		int[][] result = new int[numberInBatch.length + 1][];
 		
@@ -112,7 +118,7 @@ public abstract class TpccDataInitializer {
 	}
 	
 	public static String randomLastName() {
-		int id = randomInt(0, Constants.CUSTOMER_PER_DISTRICT);
+		int id = randomInt(0, 999);
 		return generateLastName(id);
 	}
 	

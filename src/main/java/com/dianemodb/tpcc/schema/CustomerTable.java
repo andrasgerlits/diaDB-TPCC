@@ -28,6 +28,8 @@ import com.dianemodb.tpcc.entity.Customer;
 
 public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 
+	public static final int DATA_LENGTH = 500;
+
 	public static final String TABLE_NAME = "customer";
 	
 	public static final String ID_COLUMN_NAME = "c_id";
@@ -164,7 +166,7 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	
 	public static final RecordColumn<Customer, String> DATA_COLUMN =
 			new RecordColumn<>(
-					new StringColumn(DATA_COLUMN_NAME, 500), 
+					new StringColumn(DATA_COLUMN_NAME, DATA_LENGTH), 
 					Customer::getData,
 					Customer::setData
 			);

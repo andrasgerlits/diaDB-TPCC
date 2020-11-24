@@ -5,8 +5,12 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -28,12 +32,14 @@ import fj.data.Either;
 
 public class TpccProcessManager extends ProcessManager {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(TpccProcessManager.class.getName());
-	
 	@FunctionalInterface
 	private interface TpccProcessFactory {
 		TpccTestProcess get(short warehouseId, byte districtId);
 	}
+	
+	private static final int TIME_MEASUREMENT_INTERVAL = 5 * 60 * 1000;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TpccProcessManager.class.getName());
 	
 	private final RangeMap<Integer, TpccProcessFactory> factoryByWeight = TreeRangeMap.create();
 	
@@ -44,11 +50,27 @@ public class TpccProcessManager extends ProcessManager {
 	 */
 	private final List<Short> freeTerminals = new LinkedList<>();
 	
-	private Map<Long, Map<Class<? extends TpccTestProcess>, Long>> timeTookByTxType = 
-			new HashMap<>();
+	/**
+	 * The number of processes which could be started (because we have more remaining and
+	 * because we didn't hit the upper limit on the number of parallel TX), but which 
+	 * couldn't for some reason known only to the specific implementation.
+	 * */
+	private int outstanding = 0;
+	
+	private long lastDumpTime = System.currentTimeMillis();
 
+	/**
+	 * In a single configured window, how many types of transactions were executed in 
+	 * */
+	private Map<Long, Map<Class<? extends TpccTestProcess>, Long>> processingTimeByTxType = 
+			new HashMap<>();
+	
 	private final int sum;
 	
+	private NavigableMap<Long, Short> terminalFreeupTimes = new TreeMap<>();
+	
+	private List<NextStep> toRetry = new LinkedList<>();
+
 	public TpccProcessManager(
 			SQLServerApplication application, 
 			List<ServerComputerId> leafComputers
@@ -83,9 +105,7 @@ public class TpccProcessManager extends ProcessManager {
 		// we can start a tx for each terminal right away
 		startNewProcess(freeTerminals.size());
 	}
-	
-	private List<NextStep> toRetry = new LinkedList<>();
-	
+
 	@Override
 	protected void failed(ConversationId conversationId, Throwable ex, TestProcess testProcess) {
 		if(LOGGER.isDebugEnabled()) {
@@ -104,25 +124,6 @@ public class TpccProcessManager extends ProcessManager {
 			// since this process was using a terminal anyway, we can simply restart it until it goes through
 			toRetry.add(process.start());
 		}	
-	}
-
-	/**
-	 * The number of processes which could be started (because we have more remaining and
-	 * because we didn't hit the upper limit on the number of parallel TX), but which 
-	 * couldn't for some reason known only to the specific implementation.
-	 * */
-	private int outstanding = 0;
-
-	public void process(Map<ConversationId, Either<Object, ? extends Throwable>> results) {
-		super.process(results);
-		
-		int numberToStart = freeTerminals.size() + outstanding;
-		int started = startNewProcess(numberToStart);
-		outstanding = numberToStart - started;
-		
-		if(LOGGER.isDebugEnabled() && (started > 0 || outstanding > 0)) {
-			LOGGER.debug("Started {} processes, outstanding {}", started, outstanding);
-		}
 	}
 
 	@Override
@@ -152,6 +153,84 @@ public class TpccProcessManager extends ProcessManager {
 		return result;
 	}
 
+	public void process(Map<ConversationId, Either<Object, ? extends Throwable>> results) {
+		super.process(results);
+		
+		int numberToStart = freeTerminals.size() + outstanding;
+		int started = startNewProcess(numberToStart);
+		outstanding = numberToStart - started;
+		
+		if(LOGGER.isDebugEnabled() && (started > 0 || outstanding > 0)) {
+			LOGGER.debug("Started {} processes, outstanding {}", started, outstanding);
+		}
+		
+		processLoggedTimes();
+	}
+
+	private void processLoggedTimes() {
+		long now;
+		if((now = System.currentTimeMillis()) - lastDumpTime < TIME_MEASUREMENT_INTERVAL) {
+			return;
+		}
+		
+		Map<Class<? extends TpccTestProcess>, Integer> failures = new HashMap<>();
+		Map<Class<? extends TpccTestProcess>, Integer> successes = new HashMap<>();
+		
+		// iterate from top to bottom
+		NavigableSet<Long> timeslots = new TreeSet<>(processingTimeByTxType.keySet());
+		while(!timeslots.isEmpty()) {
+			long highest = timeslots.last();
+			Map<Class<? extends TpccTestProcess>, Long> m = processingTimeByTxType.get(highest);
+			
+			for(Map.Entry<Class<? extends TpccTestProcess>, Long> e : m.entrySet()) {
+				Class<? extends TpccTestProcess> c = e.getKey();
+				long whenLate = TpccTestProcess.MAX_TIMES_BY_CLASS.get(c);
+				
+				// report as late
+				if(highest >= whenLate) {
+					failures.putIfAbsent(c, 0);
+					failures.put(c, failures.get(c) + 1);
+				}
+				else {
+					successes.putIfAbsent(c, 0);
+					successes.put(c, successes.get(c) + 1);				
+				}
+			}
+			
+			timeslots.remove(highest);
+		}
+		
+		for(Entry<Class<? extends TpccTestProcess>, Integer> e : failures.entrySet()) {
+			LOGGER.info("Failure {} {}", e.getKey().getSimpleName(), e.getValue());
+		}
+		
+		for(Entry<Class<? extends TpccTestProcess>, Integer> e : successes.entrySet()) {
+			LOGGER.info("Success {} {}", e.getKey().getSimpleName(), e.getValue());
+		}
+		
+		lastDumpTime = now;
+		processingTimeByTxType.clear();
+	}
+
+	private synchronized void returnNoLongerUsedTerminals() {
+		// clean up the free terminals list, return the ones which are no longer used
+		SortedMap<Long, Short> subMap = 
+				new TreeMap<>(
+					terminalFreeupTimes.subMap(0L, System.currentTimeMillis())
+				);
+
+		Collection<Short> terminals = subMap.values();
+		if(LOGGER.isDebugEnabled() && !terminals .isEmpty()) {
+			// add as many warehouse-ids as there are terminals
+			LOGGER.debug("Freeing up terminals {}", terminals);
+		}
+
+		freeTerminals.addAll(terminals);
+	
+		// remove freeup times once they've been dealt with
+		subMap.keySet().forEach( t -> terminalFreeupTimes.remove(t) );
+	}
+	
 	private NextStep startNewProcess() {
 		// choose a random number from the grand total
 		int processId = getRandom().nextInt(sum);
@@ -165,10 +244,10 @@ public class TpccProcessManager extends ProcessManager {
 		
 		NextStep nextStep = process.start();
 		
-		if(LOGGER.isInfoEnabled()) {
+		if(LOGGER.isDebugEnabled()) {
 			// add as many warehouse-ids as there are terminals
 			long now = System.currentTimeMillis();
-			LOGGER.info(
+			LOGGER.debug(
 					"Started process warehouse {} wait {} ms {}", 
 					warehouseId, 
 					process.getInitialRequestStartTime()- now, 
@@ -178,22 +257,6 @@ public class TpccProcessManager extends ProcessManager {
 
 		return nextStep;
 	}
-
-	private void returnNoLongerUsedTerminals() {
-		// clean up the free terminals list, return the ones which are no longer used
-		Collection<Short> terminals = 
-				terminalFreeupTimes.subMap(0L, System.currentTimeMillis())
-					.values();
-
-		if(LOGGER.isInfoEnabled() && !terminals.isEmpty()) {
-			// add as many warehouse-ids as there are terminals
-			LOGGER.info("Freeing up terminals {}", terminals);
-		}
-
-		freeTerminals.addAll(terminals);
-	}
-	
-	private NavigableMap<Long, Short> terminalFreeupTimes = new TreeMap<>();
 	
 	@Override
 	protected void success(TestProcess process) {
@@ -202,15 +265,16 @@ public class TpccProcessManager extends ProcessManager {
 		}
 		
 		TpccTestProcess tpccProcess = (TpccTestProcess) process;
-		long timeTook = System.currentTimeMillis() - tpccProcess.getStartTime();
+		long timeTook = System.currentTimeMillis() - tpccProcess.getInitialRequestStartTime();
 		
 		// group transactions into 100 ms intervals
 		long timeKey = timeTook / 100;
+		timeKey *= 100;
 
 		Class<? extends TpccTestProcess> processType = tpccProcess.getClass();
 		
 		Map<Class<? extends TpccTestProcess>, Long> typeMap = 
-				timeTookByTxType.computeIfAbsent(
+				processingTimeByTxType.computeIfAbsent(
 					timeKey, 
 					k -> {
 						Map<Class<? extends TpccTestProcess>, Long> map = new HashMap<>();
@@ -220,6 +284,8 @@ public class TpccProcessManager extends ProcessManager {
 						return map;
 					}
 				);
+		
+		typeMap.putIfAbsent(processType, 0L);
 		
 		// replace the existing value with the incremented one
 		typeMap.put(processType, typeMap.get(processType) + 1);

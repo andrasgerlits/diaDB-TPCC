@@ -17,18 +17,18 @@ import com.dianemodb.runner.ExampleRunner;
 import com.dianemodb.runner.InstanceRunner;
 import com.dianemodb.runner.KafkaClientRunner;
 import com.dianemodb.sql.SQLApplicationImpl;
-import com.dianemodb.tpcc.query.FindCustomerByLastNameDistrictAndWarehouse;
+import com.dianemodb.tpcc.query.FindCustomerByWarehouseDistrictLastName;
 import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
 import com.dianemodb.tpcc.query.FindOrderLinesByOrderIdRangeDistrictAndWarehouse;
-import com.dianemodb.tpcc.query.FindOrderLinesByOrderidDistrictAndWarehouse;
+import com.dianemodb.tpcc.query.FindOrderLinesByWarehouseDistrictOrderId;
 import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
-import com.dianemodb.tpcc.query.delivery.FindNewOrderWithLowestOrderIdByDistrictAndWarehouse;
-import com.dianemodb.tpcc.query.delivery.FindOrderByDistrictWarehouseOrderId;
-import com.dianemodb.tpcc.query.neworder.FindCustomerDetailsByWarehouseAndId;
+import com.dianemodb.tpcc.query.delivery.FindNewOrderWithLowestOrderIdByWarehouseAndDistrict;
+import com.dianemodb.tpcc.query.delivery.FindOrderByWarehouseDistrictOrderId;
+import com.dianemodb.tpcc.query.neworder.FindCustomerByWarehouseAndId;
 import com.dianemodb.tpcc.query.neworder.FindItemById;
-import com.dianemodb.tpcc.query.neworder.FindStockByItemAndWarehouseId;
+import com.dianemodb.tpcc.query.neworder.FindStockByWarehouseItem;
 import com.dianemodb.tpcc.query.orderstatus.FindMaxOrderIdForCustomer;
-import com.dianemodb.tpcc.query.payment.FindCustomerByIdDistrictAndWarehouse;
+import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
 import com.dianemodb.tpcc.schema.CustomerTable;
 import com.dianemodb.tpcc.schema.DistrictTable;
 import com.dianemodb.tpcc.schema.HistoryTable;
@@ -43,6 +43,9 @@ import com.dianemodb.tpcc.transaction.TpccClientRunner;
 public class TpccRunner extends AbstractTestRunner {
 	
 	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TpccRunner.class.getName());
+	
+	// flip this switch to alternate between running the test or initializing the database
+	private static final boolean recreate = false;
 
 	public static SQLServerApplication createApplication(Topology topology) {
 		
@@ -71,20 +74,20 @@ public class TpccRunner extends AbstractTestRunner {
 		
 		Collection<UserRecordQueryStep<?>> queryPlans = 
 				List.of(
-					new FindNewOrderWithLowestOrderIdByDistrictAndWarehouse(newOrdersTable),
-					new FindOrderByDistrictWarehouseOrderId(ordersTable),
+					new FindNewOrderWithLowestOrderIdByWarehouseAndDistrict(newOrdersTable),
+					new FindOrderByWarehouseDistrictOrderId(ordersTable),
 					
-					new FindCustomerDetailsByWarehouseAndId(customerTable),
+					new FindCustomerByWarehouseAndId(customerTable),
 					new FindItemById(itemTable),
-					new FindStockByItemAndWarehouseId(stockTable),
+					new FindStockByWarehouseItem(stockTable),
 					
 					new FindMaxOrderIdForCustomer(ordersTable),
 					
-					new FindCustomerByIdDistrictAndWarehouse(customerTable),
+					new FindCustomerByWarehouseDistrictAndId(customerTable),
 					
-					new FindCustomerByLastNameDistrictAndWarehouse(customerTable),
+					new FindCustomerByWarehouseDistrictLastName(customerTable),
 					new FindDistrictByIdAndWarehouse(districtTable),
-					new FindOrderLinesByOrderidDistrictAndWarehouse(orderLineTable),
+					new FindOrderLinesByWarehouseDistrictOrderId(orderLineTable),
 					new FindOrderLinesByOrderIdRangeDistrictAndWarehouse(orderLineTable),
 					new FindWarehouseDetailsById(warehouseTable)
 				);
@@ -93,7 +96,7 @@ public class TpccRunner extends AbstractTestRunner {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		new TpccRunner(1, true).run();
+		new TpccRunner(1, recreate).run();
 
 		//new TpccRunner(1, false).run();
 	}
@@ -136,9 +139,11 @@ public class TpccRunner extends AbstractTestRunner {
 
 	@Override
 	protected TpccClientRunner createClient(String idString) {
-		return null;
-/*
-		return FunctionalUtil.doOrPropagate(
+		if(recreate) {
+			return null;
+		}
+		else {
+			return FunctionalUtil.doOrPropagate(
 				() -> TpccClientRunner.init(
 							new String[] {
 								"-t", topologyFile,
@@ -148,7 +153,7 @@ public class TpccRunner extends AbstractTestRunner {
 							t -> createApplication(t)
 						)
 			);
-*/
+		}
 	}
 
 }

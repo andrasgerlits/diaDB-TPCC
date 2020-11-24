@@ -12,8 +12,7 @@ public abstract class PerDistrictDataInitializer extends TpccDataInitializer {
 	public PerDistrictDataInitializer(SQLServerApplication application, int numberPerDistrict) {
 		super(application);
 		this.numberInBatch = 
-				new int[]{
-						//Constants.NUMBER_OF_WAREHOUSES, 
+				new int[]{ 
 						Constants.DISTRICT_PER_WAREHOUSE, 
 						numberPerDistrict
 				};

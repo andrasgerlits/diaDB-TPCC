@@ -1,10 +1,10 @@
 package com.dianemodb.tpcc.query;
 
-import com.dianemodb.sql.SingleIndexQueryDistributionPlan;
+import com.dianemodb.sql.SingleIndexSingleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.Warehouse;
 import com.dianemodb.tpcc.schema.WarehouseTable;
 
-public class FindWarehouseDetailsById extends SingleIndexQueryDistributionPlan<Warehouse> {
+public class FindWarehouseDetailsById extends SingleIndexSingleParameterSetQueryDistributionPlan<Warehouse> {
 
 	public static final String ID = "findWarehouseDetails";
 

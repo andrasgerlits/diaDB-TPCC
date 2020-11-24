@@ -12,12 +12,12 @@ public class CustomerSelectionByLastName implements CustomerSelectionStrategy {
 
 	private final String lastName; 
 	private final short warehouseId; 
-	private final short districtId;
+	private final byte districtId;
 	
 	public CustomerSelectionByLastName(
 			String lastName, 
 			short warehouseId, 
-			short districtId
+			byte districtId
 	) {
 		this.lastName = lastName;
 		this.warehouseId = warehouseId;
@@ -40,7 +40,7 @@ public class CustomerSelectionByLastName implements CustomerSelectionStrategy {
 	@Override
 	public Envelope customerQuery(TpccTestProcess process) {
 		return TpccTestProcess.query(
-				FindCustomerByLastNameDistrictAndWarehouse.ID, 
+				FindCustomerByWarehouseDistrictLastName.ID, 
 				List.of(warehouseId, districtId, lastName),
 				process
 			);

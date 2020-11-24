@@ -20,15 +20,15 @@ import com.dianemodb.tpcc.entity.NewOrders;
 import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.init.TpccDataInitializer;
-import com.dianemodb.tpcc.query.FindOrderLinesByOrderidDistrictAndWarehouse;
-import com.dianemodb.tpcc.query.delivery.FindNewOrderWithLowestOrderIdByDistrictAndWarehouse;
-import com.dianemodb.tpcc.query.delivery.FindOrderByDistrictWarehouseOrderId;
-import com.dianemodb.tpcc.query.payment.FindCustomerByIdDistrictAndWarehouse;
+import com.dianemodb.tpcc.query.FindOrderLinesByWarehouseDistrictOrderId;
+import com.dianemodb.tpcc.query.delivery.FindNewOrderWithLowestOrderIdByWarehouseAndDistrict;
+import com.dianemodb.tpcc.query.delivery.FindOrderByWarehouseDistrictOrderId;
+import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
 
 public class Delivery extends TpccTestProcess {
 
 	private final short carrierId;
-	private final short districtId; 
+	private final byte districtId; 
 	
 	private List<RecordWithVersion<NewOrders>> newOrders;
 	
@@ -37,9 +37,9 @@ public class Delivery extends TpccTestProcess {
 			ServerComputerId txComputer,
 			SQLServerApplication application, 
 			short warehouseId,
-			short districtId
+			byte districtId
 	) {
-		super(random, application, txComputer, 5000, 2000, 5000, warehouseId);
+		super(random, application, txComputer, 2000, 5000, warehouseId);
 		this.carrierId = TpccDataInitializer.randomCarrierId();
 		this.districtId = districtId;
 	}
@@ -48,8 +48,8 @@ public class Delivery extends TpccTestProcess {
 	protected Result startTx() {
 		Envelope query = 						
 				query(
-					FindNewOrderWithLowestOrderIdByDistrictAndWarehouse.ID,
-					List.of( districtId, terminalWarehouseId )
+					FindNewOrderWithLowestOrderIdByWarehouseAndDistrict.ID,
+					List.of( terminalWarehouseId, districtId )
 				);
 		
 		return of(query, this::process);
@@ -68,19 +68,19 @@ public class Delivery extends TpccTestProcess {
 							
 							Envelope orderQuery = 
 								query(
-									FindOrderByDistrictWarehouseOrderId.ID, 
+									FindOrderByWarehouseDistrictOrderId.ID, 
 									List.of(terminalWarehouseId, no.getDistrictId(), no.getOrderId())
 								);
 							
 							Envelope customerQuery = 
 								query(
-									FindCustomerByIdDistrictAndWarehouse.ID, 
+									FindCustomerByWarehouseDistrictAndId.ID, 
 									List.of(terminalWarehouseId, no.getDistrictId(), no.getCustomerId())
 								);
 							
 							Envelope orderLinesQuery =
 								query(
-									FindOrderLinesByOrderidDistrictAndWarehouse.ID,
+									FindOrderLinesByWarehouseDistrictOrderId.ID,
 									List.of(no.getWarehouseId(), no.getDistrictId(), no.getOrderId())
 								);
 							

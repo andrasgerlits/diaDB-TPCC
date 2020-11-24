@@ -6,18 +6,18 @@ import java.util.Optional;
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.tpcc.entity.Customer;
-import com.dianemodb.tpcc.query.payment.FindCustomerByIdDistrictAndWarehouse;
+import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
 import com.dianemodb.tpcc.transaction.TpccTestProcess;
 
 public class CustomerSelectionById implements CustomerSelectionStrategy {
 
 	private final int customerId;
 	private final short warehouseId;
-	private final short districtId;
+	private final byte districtId;
 	
 	public CustomerSelectionById(
 			short warehouseId, 
-			short districtId,
+			byte districtId,
 			int customerId
 	) {
 		this.warehouseId = warehouseId;
@@ -34,7 +34,7 @@ public class CustomerSelectionById implements CustomerSelectionStrategy {
 	@Override
 	public Envelope customerQuery(TpccTestProcess process) {
 		return TpccTestProcess.query(
-				FindCustomerByIdDistrictAndWarehouse.ID, 
+				FindCustomerByWarehouseDistrictAndId.ID, 
 				List.of(warehouseId, districtId, customerId),
 				process
 			);

@@ -1,10 +1,10 @@
 package com.dianemodb.tpcc.query.neworder;
 
-import com.dianemodb.sql.SingleIndexQueryDistributionPlan;
+import com.dianemodb.sql.SingleIndexMultipleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.Item;
 import com.dianemodb.tpcc.schema.ItemTable;
 
-public class FindItemById extends SingleIndexQueryDistributionPlan<Item> {
+public class FindItemById extends SingleIndexMultipleParameterSetQueryDistributionPlan<Item> {
 	
 	public static final String ID = "findItemById";
 

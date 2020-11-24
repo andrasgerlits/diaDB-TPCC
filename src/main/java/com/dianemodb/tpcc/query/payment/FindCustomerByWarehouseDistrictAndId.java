@@ -1,14 +1,14 @@
 package com.dianemodb.tpcc.query.payment;
 
-import com.dianemodb.sql.SingleIndexQueryDistributionPlan;
+import com.dianemodb.sql.SingleIndexSingleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.schema.CustomerTable;
 
-public class FindCustomerByIdDistrictAndWarehouse extends SingleIndexQueryDistributionPlan<Customer> {
+public class FindCustomerByWarehouseDistrictAndId extends SingleIndexSingleParameterSetQueryDistributionPlan<Customer> {
 
 	public static final String ID = "findCustomerById";
 
-	public FindCustomerByIdDistrictAndWarehouse(CustomerTable table) {
+	public FindCustomerByWarehouseDistrictAndId(CustomerTable table) {
 		// warehouse, district, id
 		super(ID, table, table.getCompositeIndex());
 	}

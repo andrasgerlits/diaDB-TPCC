@@ -6,11 +6,11 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.metaschema.distributed.Operator;
-import com.dianemodb.sql.SingleIndexQueryDistributionPlan;
+import com.dianemodb.sql.SingleIndexSingleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.schema.OrderLineTable;
 
-public class FindOrderLinesByOrderIdRangeDistrictAndWarehouse extends SingleIndexQueryDistributionPlan<OrderLine> {
+public class FindOrderLinesByOrderIdRangeDistrictAndWarehouse extends SingleIndexSingleParameterSetQueryDistributionPlan<OrderLine> {
 
 	public static final String ID = "findOrderLinesByOrderIdRange";
 	

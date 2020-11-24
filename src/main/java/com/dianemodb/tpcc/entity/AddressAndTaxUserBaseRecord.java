@@ -9,7 +9,6 @@ import com.dianemodb.id.UserRecordTableId;
 public abstract class AddressAndTaxUserBaseRecord extends LocationBasedUserRecord {
 	
 	private String name;
-	
 	private String tax;
 	private String ytd;
 	

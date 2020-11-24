@@ -10,14 +10,14 @@ import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
-import com.dianemodb.tpcc.query.FindOrderLinesByOrderidDistrictAndWarehouse;
+import com.dianemodb.tpcc.query.FindOrderLinesByWarehouseDistrictOrderId;
 import com.dianemodb.tpcc.query.orderstatus.FindMaxOrderIdForCustomer;
 
 public class OrderStatus extends TpccTestProcess {
 
 	private final CustomerSelectionStrategy customerSelectionStrategy;
 	
-	private final short districtId;
+	private final byte districtId;
 	
 	public OrderStatus(
 			Random random,
@@ -26,9 +26,8 @@ public class OrderStatus extends TpccTestProcess {
 			short warehouseId,
 			byte districtId
 	) {
-		super(random, application, txComputer, 5000, 2000, 10000, warehouseId);
+		super(random, application, txComputer, 2000, 10000, warehouseId);
 		this.districtId = districtId;
-
 		this.customerSelectionStrategy = randomStrategy(random, warehouseId, districtId);
 	}
 	
@@ -58,8 +57,8 @@ public class OrderStatus extends TpccTestProcess {
 		
 		Envelope findOrderLinesQuery = 
 				query(
-					FindOrderLinesByOrderidDistrictAndWarehouse.ID,
-					List.of(orderId, districtId, terminalWarehouseId)
+					FindOrderLinesByWarehouseDistrictOrderId.ID,
+					List.of(terminalWarehouseId, districtId, orderId)
 				);
 		
 		// if something needs to be done with the resulting info, override "commit()"

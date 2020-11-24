@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -36,8 +37,8 @@ import com.dianemodb.tpcc.init.TpccDataInitializer;
 import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
 import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
 import com.dianemodb.tpcc.query.neworder.FindItemById;
-import com.dianemodb.tpcc.query.neworder.FindStockByItemAndWarehouseId;
-import com.dianemodb.tpcc.query.payment.FindCustomerByIdDistrictAndWarehouse;
+import com.dianemodb.tpcc.query.neworder.FindStockByWarehouseItem;
+import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
 
 
 public class NewOrder extends TpccTestProcess {
@@ -45,7 +46,8 @@ public class NewOrder extends TpccTestProcess {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NewOrder.class.getName());
 	
 	private static Function<Stock, String> getDistrictInfo(byte districtNumber) {
-		switch(districtNumber) {
+		// district-ids are 0-based
+		switch(districtNumber + 1) {
 	        case 1: return s ->  s.getDist1();
 	        case 2: return s ->  s.getDist2();
 	        case 3: return s ->  s.getDist3();
@@ -77,7 +79,7 @@ public class NewOrder extends TpccTestProcess {
 			short homeWarehouseId,
 			byte homeDistrictId
 	) {
-		super(random, application, txComputer, 5000, 18000, 12000, homeWarehouseId);
+		super(random, application, txComputer, 18000, 12000, homeWarehouseId);
 		
 		this.customerId = TpccDataInitializer.randomCustomerId();
 		this.customerDistrictId = homeDistrictId;
@@ -111,7 +113,7 @@ public class NewOrder extends TpccTestProcess {
 	protected Result startTx() {
 		Envelope queryCustomerEnvelope = 
 				query(
-					FindCustomerByIdDistrictAndWarehouse.ID, 
+					FindCustomerByWarehouseDistrictAndId.ID, 
 					List.of(terminalWarehouseId, customerDistrictId, customerId)
 				);
 
@@ -131,21 +133,27 @@ public class NewOrder extends TpccTestProcess {
 		Envelope queryItemEnvelope = 
 				query(
 					FindItemById.ID, 
-					new ArrayList<>(supplyingWarehouseAndQuantityByItemId.keySet())
+					new ArrayList<>(
+						/*
+						 * convert each item-id into a separate list so that they
+						 * can be used as different attributes.
+						 */
+						supplyingWarehouseAndQuantityByItemId.keySet()
+							.stream()
+							.map(itemId -> new ArrayList<>(List.of(itemId)))
+							.collect(Collectors.toSet())
+					)
 				);
 
 		// select stock for each item
 		List<List<? extends Object>> itemWarehouseIds = 
 				supplyingWarehouseAndQuantityByItemId.entrySet()
 					.stream()
-					.map( e -> List.of(e.getKey(), e.getValue().getKey()) )
+					// warehouse-id, item-id
+					.map( e -> new LinkedList<>(List.of(e.getValue().getKey(), e.getKey())))
 					.collect(Collectors.toList());
 		
-		Envelope queryStocksEnvelope = 
-				query(
-					FindStockByItemAndWarehouseId.ID, 
-					itemWarehouseIds
-				);
+		Envelope queryStocksEnvelope = query(FindStockByWarehouseItem.ID, itemWarehouseIds);
 
 		return of(
 				List.of(

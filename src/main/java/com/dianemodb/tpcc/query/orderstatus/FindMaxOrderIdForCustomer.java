@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.metaschema.QueryStep;
-import com.dianemodb.sql.SingleIndexQueryDistributionPlan;
+import com.dianemodb.sql.SingleIndexSingleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.schema.OrdersTable;
 
@@ -18,7 +18,7 @@ import com.dianemodb.tpcc.schema.OrdersTable;
  * This could be changed by introducing the order-id as part of an index on OrdersTable
  * and specifying a realistic range.
  * */
-public class FindMaxOrderIdForCustomer extends SingleIndexQueryDistributionPlan<Orders> {
+public class FindMaxOrderIdForCustomer extends SingleIndexSingleParameterSetQueryDistributionPlan<Orders> {
 
 	public static final String ID = "findMaxOrderIdForCustomer";
 	

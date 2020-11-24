@@ -1,6 +1,7 @@
 package com.dianemodb.tpcc.transaction;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -31,7 +32,16 @@ import com.dianemodb.workflow.write.ModifyRecordsWorkflow;
 
 public abstract class TpccTestProcess extends TestProcess {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(TpccTestProcess.class.getName());	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TpccTestProcess.class.getName());
+	
+	public static final Map<Class<? extends TpccTestProcess>, Integer> MAX_TIMES_BY_CLASS = 
+			Map.of(
+					Delivery.class, 5000,
+					NewOrder.class, 5000,
+					OrderStatus.class, 5000,
+					Payment.class, 5000,
+					StockLevel.class, 20000
+			);
 
 	protected static boolean hasString(String value, String searched) {
 		return value != null && value.contains(searched);
@@ -39,11 +49,21 @@ public abstract class TpccTestProcess extends TestProcess {
 	
 	@SuppressWarnings("unchecked")
 	public static <R extends UserRecord> RecordWithVersion<R> singleFromResultList(Object result) {
-		List<? extends RecordWithVersion<? extends UserRecord>> list = (List<? extends RecordWithVersion<? extends UserRecord>>) result;
-		return (RecordWithVersion<R> ) FunctionalUtil.singleResult(list);
+		if(result instanceof List) {
+			List<? extends RecordWithVersion<? extends UserRecord>> list = (List<? extends RecordWithVersion<? extends UserRecord>>) result;
+			return (RecordWithVersion<R>) FunctionalUtil.singleResult(list);
+		}
+		else {
+			assert result instanceof RecordWithVersion : result; 
+			return (RecordWithVersion<R>) result;
+		}
 	}
 	
-	protected static CustomerSelectionStrategy randomStrategy(Random random, short warehouseId, byte districtId) {
+	protected static CustomerSelectionStrategy randomStrategy(
+			Random random, 
+			short warehouseId, 
+			byte districtId
+	) {
 		// 0-5 -> 60%
 		if(random.nextInt(10) < 6) {
 			String randomLastName = TpccDataInitializer.randomLastName();
@@ -105,7 +125,6 @@ public abstract class TpccTestProcess extends TestProcess {
 			Random random, 
 			SQLServerApplication application, 
 			ServerComputerId txComputer, 
-			int maxTimeInMs,
 			int keyingTimeInMs, 
 			int meanThinkTimeInMs,
 			short warehouseId
@@ -113,7 +132,7 @@ public abstract class TpccTestProcess extends TestProcess {
 		this.random = random;
 		this.application = application;
 		this.txComputer = txComputer;
-		this.maxTimeInMs = maxTimeInMs;
+		this.maxTimeInMs = MAX_TIMES_BY_CLASS.get(getClass());
 
 		this.terminalWarehouseId = warehouseId;
 		

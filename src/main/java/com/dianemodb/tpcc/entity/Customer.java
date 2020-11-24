@@ -129,7 +129,7 @@ public class Customer extends LocationBasedUserRecord {
 	}
 
 	public void setYtdPayment(BigDecimal ytdPayment) {
-		this.ytdPayment = ytdPayment.toPlainString();
+		this.ytdPayment = ytdPayment == null? null : ytdPayment.toPlainString();
 	}
 
 	public short getPaymentCnt() {

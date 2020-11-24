@@ -7,12 +7,12 @@ import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
-import com.dianemodb.ModificationCollection;
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Customer;
+import com.dianemodb.tpcc.entity.History;
 
 public class CustomerInitializer extends PerDistrictDataInitializer {
 	
@@ -53,26 +53,49 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 			
 			assert customerId <= Constants.CUSTOMER_PER_DISTRICT;
 			
+			Timestamp now = new Timestamp(System.currentTimeMillis());
+			
 			Customer customer = new Customer(txId, null);
 			randomLocationValues(customer);
 			customer.setPhone(randomString(16, 16));
 			customer.setCredit(randomValue("B", "G") + "C");
 			customer.setCreditLimit(50000);
 			customer.setDiscount(randomFloat(0, 50));
-			customer.setBalance(new BigDecimal(-10.0));
-			customer.setData(randomString(300, 500));
-			customer.setSince(new Timestamp(System.currentTimeMillis()));
+			customer.setSince(now);
 			customer.setFirstName(randomString(8, 16));
-			
-			if(customerId <= 1000) {
-				customer.setLastName(generateLastName(customerId));
+			customer.setMiddleName("OE");
+			int lastNameSeed;
+			if(customerId < 1000) {
+				lastNameSeed = customerId;
 			}
+			else {
+				lastNameSeed = randomInt(0, 999);
+			}
+			
+			customer.setLastName(generateLastName(lastNameSeed));
 			
 			customer.setWarehouseId(warehouseId);
 			customer.setDistrictId(districtId);
 			customer.setPublicId(customerId);
-			
+			customer.setBalance(new BigDecimal(-10));
+			customer.setYtdPayment(new BigDecimal(10));
+			customer.setDeliveryCnt((short) 0);
+			customer.setPaymentCnt((short) 1);
+			customer.setData(randomString(300, 500));
+
 			records.add(customer);
+			
+			History history = new History(txId, null);
+			history.setCustomerId(customerId);
+			history.setWarehouseId(warehouseId);
+			history.setDistrictId(districtId);
+			history.setCustomerWarehouseId(warehouseId);
+			history.setCustomerDistrictId(districtId);
+			history.setAmount(new BigDecimal(10));
+			history.setData(randomString(12,24));
+			history.setDate(now);
+		
+			records.add(history);
 		}
 
 		/*
