@@ -12,6 +12,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -260,12 +261,16 @@ public class TpccProcessManager extends ProcessManager {
 	
 	@Override
 	protected void success(TestProcess process) {
-		if(LOGGER.isDebugEnabled()) {
-			LOGGER.debug("Process success {}", process);
-		}
-		
 		TpccTestProcess tpccProcess = (TpccTestProcess) process;
 		long timeTook = System.currentTimeMillis() - tpccProcess.getInitialRequestStartTime();
+
+		LOGGER.info(
+				"Process success {} {} {} {}", 
+				StringUtils.leftPad(process.getClass().getSimpleName(), 15),
+				StringUtils.leftPad(String.valueOf(timeTook), 10),
+				StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
+				tpccProcess.toString()
+		);
 		
 		// group transactions into 100 ms intervals
 		long timeKey = timeTook / 100;
