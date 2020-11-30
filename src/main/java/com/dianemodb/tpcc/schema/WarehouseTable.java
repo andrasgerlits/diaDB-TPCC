@@ -27,14 +27,19 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	public static final String ZIP_COLUMN_NAME = "w_zip";
 	public static final String TAX_COLUMN_NAME = "w_tax";
 	public static final String YTD_COLUMN_NAME = "w_ytd";
+	
+	public static final RecordColumn<Warehouse, Short> ID_COLUMN = 
+			new RecordColumn<>(
+					new ShortColumn(ID_COLUMNNAME), 
+					Warehouse::getPublicId,
+					Warehouse::setPublicId
+			);
 
 	public static final UserRecordTableId ID = new UserRecordTableId(WAREHOUSE_TABLE_ID);
 
 	private final Collection<DistributedIndex<Warehouse>> indices;
 
 	private final List<RecordColumn<Warehouse, ?>> columns;
-
-	private final RecordColumn<Warehouse, Short> idColumn;
 	
 	private final UniqueHashCodeBasedDistributedIndex<Warehouse> index;
 	
@@ -52,21 +57,14 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 			YTD_COLUMN_NAME
 		);
 		
-		this.idColumn = 
-				new RecordColumn<>(
-						new ShortColumn(ID_COLUMNNAME), 
-						Warehouse::getPublicId,
-						Warehouse::setPublicId
-				);
-		
 		this.columns = new LinkedList<>(super.columns());
-		this.columns.add(idColumn);
+		this.columns.add(ID_COLUMN);
 
 		this.index = 
 				new UniqueHashCodeBasedDistributedIndex<>(
 						servers, 
 						this, 
-						List.of(idColumn)
+						List.of(ID_COLUMN)
 				);
 		
 		this.indices = List.of(index);
@@ -90,10 +88,6 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	@Override
 	protected Collection<DistributedIndex<Warehouse>> indices() {
 		return indices;
-	}
-
-	public RecordColumn<Warehouse, Short> getIdColumn() {
-		return idColumn;
 	}
 
 	@Override

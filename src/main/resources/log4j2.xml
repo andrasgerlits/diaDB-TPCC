@@ -5,18 +5,16 @@
 		<Console name="stdlogs" target="SYSTEM_OUT">
 			<PatternLayout pattern="[%X{id}] [%X{env}] %-5level %logger{36} - %msg%n" />
 		</Console>
-<!-- 
   		<RollingFile  
-  			name="stdlogs" 
+  			name="stdlogsFile" 
   			fileName="target/out.log" 
   			filePattern="target/out-%d{HH_mm_ss}.log.gz" 
-  			append="true" 
+  			append="false" 
 		>
-           <PatternLayout pattern="[%X{id}] [%X{env}] [%X{txId}] %msg%n" />
+           <PatternLayout pattern="[%X{id}] [%X{env}] [%X{txId}] %-5level %logger{36} - %msg%n" />
            <SizeBasedTriggeringPolicy size="1000 MB" />
         </RollingFile>
 
- -->
   		<RollingFile  
   			name="sql-times" 
   			fileName="target/sql-perf.log" 
@@ -83,17 +81,24 @@
 	<Loggers>
 		<Root level="info">
 			<AppenderRef ref="stdlogs" />
+			<AppenderRef ref="stdlogsFile" />
 		</Root>
 		
 		<Logger name="kafka" level="warn"/>
 		<Logger name="org.apache" level="warn"/>
 		<Logger name="com.dianemodb" level="info"/>
-		<Logger name="com.dianemodb.tpcc" level="debug"/>
+		<Logger name="com.dianemodb.tpcc" level="info"/>
 		
 		<!-- log SQL times at debug -->
- 		<Logger name="com.dianemodb.integration.sqlwrapper" level="info" additivity="false">
+ 		<Logger name="com.dianemodb.integration.sqlwrapper" level="debug" additivity="false">
 			<AppenderRef ref="sql-times" />
 		</Logger>
+		
+		<!-- LOGS AT TRACE Logs inputs into a BASE24 file so that they can be replayed -->
+		<Logger name="com.dianemodb.ServerEvent" level="trace" additivity="false">
+			<AppenderRef ref="input"/>
+		</Logger>
+		
 
 <!-- 
 		<Logger name="com.dianemodb.integration.test.ProcessManager" level="info"/>
@@ -104,28 +109,22 @@
 		<Logger name="com.dianemodb.tpcc.transaction.TpccProcessManager" level="debug" additivity="false">
 			<AppenderRef ref="test-client" />
 		</Logger>		
- -->
 		<Logger name="com.dianemodb.runner" level="info" additivity="false">
 			<AppenderRef ref="test-client" />
 		</Logger>
 		
 		<Logger name="com.dianemodb.ModificationCollection" level="info"/>
-		
+-->
 		<!-- LOGS AT DEBUG -->
+<!-- 		
 		<Logger name="com.dianemodb.OutputChannel" level="info" additivity="false">
 			<AppenderRef ref="computer-inputs" />
 		</Logger>
 		
-		<!-- LOGS AT TRACE -->
-		<Logger name="com.dianemodb.ServerEvent" level="info" additivity="false">
-			<AppenderRef ref="input"/>
-		</Logger>
-				
 		<Logger name="com.dianemodb.Computer" level="info" additivity="false">
 			<AppenderRef ref="performance"/>
-		</Logger>
-
-		
+		</Logger>	
+ -->
 		<!-- Query execution times -->
 <!-- 				
 		

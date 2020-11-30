@@ -127,7 +127,8 @@ public abstract class TpccTestProcess extends TestProcess {
 			ServerComputerId txComputer, 
 			int keyingTimeInMs, 
 			int meanThinkTimeInMs,
-			short warehouseId
+			short warehouseId, 
+			int varianceMs
 	) {
 		this.random = random;
 		this.application = application;
@@ -139,7 +140,7 @@ public abstract class TpccTestProcess extends TestProcess {
 		this.thinkTimeInMs = (int) (-1 * Math.log(random.nextDouble()) * meanThinkTimeInMs);
 		
 		this.startTime = System.currentTimeMillis();
-		this.initialRequestStartTime = keyingTimeInMs + startTime;
+		this.initialRequestStartTime = keyingTimeInMs + startTime + varianceMs;
 		
 		LOGGER.debug("Starting {} in {} ms", this, keyingTimeInMs);
 	}

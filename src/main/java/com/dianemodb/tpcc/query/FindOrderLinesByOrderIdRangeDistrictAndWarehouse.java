@@ -24,9 +24,9 @@ public class FindOrderLinesByOrderIdRangeDistrictAndWarehouse extends SingleInde
 						Pair.of(OrderLineTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
 						Pair.of(OrderLineTable.DISTRICT_ID_COLUMN, Operator.EQ),
 						
-						// order-id >= ? AND order-id <= ?
-						Pair.of(OrderLineTable.ORDER_ID_COLUMN, Operator.GTE),
-						Pair.of(OrderLineTable.ORDER_ID_COLUMN, Operator.LTE)
+						// order-id <= ? AND order-id >= ?
+						Pair.of(OrderLineTable.ORDER_ID_COLUMN, Operator.LTE),
+						Pair.of(OrderLineTable.ORDER_ID_COLUMN, Operator.GTE)
 					)
 			)
 		);

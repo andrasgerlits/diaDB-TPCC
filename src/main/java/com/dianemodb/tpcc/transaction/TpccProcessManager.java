@@ -8,9 +8,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -24,7 +26,10 @@ import com.dianemodb.integration.test.ProcessManager;
 import com.dianemodb.integration.test.TestProcess;
 import com.dianemodb.integration.test.TestProcess.NextStep;
 import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.tpcc.Constants;
+import com.dianemodb.tpcc.entity.Warehouse;
+import com.dianemodb.tpcc.schema.WarehouseTable;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
@@ -35,7 +40,7 @@ public class TpccProcessManager extends ProcessManager {
 	
 	@FunctionalInterface
 	private interface TpccProcessFactory {
-		TpccTestProcess get(short warehouseId, byte districtId);
+		TpccTestProcess get(short warehouseId, byte districtId, int variance);
 	}
 	
 	private static final int TIME_MEASUREMENT_INTERVAL = 5 * 60 * 1000;
@@ -78,13 +83,30 @@ public class TpccProcessManager extends ProcessManager {
 	) {
 		super(application, leafComputers);
 		
+		// tx maintained on the same computer as the warehouse-record
+		WarehouseTable serverTable = (WarehouseTable) application.getTableById(WarehouseTable.ID);
+		
+		Condition<Warehouse> equalsIdCondition = 
+				Condition.andEqualsEach(List.of(WarehouseTable.ID_COLUMN));
+		
+		Function<Short, ServerComputerId> f = 
+				w -> {
+					Set<ServerComputerId> computers = 
+						serverTable.getMaintainingComputerDecidingIndex()
+							.getMaintainingComputer(equalsIdCondition , List.of(w));
+					
+					// in the current configuration, each warehouse lives on a single instance
+					assert computers.size() == 1;
+					return computers.iterator().next();
+				};
+		
 		List<Pair<Integer, TpccProcessFactory>> factories = 
 				List.of(
-						Pair.of(10, (w, d) -> new NewOrder(random, randomComputer(), application, w, d)),
-						Pair.of(10, (w, d) -> new Payment(random, randomComputer(), application, w, d)),
-						Pair.of(1, (w, d) -> new OrderStatus(random, randomComputer(), application, w, d)),
-						Pair.of(1, (w, d) -> new Delivery(random, randomComputer(), application, w, d)),
-						Pair.of(1, (w, d) -> new StockLevel(random, randomComputer(), application, w, d))
+						Pair.of(10, (w, d, v) -> new NewOrder(random, f.apply(w), application, w, d, v)),
+						Pair.of(10, (w, d, v) -> new Payment(random, f.apply(w), application, w, d, v)),
+						Pair.of(1, (w, d, v) -> new OrderStatus(random, f.apply(w), application, w, d, v)),
+						Pair.of(1, (w, d, v) -> new Delivery(random, f.apply(w), application, w, d, v)),
+						Pair.of(1, (w, d, v) -> new StockLevel(random, f.apply(w), application, w, d, v))
 				);
 		
 		int totalSoFar = 0;
@@ -97,14 +119,22 @@ public class TpccProcessManager extends ProcessManager {
 		
 		this.sum = totalSoFar;
 		
-		for( short i = 0; i < Constants.NUMBER_OF_WAREHOUSES; i++ ) {
-			for(short j = 0; j < Constants.TERMINAL_PER_WAREHOUSE; j++) {
-				freeTerminals.add(i);
-			}
+		for( short i = 0; i < (Constants.TERMINAL_PER_WAREHOUSE * Constants.NUMBER_OF_WAREHOUSES) ; i++ ) {
+			// 0, 1, 2 ... 0, 1, 2 ...
+			freeTerminals.add( (short) (i % Constants.NUMBER_OF_WAREHOUSES) );
 		}
 		
-		// we can start a tx for each terminal right away
-		startNewProcess(freeTerminals.size());
+		/*
+		 * we can start a tx for each terminal right away, 
+		 * start with an initial variance of 10 seconds to space out the first requests 
+		 */
+		startNewProcess(freeTerminals.size(), 0);
+	}
+	
+	@Override
+	public synchronized boolean isFinished() {
+		// Tick-tock, the party don't stop
+		return false;
 	}
 
 	@Override
@@ -128,12 +158,14 @@ public class TpccProcessManager extends ProcessManager {
 	}
 
 	@Override
-	protected List<NextStep> nextProcess(int number) {
+	protected List<NextStep> nextProcess(int number, int maxVarianceMs) {
 		List<NextStep> result = new LinkedList<>();
 		
 		// if there was anything to retry, return that first
 		while(!toRetry.isEmpty()) {
-			result.add(toRetry.remove(0));
+			NextStep process = toRetry.remove(0);
+			process.getProcess().retry();
+			result.add(process);
 
 			if(result.size() == number) {
 				return result;
@@ -148,7 +180,7 @@ public class TpccProcessManager extends ProcessManager {
 		returnNoLongerUsedTerminals();
 		
 		while(!freeTerminals.isEmpty() && result.size() < number) {
-			result.add(startNewProcess());
+			result.add(startNewProcess(maxVarianceMs));
 		}
 		
 		return result;
@@ -157,9 +189,25 @@ public class TpccProcessManager extends ProcessManager {
 	public void process(Map<ConversationId, Either<Object, ? extends Throwable>> results) {
 		super.process(results);
 		
+		returnNoLongerUsedTerminals();
+		
 		int numberToStart = freeTerminals.size() + outstanding;
-		int started = startNewProcess(numberToStart);
+		// if nothing to start
+		if(numberToStart == 0) {
+			return;
+		}
+		
+		int started = startNewProcess(numberToStart, 0);
+		
+		// if nothing was started
+		if(started == 0) {
+			return;
+		}
+		
+		assert started <= numberToStart;
+		
 		outstanding = numberToStart - started;
+		assert outstanding >= 0;
 		
 		if(LOGGER.isDebugEnabled() && (started > 0 || outstanding > 0)) {
 			LOGGER.debug("Started {} processes, outstanding {}", started, outstanding);
@@ -232,16 +280,23 @@ public class TpccProcessManager extends ProcessManager {
 		subMap.keySet().forEach( t -> terminalFreeupTimes.remove(t) );
 	}
 	
-	private NextStep startNewProcess() {
+	private NextStep startNewProcess(int maxVarianceMs) {
 		// choose a random number from the grand total
 		int processId = getRandom().nextInt(sum);
 		
 		byte districtId = (byte) getRandom().nextInt(Constants.DISTRICT_PER_WAREHOUSE);
 		short warehouseId = freeTerminals.remove(0);
 		
+		int variance;
+		if(maxVarianceMs > 0) {
+			variance = random.nextInt(maxVarianceMs);
+		}
+		else {
+			variance = 0;
+		}
 		
 		TpccProcessFactory factory = factoryByWeight.get(processId);
-		TpccTestProcess process = factory.get(warehouseId, districtId);
+		TpccTestProcess process = factory.get(warehouseId, districtId, variance);
 		
 		NextStep nextStep = process.start();
 		
@@ -265,10 +320,11 @@ public class TpccProcessManager extends ProcessManager {
 		long timeTook = System.currentTimeMillis() - tpccProcess.getInitialRequestStartTime();
 
 		LOGGER.info(
-				"Process success {} {} {} {}", 
+				"Process success {} {} {} {} {}", 
 				StringUtils.leftPad(process.getClass().getSimpleName(), 15),
 				StringUtils.leftPad(String.valueOf(timeTook), 10),
 				StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
+				StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3),
 				tpccProcess.toString()
 		);
 		

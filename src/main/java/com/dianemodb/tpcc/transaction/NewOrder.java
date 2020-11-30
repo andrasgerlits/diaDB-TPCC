@@ -77,9 +77,11 @@ public class NewOrder extends TpccTestProcess {
 			SQLServerApplication application,
 
 			short homeWarehouseId,
-			byte homeDistrictId
+			byte homeDistrictId,
+			
+			int varianceMs
 	) {
-		super(random, application, txComputer, 18000, 12000, homeWarehouseId);
+		super(random, application, txComputer, 18000, 12000, homeWarehouseId, varianceMs);
 		
 		this.customerId = TpccDataInitializer.randomCustomerId();
 		this.customerDistrictId = homeDistrictId;
@@ -178,6 +180,9 @@ public class NewOrder extends TpccTestProcess {
 		RecordWithVersion<Customer> customer = singleFromResultList(resultIter.next());
 		RecordWithVersion<Warehouse> warehouse = singleFromResultList(resultIter.next());
 		RecordWithVersion<District> district = singleFromResultList(resultIter.next());
+		List<RecordWithVersion<Item>> items = (List<RecordWithVersion<Item>>) resultIter.next();
+		List<RecordWithVersion<Stock>> stocks = (List<RecordWithVersion<Stock>>) resultIter.next();
+		
 		
 		District oldDistrict = district.getRecord();
 		
@@ -213,8 +218,6 @@ public class NewOrder extends TpccTestProcess {
 		
 		modificationCollection.addInsert(newOrder);
 
-		List<RecordWithVersion<Item>> items = (List<RecordWithVersion<Item>>) resultIter.next();
-		
 		// test that each queried item was found. if not, roll back TX, unused item#
 		assert CollectionUtils.isEqualCollection(
 					items.stream()
@@ -238,8 +241,6 @@ public class NewOrder extends TpccTestProcess {
 								i -> i
 						)
 					);
-		
-		List<RecordWithVersion<Stock>> stocks = (List<RecordWithVersion<Stock>>) resultIter.next();
 		
 		addModifiedStockRecords(
 				orderId, 

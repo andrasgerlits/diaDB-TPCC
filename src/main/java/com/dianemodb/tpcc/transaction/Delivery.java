@@ -37,9 +37,10 @@ public class Delivery extends TpccTestProcess {
 			ServerComputerId txComputer,
 			SQLServerApplication application, 
 			short warehouseId,
-			byte districtId
+			byte districtId,
+			int variance
 	) {
-		super(random, application, txComputer, 2000, 5000, warehouseId);
+		super(random, application, txComputer, 2000, 5000, warehouseId, variance);
 		this.carrierId = TpccDataInitializer.randomCarrierId();
 		this.districtId = districtId;
 	}
