@@ -3,7 +3,7 @@
 
 	<Appenders>
 		<Console name="stdlogs" target="SYSTEM_OUT">
-			<PatternLayout pattern="[%X{id}] [%X{env}] %-5level %logger{36} - %msg%n" />
+			<PatternLayout pattern="[%tid] [%X{env}] %-5level %logger{36} - %msg%n" />
 		</Console>
   		<RollingFile  
   			name="stdlogsFile" 
@@ -11,7 +11,7 @@
   			filePattern="target/out-%d{HH_mm_ss}.log.gz" 
   			append="false" 
 		>
-           <PatternLayout pattern="[%X{id}] [%X{env}] [%X{txId}] %-5level %logger{36} - %msg%n" />
+           <PatternLayout pattern="[%tid] [%X{env}] [%X{txId}] %-5level %logger{36} - %msg%n" />
            <SizeBasedTriggeringPolicy size="1000 MB" />
         </RollingFile>
 
@@ -88,16 +88,26 @@
 		<Logger name="org.apache" level="warn"/>
 		<Logger name="com.dianemodb" level="info"/>
 		<Logger name="com.dianemodb.tpcc" level="info"/>
+	
+		<!-- 
+			There are two different loggers for TpccProcessManager. 
+			One for following the execution of the tests and one for debugging.
+			This is the debugging one.  
+		-->	
+		<Logger name="com.dianemodb.tpcc.transaction.TpccClientRunner" level="debug" additivity="false">
+			<AppenderRef ref="stdlogsFile" />
+		</Logger>
 		
 		<!-- log SQL times at debug -->
- 		<Logger name="com.dianemodb.integration.sqlwrapper" level="debug" additivity="false">
+ 		<Logger name="com.dianemodb.integration.sqlwrapper" level="info" additivity="false">
 			<AppenderRef ref="sql-times" />
 		</Logger>
 		
 		<!-- LOGS AT TRACE Logs inputs into a BASE24 file so that they can be replayed -->
-		<Logger name="com.dianemodb.ServerEvent" level="trace" additivity="false">
+		<Logger name="com.dianemodb.ServerEvent" level="info" additivity="false">
 			<AppenderRef ref="input"/>
 		</Logger>
+		
 		
 
 <!-- 

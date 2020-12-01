@@ -26,9 +26,14 @@ public class StockLevel extends TpccTestProcess {
 			byte districtId,
 			int variance
 	) {
-		super(random, application, txComputer, 2000, 5000, warehouseId, variance);
+		// no keying-time, no think-time and no variance
+		super(random, application, txComputer, 0, 0, warehouseId, 0);
 		this.districtId = districtId;
 		this.stockThreshold = TpccDataInitializer.randomInt(10,20);
+	}
+	
+	public boolean isTerminalBased() {
+		return false;
 	}
 
 	@Override
@@ -55,5 +60,4 @@ public class StockLevel extends TpccTestProcess {
 		
 		return of(List.of(queryStock), this::commit);
 	}
-
 }

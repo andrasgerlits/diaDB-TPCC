@@ -116,11 +116,8 @@ public abstract class TpccTestProcess extends TestProcess {
 	 */
 	private final int thinkTimeInMs;
 	
-	private final long startTime;
+	protected final long startTime;
 	
-	protected ReadVersion readVersion;
-	protected TransactionId txId;
-
 	protected TpccTestProcess(
 			Random random, 
 			SQLServerApplication application, 
@@ -137,12 +134,19 @@ public abstract class TpccTestProcess extends TestProcess {
 
 		this.terminalWarehouseId = warehouseId;
 		
-		this.thinkTimeInMs = (int) (-1 * Math.log(random.nextDouble()) * meanThinkTimeInMs);
+		int thinkTime = (int) (-1 * Math.log(random.nextDouble()) * meanThinkTimeInMs);
+		int maxThinkTime = meanThinkTimeInMs * 10;
+		if(thinkTime > meanThinkTimeInMs * 10) {
+			thinkTime = maxThinkTime;
+		}
+		this.thinkTimeInMs = thinkTime;
 		
 		this.startTime = System.currentTimeMillis();
 		this.initialRequestStartTime = keyingTimeInMs + startTime + varianceMs;
-		
-		LOGGER.debug("Starting {} in {} ms", this, keyingTimeInMs);
+	}
+	
+	public boolean isTerminalBased() {
+		return true;
 	}
 	
 	public boolean isLate() {
@@ -192,6 +196,11 @@ public abstract class TpccTestProcess extends TestProcess {
 	public NextStep start() {
 		return ofSingle(startTransaction(), this::startInternal, initialRequestStartTime);
 	}
+
+	// TX is rolled back when it receives an exception
+	public NextStep cancelAndRetry() {
+		return ofSingle(startTransaction(), this::startInternal, 0L);
+	}
 	
 	@SuppressWarnings("unchecked")
 	protected Result startInternal(Object result) {
@@ -205,7 +214,6 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 
 	protected abstract Result startTx();
-
 	
 	protected <R extends UserRecord> Envelope update(RecordWithVersion<R> original, R updated) {
 		ModificationCollection modificationCollection = new ModificationCollection();

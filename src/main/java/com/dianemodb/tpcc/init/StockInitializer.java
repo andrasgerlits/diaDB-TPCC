@@ -19,7 +19,7 @@ public class StockInitializer extends TpccDataInitializer {
 
 	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(StockInitializer.class.getName());
 	
-	private static final int ITEM_PER_TX = 1000;
+	private static final int ITEM_PER_TX = 10000;
 	
 	private static final int TOTAL_NUMBER_OF_BATCHES = 
 			Constants.STOCK_PER_WAREHOUSE * Constants.NUMBER_OF_WAREHOUSES / ITEM_PER_TX;
