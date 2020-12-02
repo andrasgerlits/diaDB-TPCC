@@ -24,10 +24,10 @@ public class StockLevel extends TpccTestProcess {
 			SQLServerApplication application, 
 			short warehouseId,
 			byte districtId,
-			int variance
+			String uuid
 	) {
 		// no keying-time, no think-time and no variance
-		super(random, application, txComputer, 0, 0, warehouseId, 0);
+		super(random, application, txComputer, 0, 0, warehouseId, uuid);
 		this.districtId = districtId;
 		this.stockThreshold = TpccDataInitializer.randomInt(10,20);
 	}

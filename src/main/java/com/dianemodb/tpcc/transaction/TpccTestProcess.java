@@ -118,6 +118,8 @@ public abstract class TpccTestProcess extends TestProcess {
 	
 	protected final long startTime;
 	
+	protected final String uuid;
+	
 	protected TpccTestProcess(
 			Random random, 
 			SQLServerApplication application, 
@@ -125,7 +127,7 @@ public abstract class TpccTestProcess extends TestProcess {
 			int keyingTimeInMs, 
 			int meanThinkTimeInMs,
 			short warehouseId, 
-			int varianceMs
+			String uuid
 	) {
 		this.random = random;
 		this.application = application;
@@ -136,13 +138,15 @@ public abstract class TpccTestProcess extends TestProcess {
 		
 		int thinkTime = (int) (-1 * Math.log(random.nextDouble()) * meanThinkTimeInMs);
 		int maxThinkTime = meanThinkTimeInMs * 10;
-		if(thinkTime > meanThinkTimeInMs * 10) {
+		if(thinkTime > maxThinkTime) {
 			thinkTime = maxThinkTime;
 		}
 		this.thinkTimeInMs = thinkTime;
 		
 		this.startTime = System.currentTimeMillis();
-		this.initialRequestStartTime = keyingTimeInMs + startTime + varianceMs;
+		this.initialRequestStartTime = keyingTimeInMs + startTime;
+		
+		this.uuid = uuid;
 	}
 	
 	public boolean isTerminalBased() {
@@ -237,4 +241,23 @@ public abstract class TpccTestProcess extends TestProcess {
 	public Short getWarehouseId() {
 		return terminalWarehouseId;
 	}
+
+	public String getUiid() {
+		return uuid;
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + " ["
+				+ "txComputer=" + txComputer
+				+ ", maxTimeInMs=" + maxTimeInMs 
+				+ ", terminalWarehouseId=" + terminalWarehouseId
+				+ ", initialRequestStartTime=" + initialRequestStartTime 
+				+ ", thinkTimeInMs=" + thinkTimeInMs
+				+ ", startTime=" + startTime 
+				+ ", uuid=" + uuid 
+			+ "]";
+	}
+	
+	
 }

@@ -34,9 +34,9 @@ public class Payment extends TpccTestProcess {
 			SQLServerApplication application,
 			short warehouseId,
 			byte districtId,
-			int variance
+			String uuid
 	) {
-		super(random, application, txComputer, 3000, 12000, warehouseId, variance);
+		super(random, application, txComputer, 3000, 12000, warehouseId, uuid);
 		
 		this.customerSelectionStrategy = randomStrategy(random, warehouseId, districtId);
 		isHomePayment = random.nextInt(85) + 1 <= 85;

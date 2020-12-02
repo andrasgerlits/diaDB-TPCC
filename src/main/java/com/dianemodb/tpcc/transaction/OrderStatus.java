@@ -25,9 +25,9 @@ public class OrderStatus extends TpccTestProcess {
 			SQLServerApplication application, 
 			short warehouseId,
 			byte districtId,
-			int variance
+			String uuid
 	) {
-		super(random, application, txComputer, 2000, 10000, warehouseId, variance);
+		super(random, application, txComputer, 2000, 10000, warehouseId, uuid);
 		this.districtId = districtId;
 		this.customerSelectionStrategy = randomStrategy(random, warehouseId, districtId);
 	}

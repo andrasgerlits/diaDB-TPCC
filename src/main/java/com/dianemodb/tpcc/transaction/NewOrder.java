@@ -79,9 +79,9 @@ public class NewOrder extends TpccTestProcess {
 			short homeWarehouseId,
 			byte homeDistrictId,
 			
-			int varianceMs
+			String uuid
 	) {
-		super(random, application, txComputer, 18000, 12000, homeWarehouseId, varianceMs);
+		super(random, application, txComputer, 18000, 12000, homeWarehouseId, uuid);
 		
 		this.customerId = TpccDataInitializer.randomCustomerId();
 		this.customerDistrictId = homeDistrictId;
