@@ -247,6 +247,52 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 
 	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (initialRequestStartTime ^ (initialRequestStartTime >>> 32));
+		result = prime * result + maxTimeInMs;
+		result = prime * result + (int) (startTime ^ (startTime >>> 32));
+		result = prime * result + terminalWarehouseId;
+		result = prime * result + thinkTimeInMs;
+		result = prime * result + ((txComputer == null) ? 0 : txComputer.hashCode());
+		result = prime * result + ((uuid == null) ? 0 : uuid.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		TpccTestProcess other = (TpccTestProcess) obj;
+		if (initialRequestStartTime != other.initialRequestStartTime)
+			return false;
+		if (maxTimeInMs != other.maxTimeInMs)
+			return false;
+		if (startTime != other.startTime)
+			return false;
+		if (terminalWarehouseId != other.terminalWarehouseId)
+			return false;
+		if (thinkTimeInMs != other.thinkTimeInMs)
+			return false;
+		if (txComputer == null) {
+			if (other.txComputer != null)
+				return false;
+		} else if (!txComputer.equals(other.txComputer))
+			return false;
+		if (uuid == null) {
+			if (other.uuid != null)
+				return false;
+		} else if (!uuid.equals(other.uuid))
+			return false;
+		return true;
+	}
+
+	@Override
 	public String toString() {
 		return getClass().getSimpleName() + " ["
 				+ "txComputer=" + txComputer

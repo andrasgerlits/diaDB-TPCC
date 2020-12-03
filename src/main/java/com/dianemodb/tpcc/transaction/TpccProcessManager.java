@@ -145,7 +145,8 @@ public class TpccProcessManager extends ProcessManager {
 		else {
 			// since this process was using a terminal anyway, we can simply restart it until it goes through
 			if(!process.isLate()) { 
-				toRetry.add(process.cancelAndRetry());				
+				toRetry.add(process.cancelAndRetry());
+				terminals.ping(process);
 			}
 			else {
 				finished((TpccTestProcess) process);
@@ -160,10 +161,12 @@ public class TpccProcessManager extends ProcessManager {
 		
 		// if there was anything to retry, return that first
 		while(!toRetry.isEmpty()) {
-			NextStep process = toRetry.remove(0);
-			process.getProcess().retry();
-			result.add(process);
-
+			NextStep nextStep = toRetry.remove(0);
+			result.add(nextStep);
+			
+			TpccTestProcess tpccProcess = (TpccTestProcess) nextStep.getProcess();
+			tpccProcess.retry();
+			
 			if(result.size() == number) {
 				return result;
 			}
@@ -312,11 +315,12 @@ public class TpccProcessManager extends ProcessManager {
 		long latency = System.currentTimeMillis() - tpccProcess.getInitialRequestStartTime();
 
 		LOGGER.info(
-				"Process success {} {} {} {}", 
+				"Process finished {} {} {} {}", 
 				StringUtils.leftPad(tpccProcess.getClass().getSimpleName(), 15),
 				StringUtils.leftPad(String.valueOf(latency), 10),
 				StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
-				StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3)
+				StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3),
+				tpccProcess.getUiid()
 		);
 		
 		// group transactions into 100 ms intervals

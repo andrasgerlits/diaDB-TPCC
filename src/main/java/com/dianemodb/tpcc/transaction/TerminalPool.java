@@ -22,7 +22,7 @@ public class TerminalPool {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TerminalPool.class.getName());
 	
-	private static final int BORROW_TIMEOUT = 20 * 60 * 1000; 
+	private static final int BORROW_TIMEOUT = 5 * 60 * 1000; 
 
 	/**
 	 * The pool of terminals, from which the 
@@ -113,6 +113,11 @@ public class TerminalPool {
 		}
 		
 		terminalFreeupTimes.put(terminalFreeupTime, tpccProcess.getWarehouseId());
+	}
+	
+	public void ping(TpccTestProcess tpccProcess) {
+		borrowTime.remove(tpccProcess);
+		borrowTime.put(tpccProcess, System.currentTimeMillis());
 	}
 	
 	private void checkTimeouts() {

@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import com.dianemodb.ModificationCollection;
@@ -61,8 +62,8 @@ public class Payment extends TpccTestProcess {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Result queryDistrictWarehouse(Object results) {
-		RecordWithVersion<Customer> customerRecord = (RecordWithVersion<Customer>) results;
+	private Result queryDistrictWarehouse(Optional<Object> results) {
+		RecordWithVersion<Customer> customerRecord = (RecordWithVersion<Customer>) results.get();
 		
 		short warehouseId = customerRecord.getRecord().getWarehouseId();			
 		byte districtId = customerRecord.getRecord().getDistrictId();

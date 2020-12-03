@@ -4,9 +4,13 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.Record;
@@ -26,6 +30,8 @@ import com.dianemodb.tpcc.query.delivery.FindOrderByWarehouseDistrictOrderId;
 import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
 
 public class Delivery extends TpccTestProcess {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(Delivery.class.getName());
 
 	private final short carrierId;
 	private final byte districtId; 
@@ -47,6 +53,8 @@ public class Delivery extends TpccTestProcess {
 
 	@Override
 	protected Result startTx() {
+		LOGGER.debug("start {}", uuid);
+
 		Envelope query = 						
 				query(
 					FindNewOrderWithLowestOrderIdByWarehouseAndDistrict.ID,
@@ -57,43 +65,57 @@ public class Delivery extends TpccTestProcess {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Result process(Object result) {
-		// select orders for each new_order found
-		 this.newOrders = (List<RecordWithVersion<NewOrders>>) result;
+	private Result process(Optional<Object> result) {
+		LOGGER.debug("Process {} {}", uuid, result);
 
-		 List<Envelope> orderQueries = 
-				 newOrders.stream()
-					.flatMap(
-						rv -> {
-							NewOrders no = rv.getRecord();
-							
-							Envelope orderQuery = 
-								query(
-									FindOrderByWarehouseDistrictOrderId.ID, 
-									List.of(terminalWarehouseId, no.getDistrictId(), no.getOrderId())
-								);
-							
-							Envelope customerQuery = 
-								query(
-									FindCustomerByWarehouseDistrictAndId.ID, 
-									List.of(terminalWarehouseId, no.getDistrictId(), no.getCustomerId())
-								);
-							
-							Envelope orderLinesQuery =
-								query(
-									FindOrderLinesByWarehouseDistrictOrderId.ID,
-									List.of(no.getWarehouseId(), no.getDistrictId(), no.getOrderId())
-								);
-							
-							return Stream.of(orderQuery, customerQuery, orderLinesQuery);
-						}
-					)
+		// finish TX without writing anything to the DB if there was nothing
+		if(result.isEmpty()) {
+			return of(List.of(), this::commit);
+		}
+		
+		 // select orders for each new_order found
+		this.newOrders = (List<RecordWithVersion<NewOrders>>) result.get();
+		
+		// or if there were fewer than 10
+		if(newOrders.size() < 10) {
+			return of(List.of(), this::commit);
+		}
+		 
+		List<Envelope> orderQueries = 
+				newOrders.stream()
+					.flatMap( this::toQueries )
 					.collect(Collectors.toList());
 
-		 return of(orderQueries, this::updateRecords);
+		return of(orderQueries, this::updateRecords);
+	}
+
+	private Stream<Envelope> toQueries(RecordWithVersion<NewOrders> rv) {
+		LOGGER.debug("toQueries {} {}", uuid, rv);
+		NewOrders no = rv.getRecord();
+		
+		Envelope orderQuery = 
+			query(
+				FindOrderByWarehouseDistrictOrderId.ID, 
+				List.of(terminalWarehouseId, no.getDistrictId(), no.getOrderId())
+			);
+		
+		Envelope customerQuery = 
+			query(
+				FindCustomerByWarehouseDistrictAndId.ID, 
+				List.of(terminalWarehouseId, no.getDistrictId(), no.getCustomerId())
+			);
+		
+		Envelope orderLinesQuery =
+			query(
+				FindOrderLinesByWarehouseDistrictOrderId.ID,
+				List.of(no.getWarehouseId(), no.getDistrictId(), no.getOrderId())
+			);
+		
+		return Stream.of(orderQuery, customerQuery, orderLinesQuery);
 	}
 
 	private Result updateRecords(List<? extends Object> results) {
+		LOGGER.debug("update {} {}", uuid, results);
 		Timestamp now = new Timestamp(System.currentTimeMillis());
 		
 		List<List<? extends RecordWithVersion<? extends Record>>> resultLists = (List<List<? extends RecordWithVersion<? extends Record>>>) results;

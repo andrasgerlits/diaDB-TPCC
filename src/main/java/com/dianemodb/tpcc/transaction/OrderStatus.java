@@ -1,6 +1,7 @@
 package com.dianemodb.tpcc.transaction;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import com.dianemodb.RecordWithVersion;
@@ -39,9 +40,11 @@ public class OrderStatus extends TpccTestProcess {
 		
 	}
 
-	private Result processCustomer(Object result) {
+	private Result processCustomer(Optional<Object> result) {
+		assert result.isPresent();
+		
 		RecordWithVersion<Customer> customer = 
-				customerSelectionStrategy.getCustomerFromResult(result);
+				customerSelectionStrategy.getCustomerFromResult(result.get());
 		
 		Envelope maxOrderIdQuery =
 				query(
@@ -52,8 +55,8 @@ public class OrderStatus extends TpccTestProcess {
 		return of(maxOrderIdQuery, r -> this.update(r, customer));
 	}
 
-	private Result update(Object results, RecordWithVersion<Customer> customerRecord) {
-		RecordWithVersion<Orders> order = TpccTestProcess.singleFromResultList(results);
+	private Result update(Optional<Object> results, RecordWithVersion<Customer> customerRecord) {
+		RecordWithVersion<Orders> order = TpccTestProcess.singleFromResultList(results.get());
 		int orderId = order.getRecord().getOrderId();
 		
 		Envelope findOrderLinesQuery = 
