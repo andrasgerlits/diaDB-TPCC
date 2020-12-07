@@ -98,7 +98,6 @@ public abstract class TpccTestProcess extends TestProcess {
 	protected final Random random;
 	protected final SQLServerApplication application;
 	private final ServerComputerId txComputer;
-	private final int maxTimeInMs;
 	protected final short terminalWarehouseId;
 	
 	/**
@@ -132,7 +131,6 @@ public abstract class TpccTestProcess extends TestProcess {
 		this.random = random;
 		this.application = application;
 		this.txComputer = txComputer;
-		this.maxTimeInMs = MAX_TIMES_BY_CLASS.get(getClass());
 
 		this.terminalWarehouseId = warehouseId;
 		
@@ -154,7 +152,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 	
 	public boolean isLate() {
-		return System.currentTimeMillis() - startTime < maxTimeInMs;
+		return System.currentTimeMillis() > initialRequestStartTime + MAX_TIMES_BY_CLASS.get(this.getClass());
 	}
 	
 	@Override
@@ -251,7 +249,6 @@ public abstract class TpccTestProcess extends TestProcess {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (int) (initialRequestStartTime ^ (initialRequestStartTime >>> 32));
-		result = prime * result + maxTimeInMs;
 		result = prime * result + (int) (startTime ^ (startTime >>> 32));
 		result = prime * result + terminalWarehouseId;
 		result = prime * result + thinkTimeInMs;
@@ -270,8 +267,6 @@ public abstract class TpccTestProcess extends TestProcess {
 			return false;
 		TpccTestProcess other = (TpccTestProcess) obj;
 		if (initialRequestStartTime != other.initialRequestStartTime)
-			return false;
-		if (maxTimeInMs != other.maxTimeInMs)
 			return false;
 		if (startTime != other.startTime)
 			return false;
@@ -296,7 +291,6 @@ public abstract class TpccTestProcess extends TestProcess {
 	public String toString() {
 		return getClass().getSimpleName() + " ["
 				+ "txComputer=" + txComputer
-				+ ", maxTimeInMs=" + maxTimeInMs 
 				+ ", terminalWarehouseId=" + terminalWarehouseId
 				+ ", initialRequestStartTime=" + initialRequestStartTime 
 				+ ", thinkTimeInMs=" + thinkTimeInMs

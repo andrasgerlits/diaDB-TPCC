@@ -58,13 +58,16 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 					NewOrders::setCarrierId
 			);
 	
+	public static final RecordColumn<NewOrders, Integer> ORDER_ID_COLUMN = 
+			new RecordColumn<>(
+					new IntColumn(ORDER_ID_COLUMN_NAME), 
+					NewOrders::getOrderId, 
+					NewOrders::setOrderId
+			);
+	
 	public static final List<RecordColumn<NewOrders, ?>> COLUMNS = 
 			List.of(
-				new RecordColumn<>(
-						new IntColumn(ORDER_ID_COLUMN_NAME), 
-						NewOrders::getOrderId, 
-						NewOrders::setOrderId
-				),
+				ORDER_ID_COLUMN,
 				DISTRICT_ID_COLUMN,
 				WAREHOUSE_ID_COLUMN,
 				new RecordColumn<>(

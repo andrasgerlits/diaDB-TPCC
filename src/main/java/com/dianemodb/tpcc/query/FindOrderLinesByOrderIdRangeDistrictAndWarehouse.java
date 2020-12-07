@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.dianemodb.h2impl.SingleIndexSingleParameterSetQueryDistributionPlan;
 import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.metaschema.distributed.Operator;
-import com.dianemodb.sql.SingleIndexSingleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.schema.OrderLineTable;
 

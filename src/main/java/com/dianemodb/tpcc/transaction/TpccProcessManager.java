@@ -143,10 +143,12 @@ public class TpccProcessManager extends ProcessManager {
 		}
 		// if this was an expected diadb exception, like concurrent commit, so safe to retry
 		else {
-			// since this process was using a terminal anyway, we can simply restart it until it goes through
 			if(!process.isLate()) { 
 				toRetry.add(process.cancelAndRetry());
-				terminals.ping(process);
+				
+				if(process.isTerminalBased()) {
+					terminals.ping(process);
+				}
 			}
 			else {
 				finished((TpccTestProcess) process);

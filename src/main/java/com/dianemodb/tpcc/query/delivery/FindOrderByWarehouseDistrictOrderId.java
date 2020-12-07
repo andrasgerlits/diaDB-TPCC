@@ -1,6 +1,6 @@
 package com.dianemodb.tpcc.query.delivery;
 
-import com.dianemodb.sql.SingleIndexSingleParameterSetQueryDistributionPlan;
+import com.dianemodb.h2impl.SingleIndexSingleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.schema.OrdersTable;
 

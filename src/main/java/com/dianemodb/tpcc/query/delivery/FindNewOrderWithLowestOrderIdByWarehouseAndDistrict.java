@@ -3,43 +3,25 @@ package com.dianemodb.tpcc.query.delivery;
 import java.util.List;
 
 import com.dianemodb.RecordWithVersion;
+import com.dianemodb.h2impl.SingleIndexSingleParameterSetQueryDistributionPlan;
 import com.dianemodb.metaschema.QueryStep;
-import com.dianemodb.sql.SingleIndexSingleParameterSetQueryDistributionPlan;
+import com.dianemodb.metaschema.RecordColumn;
+import com.dianemodb.metaschema.distributed.AggregateFunction;
+import com.dianemodb.metaschema.distributed.AggregateType;
 import com.dianemodb.tpcc.entity.NewOrders;
 import com.dianemodb.tpcc.schema.NewOrdersTable;
 
 public class FindNewOrderWithLowestOrderIdByWarehouseAndDistrict extends SingleIndexSingleParameterSetQueryDistributionPlan<NewOrders>{
 
 	public static final String ID = "findNewOrdersByDistrictAndWarehouse";
-
-	// select the lowest order-id for the district of the warehouse
-	private static final String MIN_ORDER_ID_QUERY = 
-			"SELECT oo.* "
-			+ "FROM ("
-				+ "SELECT MIN(" + NewOrdersTable.ORDER_ID_COLUMN_NAME + ") mo, "
-						+ NewOrdersTable.WAREHOUSE_ID_COLUMN_NAME + " mw, "
-						+ NewOrdersTable.DISTRICT_ID_COLUMN_NAME + " md "
-						
-				+ " FROM " + NewOrdersTable.TABLE_NAME
-				
-				+ " WHERE " + NewOrdersTable.WAREHOUSE_ID_COLUMN_NAME + " =? "
-					+ " AND "+ NewOrdersTable.DISTRICT_ID_COLUMN_NAME + " =? " 
-					
-				+ " GROUP BY " 
-						+ NewOrdersTable.WAREHOUSE_ID_COLUMN_NAME + ", "
-						+ NewOrdersTable.DISTRICT_ID_COLUMN_NAME 
-			+ ") orr "
-			+ "JOIN "+ NewOrdersTable.TABLE_NAME + " oo "
-				+ "ON oo." + NewOrdersTable.WAREHOUSE_ID_COLUMN_NAME + "=orr.mw "
-					+ "AND oo." + NewOrdersTable.DISTRICT_ID_COLUMN_NAME + "=orr.md "
-					+ "AND oo." + NewOrdersTable.ORDER_ID_COLUMN_NAME + "=orr.mo"; 
+	private static final RecordColumn<NewOrders, Integer> AGGREGATE_COLUMN = NewOrdersTable.ORDER_ID_COLUMN;
 	
 	public FindNewOrderWithLowestOrderIdByWarehouseAndDistrict(NewOrdersTable table) {
 		super(
 			ID, 
-			MIN_ORDER_ID_QUERY, 
 			table, 
-			table.getCompositeIndex()
+			table.getCompositeIndex(),
+			new AggregateFunction(AGGREGATE_COLUMN, AggregateType.MIN) 
 		);
 	}
 	
@@ -49,8 +31,8 @@ public class FindNewOrderWithLowestOrderIdByWarehouseAndDistrict extends SingleI
 		return QueryStep.findHighest(
 				results, 
 				(one, other) -> Integer.compare(
-									other.getRecord().getOrderId(), 
-									one.getRecord().getOrderId()
+									AGGREGATE_COLUMN.get(other.getRecord()), 
+									AGGREGATE_COLUMN.get(one.getRecord())
 								)
 		);
 	}
