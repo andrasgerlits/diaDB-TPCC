@@ -77,7 +77,6 @@
     	<Async name="async">
 			<AppenderRef ref="stdlogs" />
 		</Async>
-
 	</Appenders>
 	<Loggers>
 		<Root level="info">
@@ -86,8 +85,8 @@
 		
 		<Logger name="kafka" level="warn"/>
 		<Logger name="org.apache" level="warn"/>
-		<Logger name="com.dianemodb" level="info"/>
-		<Logger name="com.dianemodb.tpcc" level="info"/>
+		<Logger name="com.dianemodb" level="info" />
+		<Logger name="com.dianemodb.tpcc" level="info" />
 		
 		<Logger name="com.dianemodb.tpcc.transaction.Delivery" level="info" additivity="false">
 			<AppenderRef ref="stdlogsFile" />
