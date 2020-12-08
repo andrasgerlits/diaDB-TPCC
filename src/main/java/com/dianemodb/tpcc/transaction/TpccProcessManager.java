@@ -85,7 +85,7 @@ public class TpccProcessManager extends ProcessManager {
 		
 		prototypeList = createFactoryPrototypeList(application, f);
 		
-		terminals = new TerminalPool();
+		terminals = new TerminalPool(true);
 		
 		for(short i = 0; i < Constants.NUMBER_OF_WAREHOUSES; i++ ) {
 			List<TpccProcessFactory> factoryList = new LinkedList<>(prototypeList);
@@ -175,13 +175,13 @@ public class TpccProcessManager extends ProcessManager {
 		}
 		
 		while(!terminals.isEmpty() && result.size() < number) {
-			result.add(startNewProcess(maxVarianceMs));
+			result.add(startNewProcess());
 		}
 		
 		return result;
 	}
 	
-	private NextStep startNewProcess(int maxVarianceMs) {
+	private NextStep startNewProcess() {
 		Optional<Short> maybeWarehouseId = terminals.randomWarehouseWithFreeTerminal();
 		
 		// should have checked if there were available values
@@ -190,15 +190,7 @@ public class TpccProcessManager extends ProcessManager {
 		short warehouseId = maybeWarehouseId.orElseThrow(); 
 		byte districtId = (byte) getRandom().nextInt(Constants.DISTRICT_PER_WAREHOUSE);
 
-		int variance;
-		if(maxVarianceMs > 0) {
-			variance = random.nextInt(maxVarianceMs);
-		} 
-		else {
-			variance = 0;
-		}
-		
-		TpccTestProcess process = createNextProcess(districtId, warehouseId, variance);
+		TpccTestProcess process = createNextProcess(districtId, warehouseId, 0);
 
 		if(process.isTerminalBased()) {
 			terminals.borrow(process);
@@ -314,16 +306,29 @@ public class TpccProcessManager extends ProcessManager {
 	}
 	
 	private void finished(TpccTestProcess tpccProcess) {
-		long latency = System.currentTimeMillis() - tpccProcess.getInitialRequestStartTime();
+		long latency = System.currentTimeMillis() - tpccProcess.getInitialRequestTime();
 
-		LOGGER.info(
-				"Process finished {} {} {} {}", 
-				StringUtils.leftPad(tpccProcess.getClass().getSimpleName(), 15),
-				StringUtils.leftPad(String.valueOf(latency), 10),
-				StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
-				StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3),
-				tpccProcess.getUiid()
-		);
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug(
+					"Process finished {} {} {} {}", 
+					StringUtils.leftPad(tpccProcess.getClass().getSimpleName(), 15),
+					StringUtils.leftPad(String.valueOf(latency), 10),
+					StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
+					StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3),
+					tpccProcess.getUiid()
+			);
+		}
+		
+		if(tpccProcess.isLate()) {
+			LOGGER.info(
+					"Process late {} {} {} {}", 
+					StringUtils.leftPad(tpccProcess.getClass().getSimpleName(), 15),
+					StringUtils.leftPad(String.valueOf(latency), 10),
+					StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
+					StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3),
+					tpccProcess.getUiid()
+			);
+		}
 		
 		// group transactions into 100 ms intervals
 		long timeKey = latency / 100;

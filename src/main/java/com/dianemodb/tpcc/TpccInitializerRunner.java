@@ -83,13 +83,13 @@ public class TpccInitializerRunner extends InitializerRunner {
 	}
 
 	@Override
-	protected boolean hasNext() {
+	protected boolean canGenerateMore() {
 		return currentInitializer.hasNext() || !initializers.isEmpty();
 	}
 
 	@Override
 	protected List<UserRecord> createRecords(TransactionId txId) {
-		assert hasNext();
+		assert canGenerateMore();
 		
 		if(!currentInitializer.hasNext()) {
 			LOGGER.info("Finished " + currentInitializer.getClass().getSimpleName());

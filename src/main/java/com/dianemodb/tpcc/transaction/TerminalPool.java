@@ -11,6 +11,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -20,9 +21,14 @@ import com.dianemodb.tpcc.Constants;
 
 public class TerminalPool {
 	
+	private static final int INITIAL_TERMINAL_NUMBER_PER_WAREHOUSE = 10;
+
+	private static final int MINUTE = 60 * 1000;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(TerminalPool.class.getName());
 	
-	private static final int BORROW_TIMEOUT = 5 * 60 * 1000; 
+	private static final int BORROW_TIMEOUT = 5 * MINUTE;
+	private static final int STARTUP_TIME = 10 * MINUTE; 
 
 	/**
 	 * The pool of terminals, from which the 
@@ -35,9 +41,20 @@ public class TerminalPool {
 	
 	private final NavigableMap<Long, Short> terminalFreeupTimes = new TreeMap<>();
 	
-	public TerminalPool() {
+	private final long startTime;
+	
+	private boolean started = false;
+	
+	public TerminalPool(boolean needsStartup) {
+		this.startTime = System.currentTimeMillis();
+		
+		// ramp-up disabled 
+		this.started = !needsStartup;
+
+		int numberToStart = started ? INITIAL_TERMINAL_NUMBER_PER_WAREHOUSE : Constants.TERMINAL_PER_WAREHOUSE;
+		
 		for( short i = 0; i < Constants.NUMBER_OF_WAREHOUSES; i++ ) {
-			freeTerminals.put(i, new AtomicInteger(Constants.TERMINAL_PER_WAREHOUSE));
+			freeTerminals.put(i, new AtomicInteger(numberToStart));
 		}
 	}
 	
@@ -52,7 +69,7 @@ public class TerminalPool {
 	}
 
 	public int size() {
-		returnNoLongerUsedTerminals();
+		recalculatePoolSize();
 		checkTimeouts();
 
 		return freeTerminals.values()
@@ -71,7 +88,7 @@ public class TerminalPool {
 	}
 
 	private Optional<Entry<Short, AtomicInteger>> maybeAnyFreeTerminal() {
-		returnNoLongerUsedTerminals();
+		recalculatePoolSize();
 
 		return freeTerminals.entrySet()
 					.stream()
@@ -84,24 +101,64 @@ public class TerminalPool {
 	public void borrow(TpccTestProcess process) {
 		checkTimeouts();
 		
+		recalculatePoolSize();
+		
+		// shouldn't have been called if empty
+		assert !isEmpty();
+		
+		if(!started) {
+			process.resetAllWaitTimesToZero();
+		}
+
+		long now = System.currentTimeMillis();
+		
 		short warehouseId = process.getWarehouseId();
 		
-		returnNoLongerUsedTerminals();
-		
-		assert !isEmpty();
 		int freeTerminalsForWarehouse = freeTerminals.get(warehouseId).decrementAndGet();
 		
-		borrowTime.put(process, System.currentTimeMillis());
+		borrowTime.put(process, now);
 		
 		assert freeTerminalsForWarehouse >= 0;
 	}
-	
+
+	/**
+	*  Staggered startup, add a new terminal every 3 minutes,
+	*  until all of them are started
+	*/
+	private void checkStaggeredStart() {
+		if(started) {
+			return;
+		}
+		
+		long sinceStart = System.currentTimeMillis() - startTime;
+		if(sinceStart > STARTUP_TIME) {
+			int borrowedForZero = 
+					borrowTime.keySet()
+						.stream()
+						.filter(p -> p.terminalWarehouseId == 0)
+						.collect(Collectors.counting())
+						.intValue();
+			
+			int totalTerminals = 
+					freeTerminals.get(Short.valueOf((short) 0)).get() + borrowedForZero;
+			
+			if(totalTerminals < Constants.TERMINAL_PER_WAREHOUSE) {
+				for( short i = 0; i < Constants.NUMBER_OF_WAREHOUSES; i++ ) {
+					// increment the number of terminals for each warehouse
+					freeTerminals.get(i).addAndGet(Constants.TERMINAL_PER_WAREHOUSE - INITIAL_TERMINAL_NUMBER_PER_WAREHOUSE);
+				}		
+			}
+			
+			started = true;
+		}
+	}
+
 	public void processFinished(TpccTestProcess tpccProcess) {
 		// even if it timed out, we graciously forgive
 		borrowTime.remove(tpccProcess);
 		
 		checkTimeouts();
-		returnNoLongerUsedTerminals();
+		recalculatePoolSize();
 		
 		// return terminal to the pool at this time
 		long terminalFreeupTime = System.currentTimeMillis() + tpccProcess.getThinkTimeInMs();
@@ -158,11 +215,13 @@ public class TerminalPool {
 	}
 
 	/**
-	 * clean up potentially freed up terminals. The time for these is marked
+	 * Clean up potentially freed up terminals. The time for these is marked
 	 * when the process has finished, but they're only marked as available just
 	 * before they're needed.
 	 */
-	private synchronized void returnNoLongerUsedTerminals() {
+	private synchronized void recalculatePoolSize() {
+		checkStaggeredStart();
+		
 		if(terminalFreeupTimes.isEmpty()) {
 			return;
 		}

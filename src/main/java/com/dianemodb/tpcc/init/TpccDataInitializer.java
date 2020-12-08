@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 
 import com.dianemodb.UserRecord;
@@ -177,16 +178,20 @@ public abstract class TpccDataInitializer {
 		
 		LOGGER.info(
 				"{} {} / {} \t\t {}:{}:{}", 
-				itemTypeName, 
-				numberProcessed, 
-				numberOfBatches(), 
-				hours, 
-				minutes, 
-				seconds
+				StringUtils.leftPad(itemTypeName, 10), 
+				StringUtils.leftPad(String.valueOf(numberProcessed), 5), 
+				StringUtils.leftPad(String.valueOf(numberOfBatches()), 5), 
+				pad(hours), 
+				pad(minutes), 
+				pad(seconds)
 		);
 		
 		return records;
 	}
+	protected String pad(Number seconds) {
+		return StringUtils.leftPad(String.valueOf(seconds.intValue()), 2, '0');
+	}
+
 	
 	protected abstract List<UserRecord> createModificationCollection(TransactionId txId, int batchNumber);
 

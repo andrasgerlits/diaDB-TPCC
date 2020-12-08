@@ -107,13 +107,13 @@ public abstract class TpccTestProcess extends TestProcess {
 	 * This is the epoch time at which point the first request can be made for 
 	 * the process, so "creation time + keying time" 
 	 * */
-	private final long initialRequestStartTime;
+	private long initialRequestMinStartTime;
 	
 	/**
 	 * Think time is the time spent after the answer was received by the client
 	 * and before the terminal was returned to the free pool. 
 	 */
-	private final int thinkTimeInMs;
+	private int thinkTimeInMs;
 	
 	protected final long startTime;
 	
@@ -142,7 +142,7 @@ public abstract class TpccTestProcess extends TestProcess {
 		this.thinkTimeInMs = thinkTime;
 		
 		this.startTime = System.currentTimeMillis();
-		this.initialRequestStartTime = keyingTimeInMs + startTime;
+		this.initialRequestMinStartTime = keyingTimeInMs + startTime;
 		
 		this.uuid = uuid;
 	}
@@ -152,7 +152,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 	
 	public boolean isLate() {
-		return System.currentTimeMillis() > initialRequestStartTime + MAX_TIMES_BY_CLASS.get(this.getClass());
+		return System.currentTimeMillis() > initialRequestMinStartTime + MAX_TIMES_BY_CLASS.get(this.getClass());
 	}
 	
 	@Override
@@ -196,7 +196,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	
 	@Override
 	public NextStep start() {
-		return ofSingle(startTransaction(), this::startInternal, initialRequestStartTime);
+		return ofSingle(startTransaction(), this::startInternal, initialRequestMinStartTime);
 	}
 
 	// TX is rolled back when it receives an exception
@@ -224,8 +224,8 @@ public abstract class TpccTestProcess extends TestProcess {
 		return modifyEvent(modificationCollection);		
 	}
 	
-	public long getInitialRequestStartTime() {
-		return initialRequestStartTime;
+	public long getInitialRequestTime() {
+		return initialRequestTime;
 	}
 	
 	public long getStartTime() {
@@ -248,7 +248,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (int) (initialRequestStartTime ^ (initialRequestStartTime >>> 32));
+		result = prime * result + (int) (initialRequestMinStartTime ^ (initialRequestMinStartTime >>> 32));
 		result = prime * result + (int) (startTime ^ (startTime >>> 32));
 		result = prime * result + terminalWarehouseId;
 		result = prime * result + thinkTimeInMs;
@@ -266,7 +266,7 @@ public abstract class TpccTestProcess extends TestProcess {
 		if (getClass() != obj.getClass())
 			return false;
 		TpccTestProcess other = (TpccTestProcess) obj;
-		if (initialRequestStartTime != other.initialRequestStartTime)
+		if (initialRequestMinStartTime != other.initialRequestMinStartTime)
 			return false;
 		if (startTime != other.startTime)
 			return false;
@@ -292,12 +292,15 @@ public abstract class TpccTestProcess extends TestProcess {
 		return getClass().getSimpleName() + " ["
 				+ "txComputer=" + txComputer
 				+ ", terminalWarehouseId=" + terminalWarehouseId
-				+ ", initialRequestStartTime=" + initialRequestStartTime 
+				+ ", initialRequestStartTime=" + initialRequestMinStartTime 
 				+ ", thinkTimeInMs=" + thinkTimeInMs
 				+ ", startTime=" + startTime 
 				+ ", uuid=" + uuid 
 			+ "]";
 	}
-	
-	
+
+	public void resetAllWaitTimesToZero() {
+		this.initialRequestMinStartTime = 0L;
+		this.thinkTimeInMs = 0;
+	}
 }

@@ -18,5 +18,4 @@ public class FindNewOrderWithLowestOrderIdByWarehouseAndDistrict extends SingleI
 			new AggregateFunction<>(NewOrdersTable.ORDER_ID_COLUMN, AggregateType.MIN) 
 		);
 	}
-
 }

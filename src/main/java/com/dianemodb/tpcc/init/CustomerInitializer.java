@@ -98,16 +98,6 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 			records.add(history);
 		}
 
-		/*
-		if(LOGGER.isInfoEnabled()) {
-			LOGGER.info(
-				"Customer number {} / {}",
-				batchNumber, 
-				numberOfBatches()
-			);
-		}
-		*/
-
 		return records;
 	}
 }

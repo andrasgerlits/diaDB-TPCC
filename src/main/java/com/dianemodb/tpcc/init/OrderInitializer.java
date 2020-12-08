@@ -23,7 +23,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 		super(application, Constants.ORDER_PER_DISTRICT);
 	}
 
-	private static final int ITEM_PER_TX = 10000;
+	private static final int ITEM_PER_TX = 100;
 
 	private static final int TOTAL_NUMBER_OF_BATCHES = 
 				Constants.NUMBER_OF_WAREHOUSES 
