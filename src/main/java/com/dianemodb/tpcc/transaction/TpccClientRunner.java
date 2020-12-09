@@ -19,19 +19,23 @@ import com.dianemodb.runner.ExampleRunner;
 
 public class TpccClientRunner extends AbstractClientRunner {
 
+	private int concurrentRequestNumber;
+	
 	public TpccClientRunner(
 			Properties kafkaServerProperties, 
 			String bootStrapUrl, 
 			ServerComputerId topicId,
 			Topology topology, 
-			SQLServerApplication application
+			SQLServerApplication application,
+			int concurrentRequestNumber
 	) throws Exception {
 		super(kafkaServerProperties, bootStrapUrl, topicId, topology, application);
+		this.concurrentRequestNumber = concurrentRequestNumber;
 	}
 
 	@Override
 	protected ProcessManager createTestProcessManager() {
-		return new TpccProcessManager(application, topology.getLeafNodes());
+		return new TpccProcessManager(application, topology.getLeafNodes(), concurrentRequestNumber);
 	}
 
 	public static TpccClientRunner init(
@@ -56,7 +60,8 @@ public class TpccClientRunner extends AbstractClientRunner {
 								bootstrapUrl, 
 								getTopicId(cmd), 
 								topology, 
-								f.apply(topology)
+								f.apply(topology),
+								10
 						);
 			}
 		);

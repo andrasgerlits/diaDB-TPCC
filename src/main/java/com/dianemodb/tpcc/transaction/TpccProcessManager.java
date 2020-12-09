@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -43,7 +44,7 @@ public class TpccProcessManager extends ProcessManager {
 	private static final int TIME_MEASUREMENT_INTERVAL = 1 * 60 * 1000;
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TpccProcessManager.class.getName());
-	
+
 	private long lastDumpTime = System.currentTimeMillis();
 	
 	private final TerminalPool terminals;
@@ -59,12 +60,15 @@ public class TpccProcessManager extends ProcessManager {
 	private final List<NextStep> toRetry = new LinkedList<>();
 	
 	private final List<TpccProcessFactory> prototypeList;
+
+	private final List<NextStep> processesInKeyingTime = new LinkedList<>();
 	
 	public TpccProcessManager(
 			SQLServerApplication application, 
-			List<ServerComputerId> leafComputers
+			List<ServerComputerId> leafComputers,
+			int concurrentRequestNumber
 	) {
-		super(application, leafComputers);
+		super(application, leafComputers, concurrentRequestNumber);
 		
 		// tx maintained on the same computer as the warehouse-record
 		WarehouseTable serverTable = (WarehouseTable) application.getTableById(WarehouseTable.ID);
@@ -97,7 +101,8 @@ public class TpccProcessManager extends ProcessManager {
 		 * we can start a tx for each terminal right away, 
 		 * start with an initial variance of 10 seconds to space out the first requests 
 		 */
-		startNewProcess(terminals.size(), 0);
+		List<NextStep> steps = nextProcess(terminals.size());
+		super.sendNextSteps(steps);
 	}
 
 	private List<TpccProcessFactory> createFactoryPrototypeList(
@@ -157,8 +162,7 @@ public class TpccProcessManager extends ProcessManager {
 		return TestProcess.FINISHED;
 	}
 
-	@Override
-	protected List<NextStep> nextProcess(int number, int maxVarianceMs) {
+	private List<NextStep> nextProcess(int number) {
 		List<NextStep> result = new LinkedList<>();
 		
 		// if there was anything to retry, return that first
@@ -174,7 +178,10 @@ public class TpccProcessManager extends ProcessManager {
 			}
 		}
 		
-		while(!terminals.isEmpty() && result.size() < number) {
+		while(
+			!terminals.isEmpty() 
+			&& result.size() < number 
+		) {
 			result.add(startNewProcess());
 		}
 		
@@ -232,7 +239,7 @@ public class TpccProcessManager extends ProcessManager {
 	public void process(Map<ConversationId, Either<Object, ? extends Throwable>> results) {
 		super.process(results);
 		
-		int numberToStart = terminals.size() + toRetry.size();
+		int numberToStart = terminals.size() + toRetry.size() - processesInKeyingTime.size();
 		
 		LOGGER.debug("To start {}", numberToStart, toRetry.size());
 		
@@ -241,17 +248,31 @@ public class TpccProcessManager extends ProcessManager {
 			return;
 		}
 		
-		int started = startNewProcess(numberToStart, 0);
+		List<NextStep> steps = nextProcess(numberToStart);
+		processesInKeyingTime.addAll(steps);
 		
-		// if nothing was started
-		if(started == 0) {
-			return;
-		}
+		long now = System.currentTimeMillis();
 		
-		assert started <= numberToStart;
+		List<NextStep> stepsToAbort = 
+				steps.stream()
+				.filter(n -> ((TpccTestProcess)n.getProcess()).isLate())
+				.collect(Collectors.toList());
 		
-		if(LOGGER.isDebugEnabled() && started > 0) {
-			LOGGER.debug("Started {} processes", started);
+		processesInKeyingTime.removeAll(stepsToAbort);
+		
+		stepsToAbort.forEach(s -> finished( (TpccTestProcess) s.getProcess()) );
+		
+		List<NextStep> processesToStart = 
+				processesInKeyingTime.stream()
+					.filter(s -> ((TpccTestProcess) s.getProcess()).getInitialRequestTime() <= now )
+					.collect(Collectors.toList());
+		
+		processesInKeyingTime.removeAll(processesToStart);
+		
+		super.sendNextSteps(processesToStart);
+		
+		if(LOGGER.isDebugEnabled() && processesToStart.size() > 0) {
+			LOGGER.debug("Started {} processes", processesToStart);
 		}
 		
 		logTimes();
@@ -301,6 +322,9 @@ public class TpccProcessManager extends ProcessManager {
 		
 		terminals.logState();
 		
+		LOGGER.info("Executing {}", super.numberExecuting());
+		LOGGER.info("Waiting in queue {}", super.waitingInQueue());
+		
 		lastDumpTime = now;
 		processingTimeByTxType.clear();
 	}
@@ -309,25 +333,29 @@ public class TpccProcessManager extends ProcessManager {
 		long latency = System.currentTimeMillis() - tpccProcess.getInitialRequestTime();
 
 		if(LOGGER.isDebugEnabled()) {
-			LOGGER.debug(
-					"Process finished {} {} {} {}", 
-					StringUtils.leftPad(tpccProcess.getClass().getSimpleName(), 15),
-					StringUtils.leftPad(String.valueOf(latency), 10),
-					StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
-					StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3),
-					tpccProcess.getUiid()
-			);
+			if(tpccProcess.isLate()) {
+				LOGGER.debug(
+						"Process late {} {} {} {}", 
+						StringUtils.leftPad(tpccProcess.getClass().getSimpleName(), 15),
+						StringUtils.leftPad(String.valueOf(latency), 10),
+						StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
+						StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3),
+						tpccProcess.getUiid()
+				);
+			}
+			else {
+				LOGGER.debug(
+						"Process finished {} {} {} {}", 
+						StringUtils.leftPad(tpccProcess.getClass().getSimpleName(), 15),
+						StringUtils.leftPad(String.valueOf(latency), 10),
+						StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
+						StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3),
+						tpccProcess.getUiid()
+				);
+			}
 		}
 		
 		if(tpccProcess.isLate()) {
-			LOGGER.info(
-					"Process late {} {} {} {}", 
-					StringUtils.leftPad(tpccProcess.getClass().getSimpleName(), 15),
-					StringUtils.leftPad(String.valueOf(latency), 10),
-					StringUtils.leftPad(String.valueOf(tpccProcess.getWarehouseId()), 3),
-					StringUtils.leftPad(String.valueOf(tpccProcess.getRetryCount()), 3),
-					tpccProcess.getUiid()
-			);
 		}
 		
 		// group transactions into 100 ms intervals

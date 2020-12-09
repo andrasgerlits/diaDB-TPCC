@@ -29,7 +29,7 @@ public class FindMaxOrderIdForCustomer extends SingleIndexSingleParameterSetQuer
 			ID,  
 			table, 
 			table.getCompositeCustomerIndex(),
-			new AggregateFunction(OrdersTable.ORDER_ID_COLUMN, AggregateType.MAX)
+			new AggregateFunction<Orders, Integer>(OrdersTable.ORDER_ID_COLUMN, AggregateType.MAX)
 		);
 	}
 

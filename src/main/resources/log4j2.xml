@@ -86,17 +86,15 @@
 		<Logger name="kafka" level="warn"/>
 		<Logger name="org.apache" level="warn"/>
 		<Logger name="com.dianemodb" level="info" />
-		<Logger name="com.dianemodb.tpcc" level="info" />
 		
+		<Logger name="com.dianemodb.tpcc" level="debug" />
+		<Logger name="com.dianemodb.integration.test.ProcessManager" level="debug"/>
+<!-- 
 		<Logger name="com.dianemodb.tpcc.transaction.Delivery" level="info" additivity="false">
 			<AppenderRef ref="stdlogsFile" />
 		</Logger>
-		
-<!-- 
-		<Logger name="com.dianemodb.integration.test.ProcessManager" level="debug" additivity="false">
-			<AppenderRef ref="stdlogsFile" />
-		</Logger>
--->	
+-->
+
 		<!-- log SQL times at debug -->
  		<Logger name="com.dianemodb.integration.sqlwrapper" level="info" additivity="false">
 			<AppenderRef ref="sql-times" />
@@ -157,23 +155,6 @@
  		
 		<Logger name="com.dianemodb.kafka.EventAggregator" level="info"/>
  -->
-<!-- 
-TEST LOGGERS
-		<Logger name="com.dianemodb.integration.test" level="debug"/>
-		
-
-		<AppenderRef ref="Console" />
-		</Logger>
-
-		<Logger name="com.dianemodb.integration.test.AbstractDbTestCase" level="warn">
-			<AppenderRef ref="Console" />		
-		</Logger>
-		
-		<Logger name="com.dianemodb.integration.test.KafkaStartTest" level="warn">
-			<AppenderRef ref="Console" />
-		</Logger>
-		
- -->	
 		
 <!-- 
 CHATTY LOGGERS, explicitly disabled
@@ -197,10 +178,6 @@ INPUT/OUTPUT LOGGER
 		</Logger>
 		
 		<Logger name="com.dianemodb.event.version.TokenPassingEvent" level="debug">
-			<AppenderRef ref="Console" />
-		</Logger>
-		
-		
 			<AppenderRef ref="Console" />
 		</Logger>
 		
