@@ -22,7 +22,7 @@
   			filePattern="target/sql-%d{HH_mm_ss}.log.gz" 
   			append="false" 
 		>
-           <PatternLayout pattern="%-15X{id} %-30X{env} %msg%n" />
+           <PatternLayout pattern="%-30X{env} %msg%n" />
            <SizeBasedTriggeringPolicy size="1000 MB" />
         </RollingFile>
         
@@ -87,9 +87,9 @@
 		<Logger name="org.apache" level="warn"/>
 		<Logger name="com.dianemodb" level="info" />
 		
-		<Logger name="com.dianemodb.tpcc" level="debug" />
-		<Logger name="com.dianemodb.integration.test.ProcessManager" level="debug"/>
+		<Logger name="com.dianemodb.tpcc" level="info" />
 <!-- 
+		<Logger name="com.dianemodb.integration.test.ProcessManager" level="debug"/>
 		<Logger name="com.dianemodb.tpcc.transaction.Delivery" level="info" additivity="false">
 			<AppenderRef ref="stdlogsFile" />
 		</Logger>

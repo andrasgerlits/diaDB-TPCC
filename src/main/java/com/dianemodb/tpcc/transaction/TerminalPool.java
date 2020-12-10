@@ -48,7 +48,6 @@ public class TerminalPool {
 	public TerminalPool(boolean needsStartup) {
 		this.startTime = System.currentTimeMillis();
 		
-		// ramp-up disabled 
 		this.started = !needsStartup;
 
 		int numberToStart = started ? INITIAL_TERMINAL_NUMBER_PER_WAREHOUSE : Constants.TERMINAL_PER_WAREHOUSE;

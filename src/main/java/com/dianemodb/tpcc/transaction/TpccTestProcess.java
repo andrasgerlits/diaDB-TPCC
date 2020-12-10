@@ -16,6 +16,7 @@ import com.dianemodb.event.ExecuteWorkflowEvent;
 import com.dianemodb.event.tx.CommitTransactionEvent;
 import com.dianemodb.functional.FunctionalUtil;
 import com.dianemodb.id.TransactionId;
+import com.dianemodb.integration.test.NextStep;
 import com.dianemodb.integration.test.TestProcess;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;

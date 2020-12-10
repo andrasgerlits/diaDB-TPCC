@@ -61,7 +61,7 @@ public class TpccClientRunner extends AbstractClientRunner {
 								getTopicId(cmd), 
 								topology, 
 								f.apply(topology),
-								10
+								8
 						);
 			}
 		);

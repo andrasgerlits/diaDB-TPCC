@@ -22,9 +22,9 @@ import com.dianemodb.ConversationId;
 import com.dianemodb.ServerComputerId;
 import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
 import com.dianemodb.functional.ByteUtil;
+import com.dianemodb.integration.test.NextStep;
 import com.dianemodb.integration.test.ProcessManager;
 import com.dianemodb.integration.test.TestProcess;
-import com.dianemodb.integration.test.TestProcess.NextStep;
 import com.dianemodb.integration.test.TestProcess.Result;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.metaschema.distributed.Condition;
@@ -63,12 +63,14 @@ public class TpccProcessManager extends ProcessManager {
 
 	private final List<NextStep> processesInKeyingTime = new LinkedList<>();
 	
+	private int retryCount = 0;
+	
 	public TpccProcessManager(
 			SQLServerApplication application, 
 			List<ServerComputerId> leafComputers,
 			int concurrentRequestNumber
 	) {
-		super(application, leafComputers, concurrentRequestNumber);
+		super(leafComputers, concurrentRequestNumber);
 		
 		// tx maintained on the same computer as the warehouse-record
 		WarehouseTable serverTable = (WarehouseTable) application.getTableById(WarehouseTable.ID);
@@ -89,7 +91,7 @@ public class TpccProcessManager extends ProcessManager {
 		
 		prototypeList = createFactoryPrototypeList(application, f);
 		
-		terminals = new TerminalPool(true);
+		terminals = new TerminalPool(false);
 		
 		for(short i = 0; i < Constants.NUMBER_OF_WAREHOUSES; i++ ) {
 			List<TpccProcessFactory> factoryList = new LinkedList<>(prototypeList);
@@ -148,7 +150,9 @@ public class TpccProcessManager extends ProcessManager {
 		}
 		// if this was an expected diadb exception, like concurrent commit, so safe to retry
 		else {
-			if(!process.isLate()) { 
+			// if process is already late, it has failed, stop retrying
+			if(!process.isLate()) {
+				retryCount++;
 				toRetry.add(process.cancelAndRetry());
 				
 				if(process.isTerminalBased()) {
@@ -241,7 +245,13 @@ public class TpccProcessManager extends ProcessManager {
 		
 		int numberToStart = terminals.size() + toRetry.size() - processesInKeyingTime.size();
 		
-		LOGGER.debug("To start {}", numberToStart, toRetry.size());
+		LOGGER.debug(
+				"To start {}, retry {} keying {} terminals {}", 
+				numberToStart, 
+				toRetry.size(), 
+				processesInKeyingTime.size(), 
+				terminals.size()
+		);
 		
 		// if nothing to start
 		if(numberToStart == 0) {
@@ -320,10 +330,12 @@ public class TpccProcessManager extends ProcessManager {
 			LOGGER.info("Success {} {}", e.getKey().getSimpleName(), e.getValue());
 		}
 		
-		terminals.logState();
+		LOGGER.info("Retries {}", retryCount);
+		LOGGER.info("Keying {}", processesInKeyingTime.size());
+		retryCount = 0;
 		
-		LOGGER.info("Executing {}", super.numberExecuting());
-		LOGGER.info("Waiting in queue {}", super.waitingInQueue());
+		terminals.logState();
+		LOGGER.info("{}", super.aggregator.toDetailsString());
 		
 		lastDumpTime = now;
 		processingTimeByTxType.clear();
@@ -353,9 +365,6 @@ public class TpccProcessManager extends ProcessManager {
 						tpccProcess.getUiid()
 				);
 			}
-		}
-		
-		if(tpccProcess.isLate()) {
 		}
 		
 		// group transactions into 100 ms intervals
