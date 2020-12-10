@@ -103,7 +103,7 @@ public class TpccProcessManager extends ProcessManager {
 		 * we can start a tx for each terminal right away, 
 		 * start with an initial variance of 10 seconds to space out the first requests 
 		 */
-		List<NextStep> steps = nextProcess(terminals.size());
+		List<NextStep> steps = nextProcess(terminals.availableTerminals());
 		super.sendNextSteps(steps);
 	}
 
@@ -160,6 +160,7 @@ public class TpccProcessManager extends ProcessManager {
 				}
 			}
 			else {
+				// handle it like any other timed out process
 				finished((TpccTestProcess) process);
 			}
 		}
@@ -173,9 +174,6 @@ public class TpccProcessManager extends ProcessManager {
 		while(!toRetry.isEmpty()) {
 			NextStep nextStep = toRetry.remove(0);
 			result.add(nextStep);
-			
-			TpccTestProcess tpccProcess = (TpccTestProcess) nextStep.getProcess();
-			tpccProcess.retry();
 			
 			if(result.size() == number) {
 				return result;
@@ -243,14 +241,14 @@ public class TpccProcessManager extends ProcessManager {
 	public void process(Map<ConversationId, Either<Object, ? extends Throwable>> results) {
 		super.process(results);
 		
-		int numberToStart = terminals.size() + toRetry.size() - processesInKeyingTime.size();
+		int numberToStart = terminals.availableTerminals() + toRetry.size() - processesInKeyingTime.size();
 		
 		LOGGER.debug(
 				"To start {}, retry {} keying {} terminals {}", 
 				numberToStart, 
 				toRetry.size(), 
 				processesInKeyingTime.size(), 
-				terminals.size()
+				terminals.availableTerminals()
 		);
 		
 		// if nothing to start
@@ -258,6 +256,7 @@ public class TpccProcessManager extends ProcessManager {
 			return;
 		}
 		
+		// retried processes will have 0 keying time, so will be included in the started processes
 		List<NextStep> steps = nextProcess(numberToStart);
 		processesInKeyingTime.addAll(steps);
 		
@@ -268,14 +267,20 @@ public class TpccProcessManager extends ProcessManager {
 				.filter(n -> ((TpccTestProcess)n.getProcess()).isLate())
 				.collect(Collectors.toList());
 		
-		processesInKeyingTime.removeAll(stepsToAbort);
-		
-		stepsToAbort.forEach(s -> finished( (TpccTestProcess) s.getProcess()) );
+		if(!stepsToAbort.isEmpty()) {
+			processesInKeyingTime.removeAll(stepsToAbort);
+			
+			LOGGER.warn("Aborting before request even sent {}", stepsToAbort);
+			
+			stepsToAbort.forEach(s -> finished( (TpccTestProcess) s.getProcess()) );
+		}
 		
 		List<NextStep> processesToStart = 
 				processesInKeyingTime.stream()
-					.filter(s -> ((TpccTestProcess) s.getProcess()).getInitialRequestTime() <= now )
+					.filter(s -> ((TpccTestProcess) s.getProcess()).getInitialRequestTime() >= now )
 					.collect(Collectors.toList());
+		
+		Collections.sort(processesToStart, TpccTestProcess.REQUEST_START_TIME_COMPARATOR);
 		
 		processesInKeyingTime.removeAll(processesToStart);
 		

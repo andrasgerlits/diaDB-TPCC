@@ -27,7 +27,7 @@ public class TerminalPool {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TerminalPool.class.getName());
 	
-	private static final int BORROW_TIMEOUT = 5 * MINUTE;
+	private static final int BORROW_TIMEOUT = 3 * MINUTE;
 	private static final int STARTUP_TIME = 10 * MINUTE; 
 
 	/**
@@ -58,7 +58,7 @@ public class TerminalPool {
 	}
 	
 	public void logState() {
-		LOGGER.info("free {}", size());
+		LOGGER.info("free {}", availableTerminals());
 		LOGGER.info("think time {}", terminalFreeupTimes.size());
 		LOGGER.info("borrowed {}", borrowed());
 	}
@@ -67,7 +67,7 @@ public class TerminalPool {
 		return borrowTime.size();
 	}
 
-	public int size() {
+	public int availableTerminals() {
 		recalculatePoolSize();
 		checkTimeouts();
 

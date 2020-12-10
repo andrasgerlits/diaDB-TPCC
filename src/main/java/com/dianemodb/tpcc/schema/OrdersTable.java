@@ -103,28 +103,37 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
-		Map<RecordColumn<Orders,?>, ServerComputerIdNarrowingRule> indexRuleMap = 
+		Map<RecordColumn<Orders,?>, ServerComputerIdNarrowingRule> compositeIndexRuleMap = 
 				DistrictTable.getDistrictBasedRoundRobinRules(
 						WAREHOUSE_ID_COLUMN, 
 						DISTRICT_ID_COLUMN
 				);
 		
-		indexRuleMap.put(ORDER_ID_COLUMN, NullRule.INSTANCE);
+		compositeIndexRuleMap.put(ORDER_ID_COLUMN, NullRule.INSTANCE);
 		
 		this.compositeIndex = 				
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
 						List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, ORDER_ID_COLUMN),
-						indexRuleMap
+						compositeIndexRuleMap
 				);
 		
+		Map<RecordColumn<Orders,?>, ServerComputerIdNarrowingRule> orderIndexRuleMap = 
+				DistrictTable.getDistrictBasedRoundRobinRules(
+						WAREHOUSE_ID_COLUMN, 
+						DISTRICT_ID_COLUMN
+				);
+		
+		orderIndexRuleMap.put(CUSTOMER_ID_COLUMN, NullRule.INSTANCE);
+		orderIndexRuleMap.put(ORDER_ID_COLUMN, NullRule.INSTANCE);
+
 		this.customerIndex = 
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
-						List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, CUSTOMER_ID_COLUMN),
-						indexRuleMap
+						List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, CUSTOMER_ID_COLUMN, ORDER_ID_COLUMN),
+						orderIndexRuleMap
 				);
 	}
 

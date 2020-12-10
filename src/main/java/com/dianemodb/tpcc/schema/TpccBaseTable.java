@@ -29,7 +29,11 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 	private final RecordColumn<R, RecordId> recordIdColumn;
 	
 	public TpccBaseTable(UserRecordTableId tableId, String name) {
-		super(tableId, name);
+		this(tableId, name, Caching.CACHED);
+	}
+	
+	public TpccBaseTable(UserRecordTableId tableId, String name, Caching caching) {
+		super(tableId, name, caching);
 		
 		this.txIdColumn = TX_ID();
 		this.recordIdColumn = RECORD_ID();

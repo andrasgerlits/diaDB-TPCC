@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dianemodb.Topology;
+import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
@@ -100,7 +101,8 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	private final RangeBasedDistributedIndex<NewOrders> compositeIndex;
 	
 	public NewOrdersTable(Topology servers) {
-		super(ID, TABLE_NAME);
+		super(ID, TABLE_NAME, Caching.MEMORY);
+		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
@@ -110,11 +112,13 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 						DISTRICT_ID_COLUMN
 				);
 		
+		indexRuleMap.put(ORDER_ID_COLUMN, NullRule.INSTANCE);
+		
 		compositeIndex = 				
 			new RangeBasedDistributedIndex<>(
 				servers,
 				this, 
-				List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN),
+				List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, ORDER_ID_COLUMN),
 				indexRuleMap
 			);
 

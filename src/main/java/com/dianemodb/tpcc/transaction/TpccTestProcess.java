@@ -1,5 +1,6 @@
 package com.dianemodb.tpcc.transaction;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -43,6 +44,17 @@ public abstract class TpccTestProcess extends TestProcess {
 					Payment.class, 5000,
 					StockLevel.class, 20000
 			);
+
+	public static final Comparator<NextStep> REQUEST_START_TIME_COMPARATOR = 
+			(one, other) -> {
+				TpccTestProcess p1 = (TpccTestProcess) one.getProcess();
+				TpccTestProcess p2 = (TpccTestProcess) other.getProcess();
+				
+				return Long.compare(
+						p1.initialRequestedMinStartTime, 
+						p2.initialRequestedMinStartTime
+					);
+			};
 
 	protected static boolean hasString(String value, String searched) {
 		return value != null && value.contains(searched);
@@ -121,6 +133,8 @@ public abstract class TpccTestProcess extends TestProcess {
 	protected final long startTime;
 	
 	protected final String uuid;
+	
+	private int retryCount = 0;
 	
 	protected TpccTestProcess(
 			Random random, 
@@ -204,7 +218,12 @@ public abstract class TpccTestProcess extends TestProcess {
 
 	// TX is rolled back when it receives an exception
 	public NextStep cancelAndRetry() {
+		retryCount++;
 		return ofSingle(startTransaction(), this::startInternal, 0L);
+	}
+	
+	public int getRetryCount() {
+		return retryCount;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -295,6 +314,7 @@ public abstract class TpccTestProcess extends TestProcess {
 		return getClass().getSimpleName() + " ["
 				+ "txComputer=" + txComputer
 				+ ", terminalWarehouseId=" + terminalWarehouseId
+				+ ", retryCount=" + retryCount
 				+ ", initialRequestStartTime=" + initialRequestedMinStartTime 
 				+ ", thinkTimeInMs=" + thinkTimeInMs
 				+ ", startTime=" + startTime 

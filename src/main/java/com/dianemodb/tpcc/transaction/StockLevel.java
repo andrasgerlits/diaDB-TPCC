@@ -52,6 +52,7 @@ public class StockLevel extends TpccTestProcess {
 				FunctionalUtil.singleResult( (List<RecordWithVersion<District>>) results.iterator().next() );
 		
 		int nextOid = district.getRecord().getNextOid();
+		
 		Envelope queryStock = 
 				query(
 					FindOrderLinesByOrderIdRangeDistrictAndWarehouse.ID,
