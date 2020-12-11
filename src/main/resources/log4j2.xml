@@ -20,7 +20,7 @@
   			name="sql-times" 
   			fileName="target/sql-perf.log" 
   			filePattern="target/sql-%d{HH_mm_ss}.log.gz" 
-  			append="false" 
+  			append="true" 
 		>
            <PatternLayout pattern="%-30X{env} %msg%n" />
            <SizeBasedTriggeringPolicy size="1000 MB" />
@@ -96,7 +96,7 @@
 -->
 
 		<!-- log SQL times at debug -->
- 		<Logger name="com.dianemodb.integration.sqlwrapper" level="info" additivity="false">
+ 		<Logger name="com.dianemodb.integration.sqlwrapper" level="debug" additivity="false">
 			<AppenderRef ref="sql-times" />
 		</Logger>
 		

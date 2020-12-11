@@ -47,7 +47,7 @@ public class ItemTable extends TpccBaseTable<Item> {
 	private final UniqueHashCodeBasedDistributedIndex<Item> idIndex;
 	
 	public ItemTable(Topology servers) {
-		super(ID, TABLE_NAME);
+		super(ID, TABLE_NAME, Caching.MEMORY);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
