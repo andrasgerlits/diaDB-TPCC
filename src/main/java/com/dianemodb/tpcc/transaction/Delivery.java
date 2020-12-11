@@ -2,12 +2,15 @@ package com.dianemodb.tpcc.transaction;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Random;
+import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +19,11 @@ import com.dianemodb.ModificationCollection;
 import com.dianemodb.Record;
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.UserRecord;
 import com.dianemodb.functional.FunctionalUtil;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.NewOrders;
 import com.dianemodb.tpcc.entity.OrderLine;
@@ -33,8 +38,7 @@ public class Delivery extends TpccTestProcess {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Delivery.class.getName());
 
-	private final short carrierId;
-	private final byte districtId; 
+	private final short carrierId; 
 	
 	private List<RecordWithVersion<NewOrders>> newOrders;
 	
@@ -43,83 +47,178 @@ public class Delivery extends TpccTestProcess {
 			ServerComputerId txComputer,
 			SQLServerApplication application, 
 			short warehouseId,
-			byte districtId,
 			String uuid
 	) {
 		super(random, application, txComputer, 2000, 5000, warehouseId, uuid);
 		this.carrierId = TpccDataInitializer.randomCarrierId();
-		this.districtId = districtId;
 	}
 
 	@Override
 	protected Result startTx() {
 		LOGGER.debug("start {}", uuid);
 
-		Envelope query = 						
-				query(
-					FindNewOrderWithLowestOrderIdByWarehouseAndDistrict.ID,
-					List.of( terminalWarehouseId, districtId )
-				);
+		List<Envelope> queries =
+				IntStream.range(0, Constants.DISTRICT_PER_WAREHOUSE)
+					.mapToObj( districtId -> 
+						query(
+							FindNewOrderWithLowestOrderIdByWarehouseAndDistrict.ID,
+							List.of( terminalWarehouseId, districtId )
+						)
+					)
+				.collect(Collectors.toList());
 		
-		return of(query, this::process);
+		return of(queries, this::process);
 	}
 
 	@SuppressWarnings("unchecked")
-	private Result process(Optional<Object> result) {
-		LOGGER.debug("Process {} {}", uuid, result);
+	private Result process(List<Object> r) {
+		List<List<RecordWithVersion<NewOrders>>> results = (List) r;
+		
+		LOGGER.debug("Process {} {}", uuid, results);
+		
+		assert results.size() == 1;
 
-		// finish TX without writing anything to the DB if there was nothing
-		if(result.isEmpty()) {
+		// finish TX without writing anything to the DB if there was nothing in any one
+		if(results.isEmpty() || results.stream().anyMatch( rl -> rl.isEmpty())) {
 			return of(List.of(), this::commit);
 		}
+		
+		List<RecordWithVersion<NewOrders>> orders = FunctionalUtil.flatten(results);
+		
+		// if there were no empty resultsets, this must match
+		assert orders.size() == Constants.DISTRICT_PER_WAREHOUSE;
 		
 		 // select orders for each new_order found
-		this.newOrders = (List<RecordWithVersion<NewOrders>>) result.get();
-		
-		// or if there were fewer than 10
-		if(newOrders.size() < 10) {
-			return of(List.of(), this::commit);
-		}
-		 
-		List<Envelope> orderQueries = 
-				newOrders.stream()
-					.flatMap( this::toQueries )
-					.collect(Collectors.toList());
+		this.newOrders = (List<RecordWithVersion<NewOrders>>) results.iterator().next();
 
-		return of(orderQueries, this::updateRecords);
+		LOGGER.debug("toQueries {} {}", uuid, newOrders);
+		
+		List<NewOrders> noList = 
+				newOrders.stream()
+					.map(RecordWithVersion::getRecord)
+					.collect(Collectors.toList());
+				
+		List<List<?>> orderQueryParams = 
+				noList.stream()
+					.map(this::toOrderParamList)
+					.collect(Collectors.toList());
+		
+		Envelope orderQuery = query(FindOrderByWarehouseDistrictOrderId.ID, orderQueryParams );
+		
+		List<List<?>> customerQueryParams = 
+				noList.stream()
+					.map(this::toCustomerParamList)
+					.collect(Collectors.toList());
+		
+		Envelope customerQuery = query(FindCustomerByWarehouseDistrictAndId.ID, customerQueryParams);
+		
+		List<List<?>> orderLineQueryParams = 
+				noList.stream()
+					.map(this::toOrderLineParamList)
+					.collect(Collectors.toList());
+		
+		Envelope orderLinesQuery = query(FindOrderLinesByWarehouseDistrictOrderId.ID, orderLineQueryParams);
+
+		return of(
+				List.of(orderQuery, customerQuery, orderLinesQuery), 
+				this::updateRecords
+			);
 	}
 
-	private Stream<Envelope> toQueries(RecordWithVersion<NewOrders> rv) {
-		LOGGER.debug("toQueries {} {}", uuid, rv);
-		NewOrders no = rv.getRecord();
+	private List<Number> toCustomerParamList(NewOrders no) {
+		return new ArrayList<>(List.of(terminalWarehouseId, no.getDistrictId(), no.getCustomerId()));
+	}
+	
+	private List<Number> toOrderParamList(NewOrders no) {
+		return new ArrayList<>(List.of(terminalWarehouseId, no.getDistrictId(), no.getOrderId()));
+	}
+
+	private List<Number> toOrderLineParamList(NewOrders no) {
+		return new ArrayList<>(List.of(no.getWarehouseId(), no.getDistrictId(), no.getOrderId()));
+	}
+
+	private <U extends UserRecord, A, R> Map<NewOrders, R> toNewOrderMap(
+			Function<NewOrders, List<?>> paramListFunction,
+			List<RecordWithVersion<U>> records,
+			Collector<RecordWithVersion<U>, A, Map<List<?>, R>> collector
+	) {
+		Map<List<?>, NewOrders> newOrdersByList = 
+				newOrders.stream()
+					.map(RecordWithVersion::getRecord)
+					.collect(
+						Collectors.toMap(
+							paramListFunction, 
+							Function.identity()
+						)
+					);
 		
-		Envelope orderQuery = 
-			query(
-				FindOrderByWarehouseDistrictOrderId.ID, 
-				List.of(terminalWarehouseId, no.getDistrictId(), no.getOrderId())
+		Map<List<?>, R> recordsByList = records.stream().collect(collector);
+		
+		return newOrdersByList.entrySet()
+					.stream()
+					.collect( 
+						Collectors.toMap(
+							e -> e.getValue(), 
+							e -> recordsByList.get(e.getKey())
+						)
+					);		
+	}
+	
+	private <U extends UserRecord> Map<NewOrders, RecordWithVersion<U>> toNewOrderMap(
+			Function<NewOrders, List<?>> paramListFunction,
+			Function<U, List<?>> recordListFunction,
+			List<RecordWithVersion<U>> records
+	) {
+		return toNewOrderMap(
+				paramListFunction, 
+				records, 
+				Collectors.toMap(
+					rwv -> recordListFunction.apply(rwv.getRecord()), 
+					Function.identity()
+				)
 			);
-		
-		Envelope customerQuery = 
-			query(
-				FindCustomerByWarehouseDistrictAndId.ID, 
-				List.of(terminalWarehouseId, no.getDistrictId(), no.getCustomerId())
-			);
-		
-		Envelope orderLinesQuery =
-			query(
-				FindOrderLinesByWarehouseDistrictOrderId.ID,
-				List.of(no.getWarehouseId(), no.getDistrictId(), no.getOrderId())
-			);
-		
-		return Stream.of(orderQuery, customerQuery, orderLinesQuery);
 	}
 
 	private Result updateRecords(List<? extends Object> results) {
 		LOGGER.debug("update {} {}", uuid, results);
 		Timestamp now = new Timestamp(System.currentTimeMillis());
 		
-		List<List<? extends RecordWithVersion<? extends Record>>> resultLists = (List<List<? extends RecordWithVersion<? extends Record>>>) results;
+		List<List<? extends RecordWithVersion<? extends Record>>> resultLists = 
+				(List<List<? extends RecordWithVersion<? extends Record>>>) results;
+		
 		Iterator<List<? extends RecordWithVersion<? extends Record>>> listIterator = resultLists.iterator();
+		
+		List<RecordWithVersion<Orders>> orderList = (List<RecordWithVersion<Orders>>) listIterator.next();
+		
+		Map<NewOrders, RecordWithVersion<Orders>> ordersByNewOrders = 
+				toNewOrderMap(
+					this::toOrderParamList, 
+					o -> List.of(o.getWarehouseId(), o.getDistrictId(), o.getOrderId()), 
+					orderList
+				);
+		
+		List<RecordWithVersion<Customer>> customerList = (List<RecordWithVersion<Customer>>) listIterator.next();
+		
+		Map<NewOrders, RecordWithVersion<Customer>> customersByNewOrders = 
+				toNewOrderMap(
+					this::toCustomerParamList, 
+					c -> List.of(c.getWarehouseId(), c.getDistrictId(), c.getPublicId()), 
+					customerList
+				);
+		
+		List<RecordWithVersion<OrderLine>> orderLineList = (List<RecordWithVersion<OrderLine>>) listIterator.next();
+
+		Map<NewOrders, List<RecordWithVersion<OrderLine>>> orderLineByNewOrders = 
+				toNewOrderMap(
+					this::toOrderLineParamList,  
+					orderLineList,
+					Collectors.groupingBy(
+						rwv -> {
+							OrderLine ol = rwv.getRecord();
+							return List.of(ol.getWarehouseId(), ol.getDistrictId(), ol.getOrderId());
+						}
+					)						
+				);
 		
 		// alternating order-customer pairs, listed in the order in "newOrders"
 		Iterator<RecordWithVersion<NewOrders>> newOrdersIterator = newOrders.iterator();
@@ -127,10 +226,11 @@ public class Delivery extends TpccTestProcess {
 		ModificationCollection modificationCollection = new ModificationCollection();
 		while(newOrdersIterator.hasNext()) {
 			RecordWithVersion<NewOrders> newOrder = newOrdersIterator.next();
-			RecordWithVersion<Orders> order = (RecordWithVersion<Orders>) FunctionalUtil.singleResult(listIterator.next());
-			RecordWithVersion<Customer> customer = (RecordWithVersion<Customer>) FunctionalUtil.singleResult(listIterator.next());
+			RecordWithVersion<Orders> order = ordersByNewOrders.get(newOrder);
+			RecordWithVersion<Customer> customer = customersByNewOrders.get(newOrder);
 			
-			List<RecordWithVersion<OrderLine>> orderLines = (List<RecordWithVersion<OrderLine>>) listIterator.next();
+			List<RecordWithVersion<OrderLine>> orderLines = 
+					(List<RecordWithVersion<OrderLine>>) orderLineByNewOrders.get(newOrder);
 			
 			// make sure that lines are processed as expected
 			assert newOrder.getRecord().getDistrictId() == order.getRecord().getDistrictId()
@@ -164,9 +264,6 @@ public class Delivery extends TpccTestProcess {
 			modificationCollection.addUpdate(customer, updatedCustomer);
 		}
 
-		return of(
-			List.of(modifyEvent(modificationCollection)), 
-			this::commit
-		);
+		return of(List.of(modifyEvent(modificationCollection)), this::commit);
 	}
 }

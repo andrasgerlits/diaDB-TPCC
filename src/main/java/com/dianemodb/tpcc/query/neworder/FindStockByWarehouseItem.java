@@ -1,10 +1,10 @@
 package com.dianemodb.tpcc.query.neworder;
 
-import com.dianemodb.h2impl.SingleIndexMultipleParameterSetQueryDistributionPlan;
+import com.dianemodb.h2impl.MultipleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.Stock;
 import com.dianemodb.tpcc.schema.StockTable;
 
-public class FindStockByWarehouseItem extends SingleIndexMultipleParameterSetQueryDistributionPlan<Stock> {
+public class FindStockByWarehouseItem extends MultipleParameterSetQueryDistributionPlan<Stock> {
 
 	public static final String ID = "FindStockByItemAndWarehouseId";
 	

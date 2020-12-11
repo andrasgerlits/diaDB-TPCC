@@ -116,7 +116,7 @@ public class TpccProcessManager extends ProcessManager {
 					Pair.of(10, (w, d, v) -> new NewOrder(random, f.apply(w), application, w, d, v)),
 					Pair.of(10, (w, d, v) -> new Payment(random, f.apply(w), application, w, d, v)),
 					Pair.of(1, (w, d, v) -> new OrderStatus(random, f.apply(w), application, w, d, v)),
-					Pair.of(1, (w, d, v) -> new Delivery(random, f.apply(w), application, w, d, v)),
+					Pair.of(1, (w, d, v) -> new Delivery(random, f.apply(w), application, w, v)),
 					Pair.of(1, (w, d, v) -> new StockLevel(random, f.apply(w), application, w, d, v))
 				);
 		

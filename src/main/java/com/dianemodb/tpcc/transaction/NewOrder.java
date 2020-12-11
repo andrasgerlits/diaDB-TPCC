@@ -113,10 +113,18 @@ public class NewOrder extends TpccTestProcess {
 	
 	@Override
 	protected Result startTx() {
+		List<List<?>> customerParamLists = new LinkedList<>();
+		
+		customerParamLists.add(
+			new ArrayList<>(
+				List.of(terminalWarehouseId, customerDistrictId, customerId)
+			)
+		);
+		
 		Envelope queryCustomerEnvelope = 
 				query(
 					FindCustomerByWarehouseDistrictAndId.ID, 
-					List.of(terminalWarehouseId, customerDistrictId, customerId)
+					customerParamLists 
 				);
 
 		Envelope queryWarehouseEnvelope = 

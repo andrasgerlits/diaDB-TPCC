@@ -3,7 +3,7 @@ package com.dianemodb.tpcc.query.orderstatus;
 import java.util.List;
 
 import com.dianemodb.RecordWithVersion;
-import com.dianemodb.h2impl.SingleIndexSingleParameterSetQueryDistributionPlan;
+import com.dianemodb.h2impl.SingleParameterSetQueryDistributionPlan;
 import com.dianemodb.metaschema.QueryStep;
 import com.dianemodb.metaschema.distributed.AggregateFunction;
 import com.dianemodb.metaschema.distributed.AggregateType;
@@ -20,7 +20,7 @@ import com.dianemodb.tpcc.schema.OrdersTable;
  * This could be changed by introducing the order-id as part of an index on OrdersTable
  * and specifying a realistic range.
  * */
-public class FindMaxOrderIdForCustomer extends SingleIndexSingleParameterSetQueryDistributionPlan<Orders> {
+public class FindMaxOrderIdForCustomer extends SingleParameterSetQueryDistributionPlan<Orders> {
 
 	public static final String ID = "findMaxOrderIdForCustomer";
 

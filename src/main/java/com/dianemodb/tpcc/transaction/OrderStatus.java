@@ -1,5 +1,6 @@
 package com.dianemodb.tpcc.transaction;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -62,7 +63,7 @@ public class OrderStatus extends TpccTestProcess {
 		Envelope findOrderLinesQuery = 
 				query(
 					FindOrderLinesByWarehouseDistrictOrderId.ID,
-					List.of(terminalWarehouseId, districtId, orderId)
+					List.of(new ArrayList<>(List.of(terminalWarehouseId, districtId, orderId)))
 				);
 		
 		// if something needs to be done with the resulting info, override "commit()"

@@ -1,10 +1,10 @@
 package com.dianemodb.tpcc.query.payment;
 
-import com.dianemodb.h2impl.SingleIndexSingleParameterSetQueryDistributionPlan;
+import com.dianemodb.h2impl.MultipleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.schema.CustomerTable;
 
-public class FindCustomerByWarehouseDistrictAndId extends SingleIndexSingleParameterSetQueryDistributionPlan<Customer> {
+public class FindCustomerByWarehouseDistrictAndId extends MultipleParameterSetQueryDistributionPlan<Customer> {
 
 	public static final String ID = "findCustomerById";
 
