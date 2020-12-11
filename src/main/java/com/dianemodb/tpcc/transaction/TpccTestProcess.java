@@ -20,6 +20,7 @@ import com.dianemodb.id.TransactionId;
 import com.dianemodb.integration.test.NextStep;
 import com.dianemodb.integration.test.TestProcess;
 import com.dianemodb.message.Envelope;
+import com.dianemodb.metaschema.QueryStep;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.init.TpccDataInitializer;
@@ -201,6 +202,10 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 	
 	protected Envelope query(String queryId, List<?> parameters) {
+		//TODO create a typesafe query-parameter creating structure by 
+		// referencing the conditions in the query
+		//QueryStep<?> step = application.getQuery(queryId);
+		
 		return query(queryId, parameters, this);
 	}
 

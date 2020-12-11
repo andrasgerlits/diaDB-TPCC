@@ -59,11 +59,12 @@ public class Delivery extends TpccTestProcess {
 
 		List<Envelope> queries =
 				IntStream.range(0, Constants.DISTRICT_PER_WAREHOUSE)
-					.mapToObj( districtId -> 
-						query(
-							FindNewOrderWithLowestOrderIdByWarehouseAndDistrict.ID,
-							List.of( terminalWarehouseId, districtId )
-						)
+					.mapToObj( 
+						districtId -> 
+							query(
+								FindNewOrderWithLowestOrderIdByWarehouseAndDistrict.ID,
+								List.of( terminalWarehouseId, Byte.valueOf( (byte) districtId) )
+							)
 					)
 				.collect(Collectors.toList());
 		
@@ -76,7 +77,7 @@ public class Delivery extends TpccTestProcess {
 		
 		LOGGER.debug("Process {} {}", uuid, results);
 		
-		assert results.size() == 1;
+		assert results.size() == 1 : results;
 
 		// finish TX without writing anything to the DB if there was nothing in any one
 		if(results.isEmpty() || results.stream().anyMatch( rl -> rl.isEmpty())) {
@@ -99,23 +100,29 @@ public class Delivery extends TpccTestProcess {
 					.collect(Collectors.toList());
 				
 		List<List<?>> orderQueryParams = 
-				noList.stream()
-					.map(this::toOrderParamList)
-					.collect(Collectors.toList());
+				new ArrayList<>(
+					noList.stream()
+						.map(this::toOrderParamList)
+						.collect(Collectors.toSet())
+				);
 		
 		Envelope orderQuery = query(FindOrderByWarehouseDistrictOrderId.ID, orderQueryParams );
 		
-		List<List<?>> customerQueryParams = 
-				noList.stream()
-					.map(this::toCustomerParamList)
-					.collect(Collectors.toList());
+		List<List<? extends Number>> customerQueryParams = 
+				new ArrayList<>(
+					noList.stream()
+						.map(this::toCustomerParamList)
+						.collect(Collectors.toSet())
+				);
 		
 		Envelope customerQuery = query(FindCustomerByWarehouseDistrictAndId.ID, customerQueryParams);
 		
 		List<List<?>> orderLineQueryParams = 
-				noList.stream()
-					.map(this::toOrderLineParamList)
-					.collect(Collectors.toList());
+				new ArrayList<>(
+					noList.stream()
+						.map(this::toOrderLineParamList)
+						.collect(Collectors.toSet())
+				);
 		
 		Envelope orderLinesQuery = query(FindOrderLinesByWarehouseDistrictOrderId.ID, orderLineQueryParams);
 
@@ -125,16 +132,16 @@ public class Delivery extends TpccTestProcess {
 			);
 	}
 
-	private List<Number> toCustomerParamList(NewOrders no) {
-		return new ArrayList<>(List.of(terminalWarehouseId, no.getDistrictId(), no.getCustomerId()));
+	private List<? extends Number> toCustomerParamList(NewOrders no) {
+		return List.of(terminalWarehouseId, no.getDistrictId(), no.getCustomerId());
 	}
 	
 	private List<Number> toOrderParamList(NewOrders no) {
-		return new ArrayList<>(List.of(terminalWarehouseId, no.getDistrictId(), no.getOrderId()));
+		return List.of(terminalWarehouseId, no.getDistrictId(), no.getOrderId());
 	}
 
 	private List<Number> toOrderLineParamList(NewOrders no) {
-		return new ArrayList<>(List.of(no.getWarehouseId(), no.getDistrictId(), no.getOrderId()));
+		return List.of(no.getWarehouseId(), no.getDistrictId(), no.getOrderId());
 	}
 
 	private <U extends UserRecord, A, R> Map<NewOrders, R> toNewOrderMap(
@@ -186,6 +193,12 @@ public class Delivery extends TpccTestProcess {
 		List<List<? extends RecordWithVersion<? extends Record>>> resultLists = 
 				(List<List<? extends RecordWithVersion<? extends Record>>>) results;
 		
+		/*
+		 * associate new-order records to their matching pair(s), by creating
+		 * the same set of attributes from both entities which was used to query
+		 * them from the new-order record.
+		 */
+		
 		Iterator<List<? extends RecordWithVersion<? extends Record>>> listIterator = resultLists.iterator();
 		
 		List<RecordWithVersion<Orders>> orderList = (List<RecordWithVersion<Orders>>) listIterator.next();
@@ -197,7 +210,8 @@ public class Delivery extends TpccTestProcess {
 					orderList
 				);
 		
-		List<RecordWithVersion<Customer>> customerList = (List<RecordWithVersion<Customer>>) listIterator.next();
+		List<RecordWithVersion<Customer>> customerList = 
+				(List<RecordWithVersion<Customer>>) listIterator.next();
 		
 		Map<NewOrders, RecordWithVersion<Customer>> customersByNewOrders = 
 				toNewOrderMap(
@@ -206,8 +220,10 @@ public class Delivery extends TpccTestProcess {
 					customerList
 				);
 		
-		List<RecordWithVersion<OrderLine>> orderLineList = (List<RecordWithVersion<OrderLine>>) listIterator.next();
+		List<RecordWithVersion<OrderLine>> orderLineList = 
+				(List<RecordWithVersion<OrderLine>>) listIterator.next();
 
+		// there will be multiple order-lines for each new-order, so they need to be grouped
 		Map<NewOrders, List<RecordWithVersion<OrderLine>>> orderLineByNewOrders = 
 				toNewOrderMap(
 					this::toOrderLineParamList,  
@@ -226,19 +242,14 @@ public class Delivery extends TpccTestProcess {
 		ModificationCollection modificationCollection = new ModificationCollection();
 		while(newOrdersIterator.hasNext()) {
 			RecordWithVersion<NewOrders> newOrder = newOrdersIterator.next();
-			RecordWithVersion<Orders> order = ordersByNewOrders.get(newOrder);
-			RecordWithVersion<Customer> customer = customersByNewOrders.get(newOrder);
+			
+			NewOrders newOrderRecord = newOrder.getRecord();
+			
+			RecordWithVersion<Orders> order = ordersByNewOrders.get(newOrderRecord);
+			RecordWithVersion<Customer> customer = customersByNewOrders.get(newOrderRecord);
 			
 			List<RecordWithVersion<OrderLine>> orderLines = 
-					(List<RecordWithVersion<OrderLine>>) orderLineByNewOrders.get(newOrder);
-			
-			// make sure that lines are processed as expected
-			assert newOrder.getRecord().getDistrictId() == order.getRecord().getDistrictId()
-					&& newOrder.getRecord().getWarehouseId() == order.getRecord().getWarehouseId()
-					&& newOrder.getRecord().getCustomerId() == customer.getRecord().getPublicId()
-					&& newOrder.getRecord().getOrderId() == order.getRecord().getOrderId()
-					&& newOrder.getRecord().getDistrictId() == customer.getRecord().getDistrictId()
-					&& newOrder.getRecord().getWarehouseId() == customer.getRecord().getWarehouseId();
+					(List<RecordWithVersion<OrderLine>>) orderLineByNewOrders.get(newOrderRecord);
 			
 			// delete from new-orders
 			modificationCollection.addDelete(newOrders, application);

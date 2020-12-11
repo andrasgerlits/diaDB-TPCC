@@ -24,7 +24,6 @@ import com.dianemodb.tpcc.query.FindOrderLinesByWarehouseDistrictOrderId;
 import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
 import com.dianemodb.tpcc.query.delivery.FindNewOrderWithLowestOrderIdByWarehouseAndDistrict;
 import com.dianemodb.tpcc.query.delivery.FindOrderByWarehouseDistrictOrderId;
-import com.dianemodb.tpcc.query.neworder.FindCustomerByWarehouseAndId;
 import com.dianemodb.tpcc.query.neworder.FindItemById;
 import com.dianemodb.tpcc.query.neworder.FindStockByWarehouseItem;
 import com.dianemodb.tpcc.query.orderstatus.FindMaxOrderIdForCustomer;
@@ -77,7 +76,6 @@ public class TpccRunner extends AbstractTestRunner {
 					new FindNewOrderWithLowestOrderIdByWarehouseAndDistrict(newOrdersTable),
 					new FindOrderByWarehouseDistrictOrderId(ordersTable),
 					
-					new FindCustomerByWarehouseAndId(customerTable),
 					new FindItemById(itemTable),
 					new FindStockByWarehouseItem(stockTable),
 					

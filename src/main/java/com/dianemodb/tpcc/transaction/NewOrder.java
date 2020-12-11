@@ -112,19 +112,14 @@ public class NewOrder extends TpccTestProcess {
 	}
 	
 	@Override
-	protected Result startTx() {
-		List<List<?>> customerParamLists = new LinkedList<>();
-		
-		customerParamLists.add(
-			new ArrayList<>(
-				List.of(terminalWarehouseId, customerDistrictId, customerId)
-			)
-		);
-		
+	protected Result startTx() {		
 		Envelope queryCustomerEnvelope = 
 				query(
 					FindCustomerByWarehouseDistrictAndId.ID, 
-					customerParamLists 
+					// query is multiparam-based
+					List.of(
+						List.of(terminalWarehouseId, customerDistrictId, customerId)
+					) 
 				);
 
 		Envelope queryWarehouseEnvelope = 

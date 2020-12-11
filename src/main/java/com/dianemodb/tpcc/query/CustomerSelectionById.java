@@ -1,7 +1,5 @@
 package com.dianemodb.tpcc.query;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,12 +33,9 @@ public class CustomerSelectionById implements CustomerSelectionStrategy {
 
 	@Override
 	public Envelope customerQuery(TpccTestProcess process) {
-		List<List<?>> customerParams = new LinkedList<>();
-		customerParams.add(new ArrayList<>(List.of(warehouseId, districtId, customerId)));
-		
 		return TpccTestProcess.query(
 				FindCustomerByWarehouseDistrictAndId.ID, 
-				customerParams,
+				List.of(List.of(warehouseId, districtId, customerId)),
 				process
 			);
 	}
