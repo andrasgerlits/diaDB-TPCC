@@ -256,7 +256,7 @@ public class Delivery extends TpccTestProcess {
 
 			Orders updatedOrder = order.getRecord().shallowClone(application, txId);
 			updatedOrder.setCarrierId(carrierId);
-			modificationCollection.addUpdate(order, updatedOrder);
+			modificationCollection.addUpdate(order, updatedOrder, application);
 			
 			BigDecimal sum = new BigDecimal(0);
 			for(RecordWithVersion<OrderLine> orderLine : orderLines) {
@@ -265,14 +265,14 @@ public class Delivery extends TpccTestProcess {
 				
 				sum.add(updatedOrderLine.getAmount());
 				
-				modificationCollection.addUpdate(orderLine, updatedOrderLine);
+				modificationCollection.addUpdate(orderLine, updatedOrderLine, application);
 			}
 			
 			Customer updatedCustomer = customer.getRecord().shallowClone(application, txId);
 			updatedCustomer.setBalance(updatedCustomer.getBalance().add(sum));
 			updatedCustomer.setDeliveryCnt((short) (updatedCustomer.getDeliveryCnt() + 1));
 			
-			modificationCollection.addUpdate(customer, updatedCustomer);
+			modificationCollection.addUpdate(customer, updatedCustomer, application);
 		}
 
 		return of(List.of(modifyEvent(modificationCollection)), this::commit);

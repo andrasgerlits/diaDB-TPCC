@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="error">
+<Configuration status="error" shutdownHook="disable">
 
 	<Appenders>
 		<Console name="stdlogs" target="SYSTEM_OUT">
@@ -20,7 +20,7 @@
   			name="sql-times" 
   			fileName="target/sql-perf.log" 
   			filePattern="target/sql-%d{HH_mm_ss}.log.gz" 
-  			append="true" 
+  			append="false" 
 		>
            <PatternLayout pattern="%-30X{env} %msg%n" />
            <SizeBasedTriggeringPolicy size="1000 MB" />
@@ -29,8 +29,8 @@
   		<RollingFile  
   			name="performance" 
   			fileName="target/perf.log" 
-  			append="false"
   			filePattern="target/perf-%d{HH_mm_ss}.log.gz"  
+  			append="false"
 		>
            <PatternLayout pattern="%-15X{id} %-30X{env} %msg%n" />
            <SizeBasedTriggeringPolicy size="1000 MB" />
@@ -54,8 +54,8 @@
   		<RollingFile  
   			name="computer-inputs" 
   			fileName="target/in_outputs.log" 
-  			append="true"
   			filePattern="target/in_out-%d{HH_mm_ss}.log.gz" 
+  			append="true"
 		>
 <!-- 		
            <PatternLayout pattern="[%d{HH:mm:ss,SSS}] [%X{id}] %msg%n" />
@@ -67,8 +67,8 @@
   		<RollingFile  
   			name="input" 
   			fileName="target/input_bin.log" 
-  			append="false"
   			filePattern="target/input_bin-%d{HH_mm_ss}.log.gz" 
+  			append="false"
 		>
            <PatternLayout pattern="%msg%n" />
            <SizeBasedTriggeringPolicy size="1000 MB" />
@@ -83,6 +83,7 @@
 			<AppenderRef ref="stdlogs" />
 		</Root>
 		
+		<Logger name="org.apache.log4j" level="info"/>
 		<Logger name="kafka" level="warn"/>
 		<Logger name="org.apache" level="warn"/>
 		<Logger name="com.dianemodb" level="info" />
@@ -96,16 +97,14 @@
 -->
 
 		<!-- log SQL times at debug -->
- 		<Logger name="com.dianemodb.integration.sqlwrapper" level="debug" additivity="false">
+ 		<Logger name="com.dianemodb.integration.sqlwrapper" level="info" additivity="false">
 			<AppenderRef ref="sql-times" />
 		</Logger>
 		
 		<!-- LOGS AT TRACE Logs inputs into a BASE24 file so that they can be replayed -->
-		<Logger name="com.dianemodb.ServerEvent" level="info" additivity="false">
+		<Logger name="com.dianemodb.ServerEvent" level="trace" additivity="false">
 			<AppenderRef ref="input"/>
 		</Logger>
-		
-		
 
 <!-- 
 		<Logger name="com.dianemodb.integration.test.ProcessManager" level="info"/>

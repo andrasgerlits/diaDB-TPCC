@@ -52,6 +52,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 					
 			Timestamp now = new Timestamp(System.currentTimeMillis());
 			short orderLineCount = (short) randomInt(5, 15);
+			assert orderLineCount >= 5 && orderLineCount < 15;
 			short carrierId = randomCarrierId();
 			
 			int customerId = orderId % Constants.CUSTOMER_PER_DISTRICT;
@@ -83,7 +84,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 				orderLine.setDistrictId(districtId);
 				orderLine.setWarehouseId(warehouseId);
 				orderLine.setLineNumber(j);
-				orderLine.setItemId((short) randomInt(0, Constants.ITEM_NUMBER));
+				orderLine.setItemId( randomItemId());
 				orderLine.setWarehouseId(warehouseId);
 				orderLine.setDistInfo(randomString(24, 24));
 				orderLine.setQuantity( (short) 5 );
@@ -101,15 +102,6 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 				records.add(orderLine);
 			}
 		}
-/*		
-		if(LOGGER.isInfoEnabled()) {
-			LOGGER.info(
-				"Order number {} / {}",
-				batchNumber, 
-				numberOfBatches()
-			);
-		}
-*/
 		return records;
 	}
 

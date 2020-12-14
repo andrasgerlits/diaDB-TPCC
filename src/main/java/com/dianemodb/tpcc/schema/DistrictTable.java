@@ -71,15 +71,12 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 		return new HashMap<>(
 				Map.of(
 					// round-robin per warehouse
-					warehouseColumn, getWarehouseDistributionRule(),
+					warehouseColumn, WarehouseTable.getWarehouseDistributionRule(),
 					districtIdColumn, NullRule.INSTANCE
 				)
 			);
 	}
 
-	public static IntegerRangeBasedIdNarrowingRule getWarehouseDistributionRule() {
-		return new IntegerRangeBasedIdNarrowingRule(1);
-	}
 	
 
 	private final List<RecordColumn<District, ?>> columns;

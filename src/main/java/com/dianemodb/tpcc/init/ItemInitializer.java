@@ -19,7 +19,7 @@ public class ItemInitializer extends TpccDataInitializer {
 		super(application);
 	}
 
-	private static final int ITEM_PER_TX = 10000;
+	private static final int ITEM_PER_TX = 1000;
 
 	@Override
 	protected List<UserRecord> createModificationCollection(
@@ -29,14 +29,14 @@ public class ItemInitializer extends TpccDataInitializer {
 		List<UserRecord> records = new LinkedList<>();
 		
 		for( int i = 0 ; i < ITEM_PER_TX; i++ ) {
-			Item item = new Item(txId, null);
+			Item prototype = new Item(txId, null);
 			
 			int itemId = (batchNumber * ITEM_PER_TX)  + i;
-			item.setItemId(itemId);
+			prototype.setItemId(itemId);
 			
-			item.setIm(randomInt(1, 10000));
-			item.setName(randomString(14, 24));
-			item.setPrice(randomFloat(1, 100));
+			prototype.setIm(randomInt(1, 10000));
+			prototype.setName(randomString(14, 24));
+			prototype.setPrice(randomFloat(1, 100));
 			
 			String data = randomString(26, 50);
 			
@@ -49,9 +49,14 @@ public class ItemInitializer extends TpccDataInitializer {
 					+ data.substring(brandMarkerPosition + 8);
 			}
 			
-			item.setData(data);
+			prototype.setData(data);
 			
-			records.add(item);
+			// create a copy of each item for each warehouse, it's read-only, so safe to do
+			for(short j = 0; j < Constants.NUMBER_OF_WAREHOUSES; j++) {
+				Item clone = prototype.shallowClone(application, txId);
+				clone.setWarehouseId(j);
+				records.add(clone);
+			}
 		}
 		
 		//LOGGER.info("Item batch {}, number {}", batchNumber + 1, (batchNumber + 1) * ITEM_PER_TX );
@@ -62,7 +67,6 @@ public class ItemInitializer extends TpccDataInitializer {
 	@Override
 	public int numberOfBatches() {
 		// safeguard for modifications
-		assert Constants.ITEM_NUMBER % ITEM_PER_TX == 0;
 		return Constants.ITEM_NUMBER / ITEM_PER_TX;
 	}
 }

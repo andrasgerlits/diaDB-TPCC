@@ -40,7 +40,8 @@ public class TpccClientRunner extends AbstractClientRunner {
 
 	public static TpccClientRunner init(
 			String[] args, 
-			Function<Topology, SQLServerApplication> f
+			Function<Topology, SQLServerApplication> f,
+			int parallelRequestNumber
 	) {
 		Options options = getCommonOptions();
 
@@ -61,7 +62,7 @@ public class TpccClientRunner extends AbstractClientRunner {
 								getTopicId(cmd), 
 								topology, 
 								f.apply(topology),
-								100
+								parallelRequestNumber
 						);
 			}
 		);

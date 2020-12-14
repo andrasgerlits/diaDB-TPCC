@@ -14,7 +14,7 @@ public class OrderLine extends UserBaseRecord {
 	private byte districtId;
 	private short warehouseId;
 	private short lineNumber;
-	private short itemId;
+	private int itemId;
 	private short supplyWarehouseId;
 	private long deliveryDate;
 	private short quantity;
@@ -63,11 +63,11 @@ public class OrderLine extends UserBaseRecord {
 		this.lineNumber = lineNumber;
 	}
 
-	public short getItemId() {
+	public int getItemId() {
 		return itemId;
 	}
 
-	public void setItemId(short iId) {
+	public void setItemId(int iId) {
 		this.itemId = iId;
 	}
 

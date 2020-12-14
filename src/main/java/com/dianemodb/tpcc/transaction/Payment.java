@@ -116,12 +116,12 @@ public class Payment extends TpccTestProcess {
 		RecordWithVersion<Warehouse> warehouseWithVersion = singleFromResultList(resultIter.next());
 		Warehouse updatedWarehouse = warehouseWithVersion.getRecord().shallowClone(application, txId);
 		updatedWarehouse.setYtd(updatedWarehouse.getYtd().add(amount));
-		modificationCollection.addUpdate(warehouseWithVersion, updatedWarehouse);
+		modificationCollection.addUpdate(warehouseWithVersion, updatedWarehouse, application);
 		
 		RecordWithVersion<District> districtWithVersion = singleFromResultList(resultIter.next());				
 		District updatedDistrict = districtWithVersion.getRecord().shallowClone(application, txId);
 		updatedDistrict.setYtd(updatedDistrict.getYtd().add(amount));
-		modificationCollection.addUpdate(districtWithVersion, updatedDistrict);
+		modificationCollection.addUpdate(districtWithVersion, updatedDistrict, application);
 		
 		Customer customer = customerWithVersion.getRecord();
 
@@ -146,7 +146,7 @@ public class Payment extends TpccTestProcess {
 		updatedCustomer.setBalance(updatedCustomer.getBalance().add(amount));
 		updatedCustomer.setData(updatedData);
 		
-		modificationCollection.addUpdate(customerWithVersion, updatedCustomer);
+		modificationCollection.addUpdate(customerWithVersion, updatedCustomer, application);
 		
 		return of(List.of(modifyEvent(modificationCollection)), this::commit);
 	}

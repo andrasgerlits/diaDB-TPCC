@@ -43,6 +43,7 @@ import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
 
 public class NewOrder extends TpccTestProcess {
 
+	private static final int INVALID_ITEM_ID = Constants.ITEM_NUMBER * 2;
 	private static final Logger LOGGER = LoggerFactory.getLogger(NewOrder.class.getName());
 	
 	private static Function<Stock, String> getDistrictInfo(byte districtNumber) {
@@ -99,11 +100,13 @@ public class NewOrder extends TpccTestProcess {
 			
 			int itemId;
 			if(i == orderLineCount - 1 && wrongItemInput) {
-				itemId = Short.MAX_VALUE;
+				itemId = INVALID_ITEM_ID;
 			}
 			else {
 				itemId = TpccDataInitializer.randomItemId();
 			}
+			
+			assert itemId >= 0 : itemId;
 			
 			short quantity = (short) (random.nextInt(10) + 1);
 			
@@ -134,18 +137,22 @@ public class NewOrder extends TpccTestProcess {
 					List.of(terminalWarehouseId, customerDistrictId)
 				);
 		
-		// PERFORM this results in as many queries as items
+		/*
+		 *  since items are duplicated for each warehouse, this will only be
+		 *  a single query on the machine running the transaction. 
+		 */
 		Envelope queryItemEnvelope = 
 				query(
 					FindItemById.ID, 
 					new ArrayList<>(
 						/*
-						 * convert each item-id into a separate list so that they
-						 * can be used as different attributes.
+						 * warehouse only added for efficiency, collecting as a set, since
+						 * ordering is not imprtant, but we could potentially have the same
+						 * item for different lines.
 						 */
 						supplyingWarehouseAndQuantityByItemId.keySet()
 							.stream()
-							.map(itemId -> new ArrayList<>(List.of(itemId)))
+							.map(itemId -> List.of(terminalWarehouseId, itemId))
 							.collect(Collectors.toSet())
 					)
 				);
@@ -176,7 +183,6 @@ public class NewOrder extends TpccTestProcess {
 	private Result updateDistrictInsertNewOrdersQueryStocks(List<Object> results) {
 		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		ModificationCollection modificationCollection = new ModificationCollection();
-		Envelope updateEnvelope = modifyEvent(modificationCollection);
 				
 		Iterator<Object> resultIter = results.iterator();
 		
@@ -184,17 +190,26 @@ public class NewOrder extends TpccTestProcess {
 		RecordWithVersion<Warehouse> warehouse = singleFromResultList(resultIter.next());
 		RecordWithVersion<District> district = singleFromResultList(resultIter.next());
 		List<RecordWithVersion<Item>> items = (List<RecordWithVersion<Item>>) resultIter.next();
+		if(items.size() < supplyingWarehouseAndQuantityByItemId.size()) {
+			if(!supplyingWarehouseAndQuantityByItemId.containsKey(INVALID_ITEM_ID)) {
+				throw new IllegalStateException("Fewer items returned than expected");
+			}
+			else {
+				throw new ClientInitiatedRollbackTransactionException(uuid);
+			}
+		}
+		
 		List<RecordWithVersion<Stock>> stocks = (List<RecordWithVersion<Stock>>) resultIter.next();
 		
 		
 		District oldDistrict = district.getRecord();
 		
-		int orderId = oldDistrict.getNextOid() + 1;
+		int orderId = oldDistrict.getNextOid();
 		
 		District updatedDistrict = oldDistrict.shallowClone(application, txId);		
-		updatedDistrict.setNextOid(orderId);
+		updatedDistrict.setNextOid(orderId + 1);
 				
-		modificationCollection.addUpdate(district, updatedDistrict);
+		modificationCollection.addUpdate(district, updatedDistrict, application);
 		
 		Orders order = new Orders(txId, null);
 		order.setOrderId(orderId);
@@ -203,13 +218,7 @@ public class NewOrder extends TpccTestProcess {
 		order.setCustomerId(customerId);
 		order.setEntryDate(timestamp);
 		
-		short totalNumber = 
-				(short) supplyingWarehouseAndQuantityByItemId.values()
-							.stream()
-							.mapToInt(Pair::getValue)
-							.sum();
-		
-		order.setOrderLineCount((short) totalNumber );
+		order.setOrderLineCount( (short) supplyingWarehouseAndQuantityByItemId.size() );
 		order.setAllLocal( (short) ( allOrderLocal() ? 1 : 0 ) );
 		
 		modificationCollection.addInsert(order);
@@ -254,6 +263,8 @@ public class NewOrder extends TpccTestProcess {
 				district.getRecord(),
 				customer.getRecord()
 		);
+		
+		Envelope updateEnvelope = modifyEvent(modificationCollection);
 		
 		return of(List.of(updateEnvelope), this::commit);
 	}
@@ -303,6 +314,7 @@ public class NewOrder extends TpccTestProcess {
 		
 		for(short i = 0; stockIter.hasNext(); i++) {
 			Entry<Pair<Integer, Short>, RecordWithVersion<Stock>> stockEntry = stockIter.next();
+			
 			RecordWithVersion<Stock> originalStockRecord = stockEntry.getValue();
 			Stock originalStock = originalStockRecord.getRecord();
 			
@@ -325,7 +337,7 @@ public class NewOrder extends TpccTestProcess {
 			Stock updatedStock = originalStock.shallowClone(application, txId);		
 			updatedStock.setQuantity(newStockQuantity);
 			
-			modificationCollection.addUpdate(originalStockRecord, updatedStock);
+			modificationCollection.addUpdate(originalStockRecord, updatedStock, application);
 			BigDecimal amount = 
 					new BigDecimal(originalStock.getQuantity())
 						.multiply(item.getPrice())
@@ -337,7 +349,7 @@ public class NewOrder extends TpccTestProcess {
 			newOrderLine.setDistrictId(customerDistrictId);
 			newOrderLine.setWarehouseId(supplyingWarehouse);
 			newOrderLine.setLineNumber(i);
-			newOrderLine.setItemId((short) item.getItemId());
+			newOrderLine.setItemId(item.getItemId());
 			newOrderLine.setSupplyWarehouseId(supplyingWarehouse);
 			newOrderLine.setQuantity((short) quantity);
 			newOrderLine.setAmount(amount);

@@ -246,7 +246,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	
 	protected <R extends UserRecord> Envelope update(RecordWithVersion<R> original, R updated) {
 		ModificationCollection modificationCollection = new ModificationCollection();
-		modificationCollection.addUpdate(original, updated);
+		modificationCollection.addUpdate(original, updated, application);
 		
 		return modifyEvent(modificationCollection);		
 	}

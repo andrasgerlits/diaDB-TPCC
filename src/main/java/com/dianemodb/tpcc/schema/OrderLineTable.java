@@ -66,7 +66,7 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 				DISTRICT_ID_COLUMN,
 				WAREHOUSE_ID_COLUMN,
 				new RecordColumn<>(new ShortColumn(NUMBER_COLUMN_NAME), OrderLine::getLineNumber, OrderLine::setLineNumber),
-				new RecordColumn<>(new ShortColumn(ITEM_ID_COLUMN_NAME), OrderLine::getItemId, OrderLine::setItemId),
+				new RecordColumn<>(new IntColumn(ITEM_ID_COLUMN_NAME), OrderLine::getItemId, OrderLine::setItemId),
 				new RecordColumn<>(new ShortColumn(SUPPLY_WAREHOUSE_COLUMN_NAME), OrderLine::getSupplyWarehouseId, OrderLine::setSupplyWarehouseId),
 				new RecordColumn<>(new TimestampColumn(DELIVERY_DATE_COLUMN_NAME), OrderLine::getDeliveryDate, OrderLine::setDeliveryDate),
 				new RecordColumn<>(new ShortColumn(QUANTITIY_COLUMN_NAME), OrderLine::getQuantity, OrderLine::setQuantity),

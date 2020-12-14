@@ -1,11 +1,14 @@
 package com.dianemodb.tpcc.schema;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.dianemodb.Topology;
-import com.dianemodb.h2impl.UniqueHashCodeBasedDistributedIndex;
+import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
+import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -41,7 +44,11 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 
 	private final List<RecordColumn<Warehouse, ?>> columns;
 	
-	private final UniqueHashCodeBasedDistributedIndex<Warehouse> index;
+	private final RangeBasedDistributedIndex<Warehouse> index;
+
+	public static IntegerRangeBasedIdNarrowingRule getWarehouseDistributionRule() {
+		return new IntegerRangeBasedIdNarrowingRule(1);
+	}
 	
 	public WarehouseTable(Topology servers) {
 		super(
@@ -61,10 +68,11 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 		this.columns.add(ID_COLUMN);
 
 		this.index = 
-				new UniqueHashCodeBasedDistributedIndex<>(
+				new RangeBasedDistributedIndex<>(
 						servers, 
 						this, 
-						List.of(ID_COLUMN)
+						List.of(ID_COLUMN),
+						new HashMap<>(Map.of(ID_COLUMN, getWarehouseDistributionRule()))
 				);
 		
 		this.indices = List.of(index);

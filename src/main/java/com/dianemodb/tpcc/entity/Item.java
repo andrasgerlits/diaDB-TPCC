@@ -14,6 +14,7 @@ public class Item extends UserBaseRecord {
 	private String name;
 	private String price;
 	private String data;
+	private short warehouseId;
 	
 	@Deprecated
 	@SuppressWarnings({ "unused"})
@@ -23,6 +24,18 @@ public class Item extends UserBaseRecord {
 	
 	public Item(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, ItemTable.ID);
+	}
+
+	public short getWarehouseId() {
+		return warehouseId;
+	}
+
+	public void setWarehouseId(short warehouseId) {
+		this.warehouseId = warehouseId;
+	}
+
+	public void setPrice(String price) {
+		this.price = price;
 	}
 
 	public int getItemId() {
