@@ -113,7 +113,7 @@ public class TpccRunner extends AbstractTestRunner {
 							"-t", topologyFile,
 							"-b", AbstractServerTestCase.getBootstrapUrl(),
 							"-id", initNodeId ,
-							"-tx", String.valueOf(48)
+							"-tx", String.valueOf(1000)
 					}					
 				)
 			);
@@ -149,7 +149,7 @@ public class TpccRunner extends AbstractTestRunner {
 								"-b", AbstractServerTestCase.getBootstrapUrl()
 							},
 							t -> createApplication(t),
-							100
+							1000
 						)
 			);
 		}
