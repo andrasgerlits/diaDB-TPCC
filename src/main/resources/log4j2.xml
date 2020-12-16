@@ -89,8 +89,11 @@
 		<Logger name="com.dianemodb" level="info" />
 		
 		<Logger name="com.dianemodb.tpcc" level="info" />
+
+		
 <!-- 
-		<Logger name="com.dianemodb.integration.test.ProcessManager" level="debug"/>
+		<Logger name="com.dianemodb.tpcc.transaction.TerminalBasedProcessScheduler" level="debug"/>
+		<Logger name="com.dianemodb.tpcc.transaction.TerminalPool" level="debug"/>
 		<Logger name="com.dianemodb.tpcc.transaction.Delivery" level="info" additivity="false">
 			<AppenderRef ref="stdlogsFile" />
 		</Logger>

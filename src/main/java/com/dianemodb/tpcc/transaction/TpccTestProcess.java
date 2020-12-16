@@ -3,6 +3,7 @@ package com.dianemodb.tpcc.transaction;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -20,7 +21,6 @@ import com.dianemodb.id.TransactionId;
 import com.dianemodb.integration.test.NextStep;
 import com.dianemodb.integration.test.TestProcess;
 import com.dianemodb.message.Envelope;
-import com.dianemodb.metaschema.QueryStep;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.init.TpccDataInitializer;
@@ -28,14 +28,16 @@ import com.dianemodb.tpcc.query.CustomerSelectionById;
 import com.dianemodb.tpcc.query.CustomerSelectionByLastName;
 import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
 import com.dianemodb.version.ReadVersion;
+import com.dianemodb.version.Transaction.State;
 import com.dianemodb.workflow.query.QueryWorkflow;
 import com.dianemodb.workflow.query.QueryWorkflowInput;
+import com.dianemodb.workflow.tx.TxEndValue;
 import com.dianemodb.workflow.write.ChangeRecordsWorkflowInput;
 import com.dianemodb.workflow.write.ModifyRecordsWorkflow;
 
 public abstract class TpccTestProcess extends TestProcess {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(TpccTestProcess.class.getName());
+	static final Logger LOGGER = LoggerFactory.getLogger(TpccTestProcess.class.getName());
 	
 	public static final Map<Class<? extends TpccTestProcess>, Integer> MAX_TIMES_BY_CLASS = 
 			Map.of(
@@ -50,9 +52,10 @@ public abstract class TpccTestProcess extends TestProcess {
 			(one, other) -> {
 				TpccTestProcess p1 = (TpccTestProcess) one.getProcess();
 				TpccTestProcess p2 = (TpccTestProcess) other.getProcess();
-				
+
+				// the ones with the higher value come later
 				return Long.compare(
-						p1.initialRequestedMinStartTime, 
+						p1.initialRequestedMinStartTime,						
 						p2.initialRequestedMinStartTime
 					);
 			};
@@ -131,11 +134,11 @@ public abstract class TpccTestProcess extends TestProcess {
 	 */
 	private int thinkTimeInMs;
 	
-	protected final long startTime;
-	
-	protected final String uuid;
+	protected long finished = -1;
 	
 	private int retryCount = 0;
+	
+	protected final String uuid;
 	
 	protected TpccTestProcess(
 			Random random, 
@@ -159,8 +162,7 @@ public abstract class TpccTestProcess extends TestProcess {
 		}
 		this.thinkTimeInMs = thinkTime;
 		
-		this.startTime = System.currentTimeMillis();
-		this.initialRequestedMinStartTime = keyingTimeInMs + startTime;
+		this.initialRequestedMinStartTime = keyingTimeInMs + System.currentTimeMillis();
 		
 		this.uuid = uuid;
 	}
@@ -170,8 +172,29 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 	
 	public boolean isLate() {
-		return System.currentTimeMillis() > initialRequestedMinStartTime + MAX_TIMES_BY_CLASS.get(this.getClass());
+		long maxLatency = MAX_TIMES_BY_CLASS.get(this.getClass());;
+		if(finished == -1) { 
+			return System.currentTimeMillis() > initialRequestedMinStartTime + maxLatency; 
+		}
+		else {
+			return getTpccLatency() > maxLatency ;
+		}
 	}
+	
+	public int txLatency() {
+		if(finished == -1) {
+			throw new IllegalStateException("Tx not yet finished");
+		}
+		return (int) (finished - startTime); 
+	}
+	
+	public long getTpccLatency() {
+		if(finished == -1) {
+			throw new IllegalStateException("Tx not yet finished");
+		}
+		return (int) (finished - initialRequestedMinStartTime); 
+	}
+
 	
 	@Override
 	protected ServerComputerId txMaintainingComputer() {
@@ -187,8 +210,26 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 	
 	protected Result evaluateCommit(Object result) {
-		LOGGER.debug("committed warehouse-id {} tx-id {} read-version {}", terminalWarehouseId, txId, readVersion);
-		return TestProcess.FINISHED;
+		TxEndValue txEndState = ((Optional<TxEndValue>) result).get();
+		if(txEndState.getTxEndState() == State.COMMITTED) {
+			LOGGER.debug(
+					"{} committed warehouse-id {} read-version {}", 
+					terminalWarehouseId, 
+					txId, 
+					readVersion
+			);
+			return TestProcess.FINISHED;
+		}
+		else {
+			LOGGER.debug(
+					"{} commit failed, retrying warehouse-id {} read-version {}", 
+					terminalWarehouseId, 
+					txId, 
+					readVersion
+			);
+			assert txEndState.getTxEndState() == State.CANCELLED;
+			return of(cancelAndRetry());
+		}
 	}
 	
 	protected Envelope modifyEvent(ModificationCollection modificationCollection) {
@@ -224,6 +265,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	// TX is rolled back when it receives an exception
 	public NextStep cancelAndRetry() {
 		retryCount++;
+		LOGGER.debug("{} retrying {}", startTime);
 		return ofSingle(startTransaction(), this::startInternal, 0L);
 	}
 	
@@ -237,7 +279,13 @@ public abstract class TpccTestProcess extends TestProcess {
 		txId = pair.getKey();
 		readVersion = pair.getValue();
 
-		LOGGER.debug("started warehouse-id {} tx-id {} read-version {}", terminalWarehouseId, txId, readVersion);
+		LOGGER.debug(
+				"{} starting w_id {} tx-id {} read-version {}",
+				uuid,
+				terminalWarehouseId, 
+				txId, 
+				readVersion
+		);
 		
 		return startTx();
 	}
@@ -251,12 +299,8 @@ public abstract class TpccTestProcess extends TestProcess {
 		return modifyEvent(modificationCollection);		
 	}
 	
-	public long getInitialRequestTime() {
+	public long getMinInitialRequestTime() {
 		return initialRequestedMinStartTime;
-	}
-	
-	public long getStartTime() {
-		return startTime;
 	}
 	
 	public long getThinkTimeInMs() {
@@ -266,9 +310,17 @@ public abstract class TpccTestProcess extends TestProcess {
 	public Short getWarehouseId() {
 		return terminalWarehouseId;
 	}
-
-	public String getUiid() {
-		return uuid;
+	
+	@Override
+	public void stepDone(long now, NextStep nextStep) {
+		LOGGER.debug(
+				"{} Step finished {} {}", 
+				uuid, 
+				now - startTime, 
+				nextStep
+		);
+		
+		super.stepDone(now, nextStep);
 	}
 
 	@Override
@@ -280,7 +332,6 @@ public abstract class TpccTestProcess extends TestProcess {
 		result = prime * result + terminalWarehouseId;
 		result = prime * result + thinkTimeInMs;
 		result = prime * result + ((txComputer == null) ? 0 : txComputer.hashCode());
-		result = prime * result + ((uuid == null) ? 0 : uuid.hashCode());
 		return result;
 	}
 
@@ -306,29 +357,25 @@ public abstract class TpccTestProcess extends TestProcess {
 				return false;
 		} else if (!txComputer.equals(other.txComputer))
 			return false;
-		if (uuid == null) {
-			if (other.uuid != null)
-				return false;
-		} else if (!uuid.equals(other.uuid))
-			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
 		return getClass().getSimpleName() + " ["
-				+ "txComputer=" + txComputer
+				+ "uuid=" + uuid
+				+ ", txComputer=" + txComputer
 				+ ", terminalWarehouseId=" + terminalWarehouseId
 				+ ", retryCount=" + retryCount
 				+ ", initialRequestStartTime=" + initialRequestedMinStartTime 
 				+ ", thinkTimeInMs=" + thinkTimeInMs
 				+ ", startTime=" + startTime 
-				+ ", uuid=" + uuid 
 			+ "]";
 	}
 
-	public void resetAllWaitTimesToZero() {
-		this.initialRequestedMinStartTime = System.currentTimeMillis();
-		this.thinkTimeInMs = 0;
+	public void finished() {
+		assert finished == -1;
+		finished = System.currentTimeMillis();
 	}
+
 }

@@ -16,22 +16,22 @@ import com.dianemodb.tpcc.Constants;
 
 public class TpccStartupScheduler implements TpccProcessScheduler {
 	
-	private static final int STARTUP_BATCH_NUMBER = 100;
+	private final int batchPerDistrict;
 	private final Consumer<List<NextStep>> sender;
 	private final List<Supplier<TpccTestProcess>> processes = new LinkedList<>();
 	private int finished = 0;
 	private int finishedNow = 0;
 	
-	private static final int TOTAL_NUMBER = 
-			Constants.NUMBER_OF_WAREHOUSES * Constants.DISTRICT_PER_WAREHOUSE * STARTUP_BATCH_NUMBER; 
-	
 	public TpccStartupScheduler(
+			int batchPerDistrict,
 			BiFunction<Short, Byte, TpccTestProcess> processFactory,
-			Consumer<List<NextStep>> sender			
+			Consumer<List<NextStep>> sender
 	) {
 		this.sender = sender;
 		
-		for(int i = 0; i < STARTUP_BATCH_NUMBER; i++) {
+		this.batchPerDistrict = batchPerDistrict;
+		
+		for(int i = 0; i < batchPerDistrict; i++) {
 			for(short w=0; w < Constants.NUMBER_OF_WAREHOUSES; w++) {
 				final short wId = w;
 				for(byte d = 0; d < Constants.DISTRICT_PER_WAREHOUSE; d++) {
@@ -62,7 +62,7 @@ public class TpccStartupScheduler implements TpccProcessScheduler {
 		sendBatch(finishedNow);
 		finished += finishedNow;
 		finishedNow = 0;
-		return finished < TOTAL_NUMBER;
+		return finished < Constants.NUMBER_OF_WAREHOUSES * Constants.DISTRICT_PER_WAREHOUSE * batchPerDistrict;
 	}
 
 	private void sendBatch(int number) {

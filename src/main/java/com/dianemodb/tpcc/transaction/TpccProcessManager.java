@@ -31,10 +31,19 @@ public class TpccProcessManager extends ProcessManager {
 		
 		this.processMaker = new TpccProcessMaker(application);
 		this.scheduler = 
-				new TpccStartupScheduler(
+				new TerminalBasedProcessScheduler(
 						(w, d) -> processMaker.createNextProcess(w, d, 0),
 						batch -> super.sendNextSteps(batch)
 				);
+
+/*
+		this.scheduler = 
+				new TpccStartupScheduler(
+						0,
+						(w, d) -> processMaker.createNextProcess(w, d, 0),
+						batch -> super.sendNextSteps(batch)
+				);
+*/
 	}
 	
 	public Result failed(ConversationId conversationId, Throwable ex, TestProcess testProcess) {

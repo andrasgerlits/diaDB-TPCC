@@ -11,6 +11,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public class TerminalPool {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TerminalPool.class.getName());
 	
-	private static final int BORROW_TIMEOUT = 3 * 1000 * 60;
+	private static final int BORROW_TIMEOUT = 30 * 1000 * 60;
 
 	/**
 	 * The pool of terminals, from which the 
@@ -75,14 +76,23 @@ public class TerminalPool {
 	private Optional<Entry<Short, AtomicInteger>> maybeAnyFreeTerminal() {
 		recalculatePoolSize();
 
-		return freeTerminals.entrySet()
+		List<Entry<Short, AtomicInteger>> list = 
+				freeTerminals.entrySet()
 					.stream()
 					.filter(e -> e.getValue().intValue() > 0)
-					.findAny();
+					.collect(Collectors.toList());
+		
+		if(list.size() == 0) {
+			return Optional.empty();
+		}
+		
+		Entry<Short, AtomicInteger> result = 
+				list.get( (int) (Math.random() * list.size()) );
+		
+		return Optional.of(result);
 	}
 	
 	public void borrow(TpccTestProcess process) {
-		checkTimeouts();
 		
 		recalculatePoolSize();
 		
@@ -90,6 +100,7 @@ public class TerminalPool {
 		assert !isEmpty();
 		
 		long now = System.currentTimeMillis();
+		LOGGER.debug("Borrowing terminal {}", process.getMinInitialRequestTime() - now);
 		
 		short warehouseId = process.getWarehouseId();
 		
@@ -175,7 +186,7 @@ public class TerminalPool {
 		Map<Long, Short> freeUpNow = 
 				new HashMap<>(terminalFreeupTimes.subMap(0L, System.currentTimeMillis()));
 
-		LOGGER.debug("Returning {}", freeUpNow);
+		LOGGER.debug("Returning {}", freeUpNow.size());
 		
 		for(Short warehouseId : freeUpNow.values()) {
 			int currentlyFree = freeTerminals.get(warehouseId).incrementAndGet();
