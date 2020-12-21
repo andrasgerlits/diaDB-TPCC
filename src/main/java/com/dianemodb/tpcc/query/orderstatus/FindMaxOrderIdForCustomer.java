@@ -1,8 +1,10 @@
 package com.dianemodb.tpcc.query.orderstatus;
 
+import org.h2.expression.aggregate.AggregateType;
+
 import com.dianemodb.h2impl.SingleParameterSetQueryDistributionPlan;
-import com.dianemodb.metaschema.distributed.AggregateFunction;
-import com.dianemodb.metaschema.distributed.AggregateType;
+import com.dianemodb.metaschema.distributed.MinMaxFunction;
+import com.dianemodb.metaschema.distributed.MinMaxType;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.schema.OrdersTable;
 
@@ -25,7 +27,7 @@ public class FindMaxOrderIdForCustomer extends SingleParameterSetQueryDistributi
 			ID,  
 			table, 
 			table.getCompositeCustomerIndex(),
-			new AggregateFunction<Orders, Integer>(OrdersTable.ORDER_ID_COLUMN, AggregateType.MAX)
+			new MinMaxFunction<Orders, Integer>(OrdersTable.ORDER_ID_COLUMN, MinMaxType.MAX)
 		);
 	}
 }

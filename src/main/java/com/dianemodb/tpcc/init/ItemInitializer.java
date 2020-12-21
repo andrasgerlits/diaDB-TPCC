@@ -19,7 +19,7 @@ public class ItemInitializer extends TpccDataInitializer {
 		super(application);
 	}
 
-	private static final int ITEM_PER_TX = 1000;
+	private static final int ITEM_PER_TX = 10;
 
 	@Override
 	protected List<UserRecord> createModificationCollection(

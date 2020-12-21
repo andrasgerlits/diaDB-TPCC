@@ -77,8 +77,6 @@ public class Delivery extends TpccTestProcess {
 		
 		LOGGER.debug("Process {} {}", uuid, results);
 		
-		assert results.size() == 1 : results;
-
 		// finish TX without writing anything to the DB if there was nothing in any one
 		if(results.isEmpty() || results.stream().anyMatch( rl -> rl.isEmpty())) {
 			return of(List.of(), this::commit);
@@ -277,4 +275,5 @@ public class Delivery extends TpccTestProcess {
 
 		return of(List.of(modifyEvent(modificationCollection)), this::commit);
 	}
+	
 }

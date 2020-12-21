@@ -311,6 +311,11 @@ public abstract class TpccTestProcess extends TestProcess {
 		return terminalWarehouseId;
 	}
 	
+	public void finished() {
+		assert finished == -1;
+		finished = System.currentTimeMillis();
+	}
+	
 	@Override
 	public void stepDone(long now, NextStep nextStep) {
 		LOGGER.debug(
@@ -321,43 +326,6 @@ public abstract class TpccTestProcess extends TestProcess {
 		);
 		
 		super.stepDone(now, nextStep);
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (int) (initialRequestedMinStartTime ^ (initialRequestedMinStartTime >>> 32));
-		result = prime * result + (int) (startTime ^ (startTime >>> 32));
-		result = prime * result + terminalWarehouseId;
-		result = prime * result + thinkTimeInMs;
-		result = prime * result + ((txComputer == null) ? 0 : txComputer.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		TpccTestProcess other = (TpccTestProcess) obj;
-		if (initialRequestedMinStartTime != other.initialRequestedMinStartTime)
-			return false;
-		if (startTime != other.startTime)
-			return false;
-		if (terminalWarehouseId != other.terminalWarehouseId)
-			return false;
-		if (thinkTimeInMs != other.thinkTimeInMs)
-			return false;
-		if (txComputer == null) {
-			if (other.txComputer != null)
-				return false;
-		} else if (!txComputer.equals(other.txComputer))
-			return false;
-		return true;
 	}
 
 	@Override
@@ -373,9 +341,21 @@ public abstract class TpccTestProcess extends TestProcess {
 			+ "]";
 	}
 
-	public void finished() {
-		assert finished == -1;
-		finished = System.currentTimeMillis();
+	@Override
+	public int hashCode() {
+		return uuid.hashCode();
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		TpccTestProcess other = (TpccTestProcess) obj;
+		
+		return other.uuid.equals(this.uuid);
+	}
 }
