@@ -2,15 +2,18 @@ package com.dianemodb.tpcc;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.StorageConnection;
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
 import com.dianemodb.computertest.framework.TestComputer;
 import com.dianemodb.id.RecordId;
+import com.dianemodb.integration.sqlwrapper.BenchmarkingH2ConnectionWrapper;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.SQLHelper;
 import com.dianemodb.metaschema.SQLServerApplication;
@@ -19,6 +22,9 @@ import com.dianemodb.metaschema.index.IndexRecord;
 import com.dianemodb.metaschema.index.IndexTable;
 import com.dianemodb.metaschema.schema.ServerTable;
 import com.dianemodb.metaschema.schema.UserRecordTable;
+import com.dianemodb.runner.DiaDBRunner;
+import com.dianemodb.runner.ExampleRunner;
+import com.dianemodb.runner.KafkaClientRunner;
 import com.dianemodb.tpcc.schema.TpccBaseTable;
 
 public class TpccDataPopulationGenerator {
@@ -28,19 +34,64 @@ public class TpccDataPopulationGenerator {
 	private static final String ID_SEQ_NAME = "id_sequence";
 	private static final String WAREHOUSE_ID_COLUMN_NAME = "wh_id";
 	
-	public static void main(String[] args) {
-		SQLServerApplication application = TpccRunner.createApplication(new Topology(Map.of()));
-		populate(application, new ServerComputerId(ServerComputerId.ROOT, (byte) 0));
+	public static void main(String[] args) throws Exception {
+		Topology topology = DiaDBRunner.readTopologyFromFile(ExampleRunner.SMALL_SINGLE_LEVEL_TOPOLOGY);
+		SQLServerApplication application = TpccRunner.createApplication(topology);
+
+		populate(topology, application, 11);
+	}
+	
+	public static void populate(
+			Topology topology, 
+			SQLServerApplication application,
+			int multiplier
+	) {
+		List<ServerComputerId> leafComputers = topology.getLeafNodes();
+		
+		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
+		
+		for( int i = 0; i < multiplier; i++ ) {
+			for(ServerComputerId computerId : leafComputers) {
+				byte index = computerId.getIndexValue();
+				final int ii = i;
+				
+				executor.execute(
+					() ->  {
+						System.out.println("Populating " + computerId.clearTextFormat() + " loop " + ii);
+						
+						// this is the default directory, configured byt the environment switch
+						StorageConnection connection = 
+								new BenchmarkingH2ConnectionWrapper(
+										KafkaClientRunner.ABSOLUTE_ROOT_DIRECTORY + "server_1", 
+										computerId.clearTextFormat()
+								);
+						
+						populate(
+								application, 
+								connection, 
+								computerId, 
+								(short) index, 
+								(short) ((index + leafComputers.size()) * (ii + 1))
+						);
+								
+						connection.commit();
+						connection.close();
+						
+						System.out.println("Done for " + computerId.clearTextFormat() + " loop " + ii);
+					}
+				);				
+			}
+		}
 	}
 
 	public static void populate(
-			SQLServerApplication application, 
-			ServerComputerId computerId
+			SQLServerApplication application,
+			StorageConnection connection,
+			ServerComputerId computerId,
+			short wh_id,
+			short new_wh_id
 	) {
 
-		short wh_id = 0;
-		short new_wh_id = 8;
-		
 		ServerComputerId id = new ServerComputerId(ServerComputerId.ROOT, (byte) 0);
 		
 		String serverId = id.clearTextFormat();
@@ -49,9 +100,9 @@ public class TpccDataPopulationGenerator {
 		String initSequence = 
 				"CREATE SEQUENCE " + ID_SEQ_NAME + " start with ("
 					+ "SELECT f.value FROM ID_FACTORY f WHERE f.name='user_rec_id' LIMIT 1"
-				+ ");";
+				+ ")";
 		
-		System.out.println(initSequence);
+		SQLHelper.executeStatement(connection, initSequence);
 		
 		Collection<ServerTable<?>> tables = 
 				application.tables()
@@ -61,18 +112,21 @@ public class TpccDataPopulationGenerator {
 					.collect(Collectors.toList());
 		
 		for(ServerTable<?> table : tables) {
-			table( (TpccBaseTable<?>) table, serverId, wh_id, new_wh_id);
+			table( (TpccBaseTable<?>) table, connection, serverId, wh_id, new_wh_id);
 		}
 		
 		String updateIdFactoryStatement = 
 				"UPDATE ID_FACTORY SET value = " + ID_SEQ_NAME + ".nextval "
-						+ "WHERE name='" + TestComputer.USER_RECORD_ID_FACTORY_ID + "';";
+						+ "WHERE name='" + TestComputer.USER_RECORD_ID_FACTORY_ID + "'";
+		SQLHelper.executeStatement(connection, updateIdFactoryStatement);
 		
-		System.out.println(updateIdFactoryStatement);
+		String dropIdSequenceStatement = "DROP SEQUENCE " + ID_SEQ_NAME + ";";
+		SQLHelper.executeStatement(connection, dropIdSequenceStatement);
 	}
 
 	private static <R extends UserRecord> void table(
 			TpccBaseTable<R> userTable, 
+			StorageConnection connection,
 			String serverId, 
 			short wh_id,
 			short new_wh_id
@@ -100,8 +154,7 @@ public class TpccDataPopulationGenerator {
 						"CREATE GLOBAL TEMPORARY TABLE ", 
 						nameAndValues
 				);
-		
-		System.out.println(createTableStatement + ";");
+		SQLHelper.executeStatement(connection, createTableStatement);
 		
 		
 		String tmpInsertRecordsStatement =
@@ -119,7 +172,7 @@ public class TpccDataPopulationGenerator {
 				+ " FROM " + userTable.getName() 
 				+ " WHERE " + userTable.getWarehouseIdColumn().getName() + "=" + wh_id + ";";
 		
-		System.out.println(tmpInsertRecordsStatement);
+		SQLHelper.executeStatement(connection, tmpInsertRecordsStatement);
 		
 		String insertRecordsStatement = 
 			"INSERT INTO " + userTable.getName() + "(" 
@@ -133,7 +186,7 @@ public class TpccDataPopulationGenerator {
 					+ WAREHOUSE_ID_COLUMN_NAME
 				+ " FROM " + userTable.getName()+ "_tmp;";
 		
-		System.out.println(insertRecordsStatement);
+		SQLHelper.executeStatement(connection, insertRecordsStatement);
 		
 		Set<IndexTable> indices = 
 				userTable.allIndices()
@@ -170,7 +223,7 @@ public class TpccDataPopulationGenerator {
 							indexColumnStringsWithValues
 					);
 			
-			System.out.println(createTempIndexTableStatement + ";");
+			SQLHelper.executeStatement(connection, createTempIndexTableStatement);
 			
 			String tmpIndexInsertStatement = 
 				"INSERT INTO " + indexTmpTableName
@@ -192,7 +245,7 @@ public class TpccDataPopulationGenerator {
 							+ " JOIN " + userRecordTempTableName + " u " 
 								+ " ON u." + OLD_RECORD_ID_COLUMN_NAME + "=i." + i.getUserRecordColumn().getName() + ";";
 			
-			System.out.println(tmpIndexInsertStatement);
+			SQLHelper.executeStatement(connection, tmpIndexInsertStatement);
 			
 			String insertIndexStatement = 
 				"INSERT INTO " + i.getName() + "(" 
@@ -206,15 +259,15 @@ public class TpccDataPopulationGenerator {
 						+ "i." + i.getUserRecordColumn().getName()
 					+ " FROM " + indexTmpTableName + " i;";
 			
-			System.out.println(insertIndexStatement);
+			SQLHelper.executeStatement(connection, insertIndexStatement);
 			
 			String dropTempIndexTableStatement = "DROP TABLE " + indexTmpTableName + ";";
-			
-			System.out.println(dropTempIndexTableStatement);
+			SQLHelper.executeStatement(connection, dropTempIndexTableStatement);
 		}
 		
 		String dropTempUserTableStatement = "DROP TABLE " + userRecordTempTableName + ";";
-		System.out.println(dropTempUserTableStatement);
+		
+		SQLHelper.executeStatement(connection, dropTempUserTableStatement);
 	}
 	
 }
