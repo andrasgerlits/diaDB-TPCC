@@ -57,7 +57,7 @@ public class ItemTable extends TpccBaseTable<Item> {
 	private final RangeBasedDistributedIndex<Item> idIndex;
 	
 	public ItemTable(Topology servers) {
-		super(ID, TABLE_NAME, Caching.MEMORY);
+		super(ID, TABLE_NAME, Caching.CACHED);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);

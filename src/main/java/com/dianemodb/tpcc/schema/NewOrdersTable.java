@@ -101,7 +101,7 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	private final RangeBasedDistributedIndex<NewOrders> compositeIndex;
 	
 	public NewOrdersTable(Topology servers) {
-		super(ID, TABLE_NAME, Caching.MEMORY);
+		super(ID, TABLE_NAME, Caching.CACHED);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);

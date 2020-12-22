@@ -156,7 +156,6 @@ public class TpccDataPopulationGenerator {
 				);
 		SQLHelper.executeStatement(connection, createTableStatement);
 		
-		
 		String tmpInsertRecordsStatement =
 			"INSERT INTO " + userRecordTempTableName + "(" 
 					+ commaSeparatedColumnNames + ", " 
@@ -170,7 +169,7 @@ public class TpccDataPopulationGenerator {
 					+ recordIdColumn.getName() + ","
 					+ new_wh_id
 				+ " FROM " + userTable.getName() 
-				+ " WHERE " + userTable.getWarehouseIdColumn().getName() + "=" + wh_id + ";";
+				+ " WHERE " + warehouseIdColumn.getName() + "=" + wh_id + ";";
 		
 		SQLHelper.executeStatement(connection, tmpInsertRecordsStatement);
 		
@@ -184,7 +183,7 @@ public class TpccDataPopulationGenerator {
 					+ commaSeparatedColumnNames + ", " 
 					+ NEW_RECORD_ID_COLUMN_NAME + ", "
 					+ WAREHOUSE_ID_COLUMN_NAME
-				+ " FROM " + userTable.getName()+ "_tmp;";
+				+ " FROM " + userRecordTempTableName;
 		
 		SQLHelper.executeStatement(connection, insertRecordsStatement);
 		
@@ -196,78 +195,87 @@ public class TpccDataPopulationGenerator {
 					.collect(Collectors.toSet());
 		
 		for(IndexTable i : indices) {	
-			List<RecordColumn<IndexRecord, ?>> indexColumnsWithoutUserRecord = i.getColumns();
-			
-			// record-id needs to be replaced with a new value
-			indexColumnsWithoutUserRecord.remove(i.getRecordIdColumn());
-			
-			// user-record id needs to be the same as one just inserted 
-			indexColumnsWithoutUserRecord.remove(i.getUserRecordColumn());
-			
-			String indexTmpTableName = i.getName() + "_tmp";
-			
-			// foo VARCHAR(128), bar INT
-			List<String> indexColumnStringsWithValues = 
-					SQLHelper.convertColumnsToNameAndValue(indexColumnsWithoutUserRecord);
-			
-			indexColumnStringsWithValues.add(
-					NEW_RECORD_ID_COLUMN_NAME + " " + i.getRecordIdColumn().getSQLDataType());
-			
-			indexColumnStringsWithValues.add(
-					i.getUserRecordColumn().getName() + " " + i.getUserRecordColumn().getSQLDataType());
-			
-			String createTempIndexTableStatement = 
-					SQLHelper.createTableStatementFromStrings(
-							indexTmpTableName, 
-							"CREATE GLOBAL TEMPORARY TABLE ", 
-							indexColumnStringsWithValues
-					);
-			
-			SQLHelper.executeStatement(connection, createTempIndexTableStatement);
-			
-			String tmpIndexInsertStatement = 
-				"INSERT INTO " + indexTmpTableName
-					+ "(" 
-						+ SQLHelper.getCommaSeparatedColumnNames(indexColumnsWithoutUserRecord) + ", "
-						
-						// the new record-id of the index-record
-						+ NEW_RECORD_ID_COLUMN_NAME + ", "
-						
-						// the new user-record
-						+ i.getUserRecordColumn().getName()
-					+ ") "
-					+ "SELECT " 
-						+ SQLHelper.getCommaSeparatedColumnNamesWithPrefix("i", indexColumnsWithoutUserRecord) + ", "
-						+ "('" + serverId + ":' || " + ID_SEQ_NAME  + ".nextval),"
-						+ "u." + NEW_RECORD_ID_COLUMN_NAME
-						
-						+ " FROM " + i.getName() + " i " 
-							+ " JOIN " + userRecordTempTableName + " u " 
-								+ " ON u." + OLD_RECORD_ID_COLUMN_NAME + "=i." + i.getUserRecordColumn().getName() + ";";
-			
-			SQLHelper.executeStatement(connection, tmpIndexInsertStatement);
-			
-			String insertIndexStatement = 
-				"INSERT INTO " + i.getName() + "(" 
-					+ SQLHelper.getCommaSeparatedColumnNames(indexColumnsWithoutUserRecord) + ","
-					+ i.getRecordIdColumn().getName() + ","
-					+ i.getUserRecordColumn().getName()
-				+ ") "
-					+ "SELECT "
-						+ SQLHelper.getCommaSeparatedColumnNamesWithPrefix("i", indexColumnsWithoutUserRecord) + ","
-						+ "i." + NEW_RECORD_ID_COLUMN_NAME + "," 
-						+ "i." + i.getUserRecordColumn().getName()
-					+ " FROM " + indexTmpTableName + " i;";
-			
-			SQLHelper.executeStatement(connection, insertIndexStatement);
-			
-			String dropTempIndexTableStatement = "DROP TABLE " + indexTmpTableName + ";";
-			SQLHelper.executeStatement(connection, dropTempIndexTableStatement);
+			index(connection, serverId, userRecordTempTableName, i);
 		}
 		
 		String dropTempUserTableStatement = "DROP TABLE " + userRecordTempTableName + ";";
 		
 		SQLHelper.executeStatement(connection, dropTempUserTableStatement);
+	}
+
+	private static void index(
+				StorageConnection connection, 
+				String serverId, 
+				String userRecordTempTableName,
+				IndexTable i
+	) {
+		List<RecordColumn<IndexRecord, ?>> indexColumnsWithoutUserRecord = i.getColumns();
+		
+		// record-id needs to be replaced with a new value
+		indexColumnsWithoutUserRecord.remove(i.getRecordIdColumn());
+		
+		// user-record id needs to be the same as one just inserted 
+		indexColumnsWithoutUserRecord.remove(i.getUserRecordColumn());
+		
+		String indexTmpTableName = i.getName() + "_tmp";
+		
+		// foo VARCHAR(128), bar INT
+		List<String> indexColumnStringsWithValues = 
+				SQLHelper.convertColumnsToNameAndValue(indexColumnsWithoutUserRecord);
+		
+		indexColumnStringsWithValues.add(
+				NEW_RECORD_ID_COLUMN_NAME + " " + i.getRecordIdColumn().getSQLDataType());
+		
+		indexColumnStringsWithValues.add(
+				i.getUserRecordColumn().getName() + " " + i.getUserRecordColumn().getSQLDataType());
+		
+		String createTempIndexTableStatement = 
+				SQLHelper.createTableStatementFromStrings(
+						indexTmpTableName, 
+						"CREATE GLOBAL TEMPORARY TABLE ", 
+						indexColumnStringsWithValues
+				);
+		
+		SQLHelper.executeStatement(connection, createTempIndexTableStatement);
+		
+		String tmpIndexInsertStatement = 
+			"INSERT INTO " + indexTmpTableName
+				+ "(" 
+					+ SQLHelper.getCommaSeparatedColumnNames(indexColumnsWithoutUserRecord) + ", "
+					
+					// the new record-id of the index-record
+					+ NEW_RECORD_ID_COLUMN_NAME + ", "
+					
+					// the new user-record
+					+ i.getUserRecordColumn().getName()
+				+ ") "
+				+ "SELECT " 
+					+ SQLHelper.getCommaSeparatedColumnNamesWithPrefix("i", indexColumnsWithoutUserRecord) + ", "
+					+ "('" + serverId + ":' || " + ID_SEQ_NAME  + ".nextval),"
+					+ "u." + NEW_RECORD_ID_COLUMN_NAME
+					// WHERE i.USER_RECORD_ID IN (SELECT u.old_record_id FROM order_line_tmp u)
+					+ " FROM " + userRecordTempTableName + " u " 
+					+ " JOIN "  + i.getName() + " i "
+						+ " ON u." + OLD_RECORD_ID_COLUMN_NAME + "=i." + i.getUserRecordColumn().getName();
+		
+		SQLHelper.executeStatement(connection, tmpIndexInsertStatement);
+		
+		String insertIndexStatement = 
+			"INSERT INTO " + i.getName() + "(" 
+				+ SQLHelper.getCommaSeparatedColumnNames(indexColumnsWithoutUserRecord) + ","
+				+ i.getRecordIdColumn().getName() + ","
+				+ i.getUserRecordColumn().getName()
+			+ ") "
+				+ "SELECT "
+					+ SQLHelper.getCommaSeparatedColumnNamesWithPrefix("i", indexColumnsWithoutUserRecord) + ","
+					+ "i." + NEW_RECORD_ID_COLUMN_NAME + "," 
+					+ "i." + i.getUserRecordColumn().getName()
+				+ " FROM " + indexTmpTableName + " i;";
+		
+		SQLHelper.executeStatement(connection, insertIndexStatement);
+		
+		String dropTempIndexTableStatement = "DROP TABLE " + indexTmpTableName + ";";
+		SQLHelper.executeStatement(connection, dropTempIndexTableStatement);
 	}
 	
 }
