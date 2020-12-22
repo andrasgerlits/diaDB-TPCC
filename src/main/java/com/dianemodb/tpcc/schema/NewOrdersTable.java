@@ -153,4 +153,9 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	protected DistributedIndex<NewOrders> getMaintainingComputerDecidingIndex() {
 		return compositeIndex;
 	}
+
+	@Override
+	public RecordColumn<NewOrders, Short> getWarehouseIdColumn() {
+		return WAREHOUSE_ID_COLUMN;
+	}
 }

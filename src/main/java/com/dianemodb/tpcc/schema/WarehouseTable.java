@@ -106,4 +106,9 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	public DistributedIndex<Warehouse> getIdIndex() {
 		return index;
 	}
+
+	@Override
+	public RecordColumn<Warehouse, Short> getWarehouseIdColumn() {
+		return ID_COLUMN;
+	}
 }

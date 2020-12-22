@@ -273,4 +273,9 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	public Collection<DistributedIndex<Customer>> indices() {
 		return indices;
 	}
+
+	@Override
+	public RecordColumn<Customer, Short> getWarehouseIdColumn() {
+		return WAREHOUSE_ID_COLUMN;
+	}
 }

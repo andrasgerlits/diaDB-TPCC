@@ -135,4 +135,9 @@ public class StockTable extends TpccBaseTable<Stock> {
 	protected DistributedIndex<Stock> getMaintainingComputerDecidingIndex() {
 		return itemWarehouseIndex;
 	}
+
+	@Override
+	public RecordColumn<Stock, Short> getWarehouseIdColumn() {
+		return WAREHOUSE_ID_COLUMN;
+	}
 }

@@ -133,4 +133,8 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 		return orderIdRangeIndex;
 	}
 
+	@Override
+	public RecordColumn<OrderLine, Short> getWarehouseIdColumn() {
+		return WAREHOUSE_ID_COLUMN;
+	}
 }

@@ -169,4 +169,9 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 	protected DistributedIndex<Orders> getMaintainingComputerDecidingIndex() {
 		return compositeIndex;
 	}
+
+	@Override
+	public RecordColumn<Orders, Short> getWarehouseIdColumn() {
+		return WAREHOUSE_ID_COLUMN;
+	}
 }

@@ -9,7 +9,6 @@ import java.util.Map;
 
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
-import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
 import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
@@ -149,7 +148,9 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	public DistributedIndex<District> getCompositeIndex() {
 		return compositeIndex;
 	}
-	
-	
 
+	@Override
+	public RecordColumn<District, Short> getWarehouseIdColumn() {
+		return WAREHOUSE_COLUMN;
+	}
 }

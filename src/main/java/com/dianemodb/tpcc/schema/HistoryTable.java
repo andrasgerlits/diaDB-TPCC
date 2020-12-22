@@ -165,4 +165,9 @@ public class HistoryTable extends TpccBaseTable<History> {
 	protected DistributedIndex<History> getMaintainingComputerDecidingIndex() {
 		return compositeIndex;
 	}
+
+	@Override
+	public RecordColumn<History, Short> getWarehouseIdColumn() {
+		return WAREHOUSE_ID_COLUMN;
+	}
 }

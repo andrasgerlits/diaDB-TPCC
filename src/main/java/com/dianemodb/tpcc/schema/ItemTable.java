@@ -105,4 +105,9 @@ public class ItemTable extends TpccBaseTable<Item> {
 	protected DistributedIndex<Item> getMaintainingComputerDecidingIndex() {
 		return idIndex;
 	}
+
+	@Override
+	public RecordColumn<Item, Short> getWarehouseIdColumn() {
+		return WAREHOUSE_ID_COLUMN;
+	}
 }

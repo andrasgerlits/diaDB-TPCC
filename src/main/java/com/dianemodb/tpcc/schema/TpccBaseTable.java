@@ -53,6 +53,8 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 	
 	protected abstract DistributedIndex<R> getMaintainingComputerDecidingIndex();
 	
+	public abstract RecordColumn<R, Short> getWarehouseIdColumn();
+	
 	@Override
 	public final ServerComputerId chooseMaintainingComputer(
 			SQLServerApplication application,

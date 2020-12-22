@@ -1,7 +1,5 @@
 package com.dianemodb.tpcc.query.orderstatus;
 
-import org.h2.expression.aggregate.AggregateType;
-
 import com.dianemodb.h2impl.SingleParameterSetQueryDistributionPlan;
 import com.dianemodb.metaschema.distributed.MinMaxFunction;
 import com.dianemodb.metaschema.distributed.MinMaxType;
