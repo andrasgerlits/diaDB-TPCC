@@ -17,7 +17,7 @@ import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.District;
 import com.dianemodb.tpcc.entity.Warehouse;
 import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
-import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
+import com.dianemodb.tpcc.query.FindDistrictByWarehouseAndDistrictId;
 import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
 import com.dianemodb.tpcc.schema.CustomerTable;
 
@@ -82,7 +82,7 @@ public class Payment extends TpccTestProcess {
 		
 		Envelope queryDistrictEnvelope =
 				query(
-					FindDistrictByIdAndWarehouse.ID, 
+					FindDistrictByWarehouseAndDistrictId.ID, 
 					List.of(warehouseId, districtId)
 				);
 		

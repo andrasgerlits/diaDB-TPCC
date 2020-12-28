@@ -1,14 +1,19 @@
 package com.dianemodb.tpcc;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 import com.dianemodb.ServerComputerId;
-import com.dianemodb.StorageConnection;
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
 import com.dianemodb.computertest.framework.TestComputer;
@@ -29,6 +34,7 @@ import com.dianemodb.tpcc.schema.TpccBaseTable;
 
 public class TpccDataPopulationGenerator {
 	
+	private static final int PARALLEL_LOAD_THREADS = 2;
 	private static final String OLD_RECORD_ID_COLUMN_NAME = "old_record_id";
 	private static final String NEW_RECORD_ID_COLUMN_NAME = "record_id";
 	private static final String ID_SEQ_NAME = "id_sequence";
@@ -48,50 +54,106 @@ public class TpccDataPopulationGenerator {
 	) {
 		List<ServerComputerId> leafComputers = topology.getLeafNodes();
 		
-		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
+		CountDownLatch latch = new CountDownLatch(multiplier * leafComputers.size()); 
+		
+		ThreadPoolExecutor executor = 
+				(ThreadPoolExecutor) Executors.newFixedThreadPool(
+						PARALLEL_LOAD_THREADS, 
+						r -> { 
+							Thread t = new Thread(r);
+							t.setDaemon(true);
+							return t;
+						}
+					);
 		
 		for( int i = 0; i < multiplier; i++ ) {
 			for(ServerComputerId computerId : leafComputers) {
-				byte index = computerId.getIndexValue();
 				final int ii = i;
+
+				byte index = computerId.getIndexValue();
+				short newWarehouseId = (short) (index + (leafComputers.size() * (ii + 1)));
 				
-				executor.execute(
+				executor.execute( 
 					() ->  {
-						System.out.println("Populating " + computerId.clearTextFormat() + " loop " + ii);
-						
-						// this is the default directory, configured byt the environment switch
-						StorageConnection connection = 
-								new BenchmarkingH2ConnectionWrapper(
-										KafkaClientRunner.ABSOLUTE_ROOT_DIRECTORY + "server_1", 
-										computerId.clearTextFormat()
-								);
-						
-						populate(
-								application, 
-								connection, 
-								computerId, 
-								(short) index, 
-								(short) ((index + leafComputers.size()) * (ii + 1))
-						);
-								
-						connection.commit();
-						connection.close();
-						
-						System.out.println("Done for " + computerId.clearTextFormat() + " loop " + ii);
+						try {
+							run(application, computerId, ii, index, newWarehouseId);
+							latch.countDown();
+						} catch (SQLException e) {
+							throw new RuntimeException(e);
+						}
 					}
-				);				
+				);
 			}
+		}
+		
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
-	public static void populate(
+	private static void run(
+			SQLServerApplication application, 
+			ServerComputerId computerId, 
+			final int ii, 
+			byte index,
+			short newWarehouseId
+	) throws SQLException {
+		System.out.println("Populating " + computerId.clearTextFormat() + " wh " + newWarehouseId);
+		
+		List<String> statements = 
+			populate(
+				application, 
+				computerId, 
+				(short) index, 
+				newWarehouseId
+			);
+
+		// this is the default directory, configured byt the environment switch
+		Connection connection = 
+				BenchmarkingH2ConnectionWrapper.createConnection(
+						KafkaClientRunner.ABSOLUTE_ROOT_DIRECTORY + "server_1", 
+						computerId.clearTextFormat()
+				);
+		
+		executeStatement(
+				connection, 
+				statements.toArray(new String[statements.size()])
+		);
+				
+		connection.commit();
+		connection.close();
+		
+
+		// this should trigger compacting and at worst fails ASAP if H2 would crash
+		connection = 
+				BenchmarkingH2ConnectionWrapper.createConnection(
+						KafkaClientRunner.ABSOLUTE_ROOT_DIRECTORY + "server_1", 
+						computerId.clearTextFormat()
+				);
+		
+		connection.close();
+
+		System.out.println("Done for " + computerId.clearTextFormat() + " loop " + ii);
+	}
+	
+	public static void executeStatement(Connection conn, String... statements) throws SQLException {
+		for(String statement : statements) {
+			PreparedStatement jdbcStatement = conn.prepareStatement(statement);
+			jdbcStatement.execute();
+			jdbcStatement.close();
+		}
+	}
+
+	public static List<String> populate(
 			SQLServerApplication application,
-			StorageConnection connection,
 			ServerComputerId computerId,
 			short wh_id,
 			short new_wh_id
 	) {
-
+		List<String> statements = new LinkedList<String>();
+				
 		ServerComputerId id = new ServerComputerId(ServerComputerId.ROOT, (byte) 0);
 		
 		String serverId = id.clearTextFormat();
@@ -99,10 +161,12 @@ public class TpccDataPopulationGenerator {
 		// init this to be the current value
 		String initSequence = 
 				"CREATE SEQUENCE " + ID_SEQ_NAME + " start with ("
-					+ "SELECT f.value FROM ID_FACTORY f WHERE f.name='user_rec_id' LIMIT 1"
-				+ ")";
+					+ "SELECT f.value FROM ID_FACTORY f "
+					+ " WHERE f.name='" + TestComputer.USER_RECORD_ID_FACTORY_ID + "' "
+					+ " LIMIT 1"
+				+ ");";
 		
-		SQLHelper.executeStatement(connection, initSequence);
+		statements.add(initSequence);
 		
 		Collection<ServerTable<?>> tables = 
 				application.tables()
@@ -112,25 +176,30 @@ public class TpccDataPopulationGenerator {
 					.collect(Collectors.toList());
 		
 		for(ServerTable<?> table : tables) {
-			table( (TpccBaseTable<?>) table, connection, serverId, wh_id, new_wh_id);
+			List<String> tableStatements = table( (TpccBaseTable<?>) table, serverId, wh_id, new_wh_id);
+			statements.addAll(tableStatements);
 		}
 		
 		String updateIdFactoryStatement = 
 				"UPDATE ID_FACTORY SET value = " + ID_SEQ_NAME + ".nextval "
 						+ "WHERE name='" + TestComputer.USER_RECORD_ID_FACTORY_ID + "'";
-		SQLHelper.executeStatement(connection, updateIdFactoryStatement);
+		
+		statements.add(updateIdFactoryStatement);
 		
 		String dropIdSequenceStatement = "DROP SEQUENCE " + ID_SEQ_NAME + ";";
-		SQLHelper.executeStatement(connection, dropIdSequenceStatement);
+		statements.add(dropIdSequenceStatement);
+		
+		return statements;
 	}
 
-	private static <R extends UserRecord> void table(
+	private static <R extends UserRecord> List<String> table(
 			TpccBaseTable<R> userTable, 
-			StorageConnection connection,
 			String serverId, 
 			short wh_id,
 			short new_wh_id
 	) {	
+		List<String> statements = new LinkedList<String>();
+		
 		RecordColumn<R, Short> warehouseIdColumn = userTable.getWarehouseIdColumn();
 		RecordColumn<R, RecordId> recordIdColumn = userTable.getRecordIdColumn();
 
@@ -154,7 +223,8 @@ public class TpccDataPopulationGenerator {
 						"CREATE GLOBAL TEMPORARY TABLE ", 
 						nameAndValues
 				);
-		SQLHelper.executeStatement(connection, createTableStatement);
+		
+		statements.add(createTableStatement);
 		
 		String tmpInsertRecordsStatement =
 			"INSERT INTO " + userRecordTempTableName + "(" 
@@ -171,7 +241,7 @@ public class TpccDataPopulationGenerator {
 				+ " FROM " + userTable.getName() 
 				+ " WHERE " + warehouseIdColumn.getName() + "=" + wh_id + ";";
 		
-		SQLHelper.executeStatement(connection, tmpInsertRecordsStatement);
+		statements.add(tmpInsertRecordsStatement);
 		
 		String insertRecordsStatement = 
 			"INSERT INTO " + userTable.getName() + "(" 
@@ -185,49 +255,72 @@ public class TpccDataPopulationGenerator {
 					+ WAREHOUSE_ID_COLUMN_NAME
 				+ " FROM " + userRecordTempTableName;
 		
-		SQLHelper.executeStatement(connection, insertRecordsStatement);
+		statements.add(insertRecordsStatement);
 		
-		Set<IndexTable> indices = 
+		Set<DistributedIndex<R>> indices = 
 				userTable.allIndices()
 					.values()
 					.stream()
-					.map(DistributedIndex::getTable)
 					.collect(Collectors.toSet());
 		
-		for(IndexTable i : indices) {	
-			index(connection, serverId, userRecordTempTableName, i);
+		for(DistributedIndex<R> i : indices) {	
+			List<String> indexStrings = index(userTable, serverId, userRecordTempTableName, i, new_wh_id);
+			statements.addAll(indexStrings);
 		}
 		
 		String dropTempUserTableStatement = "DROP TABLE " + userRecordTempTableName + ";";
-		
-		SQLHelper.executeStatement(connection, dropTempUserTableStatement);
+		statements.add(dropTempUserTableStatement);
+
+		return statements;
 	}
 
-	private static void index(
-				StorageConnection connection, 
+	private static <R extends UserRecord> List<String> index(
+				TpccBaseTable<R> userTable,
 				String serverId, 
 				String userRecordTempTableName,
-				IndexTable i
+				DistributedIndex<R> index,
+				short warehouseId
 	) {
-		List<RecordColumn<IndexRecord, ?>> indexColumnsWithoutUserRecord = i.getColumns();
+		IndexTable indexTable = index.getTable();
+		
+		RecordColumn<R, Short> warehouseColumn = userTable.getWarehouseIdColumn();
+		
+		List<String> statements = new LinkedList<String>();
+
+		List<RecordColumn<IndexRecord, ?>> indexColumnsWithoutUserRecordAndWarehouse = indexTable.getColumns();
+
+		// we have indices which have no warehouse-columns, like record-id & tx-id
+		Optional<RecordColumn<IndexRecord, ?>> maybeIndexWarehouseColumn = 
+				indexTable.getColumns()
+					.stream()
+					.filter( c -> c.getName().equals(warehouseColumn.getName()))
+					.findAny();
+		
+		maybeIndexWarehouseColumn.ifPresent(c -> indexColumnsWithoutUserRecordAndWarehouse.remove(c));
 		
 		// record-id needs to be replaced with a new value
-		indexColumnsWithoutUserRecord.remove(i.getRecordIdColumn());
+		indexColumnsWithoutUserRecordAndWarehouse.remove(indexTable.getRecordIdColumn());
 		
 		// user-record id needs to be the same as one just inserted 
-		indexColumnsWithoutUserRecord.remove(i.getUserRecordColumn());
+		indexColumnsWithoutUserRecordAndWarehouse.remove(indexTable.getUserRecordColumn());
 		
-		String indexTmpTableName = i.getName() + "_tmp";
+		/*
+		 * we presume that there are other columns in the index beside the warehouse, as the 
+		 * others are technical columns, so don't carry information for the end-user. 
+		 */
+		assert !indexColumnsWithoutUserRecordAndWarehouse.isEmpty() : index;
+		
+		String indexTmpTableName = indexTable.getName() + "_tmp";
 		
 		// foo VARCHAR(128), bar INT
 		List<String> indexColumnStringsWithValues = 
-				SQLHelper.convertColumnsToNameAndValue(indexColumnsWithoutUserRecord);
+				SQLHelper.convertColumnsToNameAndValue(indexColumnsWithoutUserRecordAndWarehouse);
 		
 		indexColumnStringsWithValues.add(
-				NEW_RECORD_ID_COLUMN_NAME + " " + i.getRecordIdColumn().getSQLDataType());
+				NEW_RECORD_ID_COLUMN_NAME + " " + indexTable.getRecordIdColumn().getSQLDataType());
 		
 		indexColumnStringsWithValues.add(
-				i.getUserRecordColumn().getName() + " " + i.getUserRecordColumn().getSQLDataType());
+				indexTable.getUserRecordColumn().getName() + " " + indexTable.getUserRecordColumn().getSQLDataType());
 		
 		String createTempIndexTableStatement = 
 				SQLHelper.createTableStatementFromStrings(
@@ -236,46 +329,57 @@ public class TpccDataPopulationGenerator {
 						indexColumnStringsWithValues
 				);
 		
-		SQLHelper.executeStatement(connection, createTempIndexTableStatement);
+		statements.add(createTempIndexTableStatement);
 		
 		String tmpIndexInsertStatement = 
 			"INSERT INTO " + indexTmpTableName
 				+ "(" 
-					+ SQLHelper.getCommaSeparatedColumnNames(indexColumnsWithoutUserRecord) + ", "
+					+ SQLHelper.getCommaSeparatedColumnNames(indexColumnsWithoutUserRecordAndWarehouse) + ", "
 					
 					// the new record-id of the index-record
 					+ NEW_RECORD_ID_COLUMN_NAME + ", "
 					
 					// the new user-record
-					+ i.getUserRecordColumn().getName()
+					+ indexTable.getUserRecordColumn().getName()
 				+ ") "
 				+ "SELECT " 
-					+ SQLHelper.getCommaSeparatedColumnNamesWithPrefix("i", indexColumnsWithoutUserRecord) + ", "
+					+ SQLHelper.getCommaSeparatedColumnNamesWithPrefix("i", indexColumnsWithoutUserRecordAndWarehouse) + ", "
 					+ "('" + serverId + ":' || " + ID_SEQ_NAME  + ".nextval),"
 					+ "u." + NEW_RECORD_ID_COLUMN_NAME
-					// WHERE i.USER_RECORD_ID IN (SELECT u.old_record_id FROM order_line_tmp u)
 					+ " FROM " + userRecordTempTableName + " u " 
-					+ " JOIN "  + i.getName() + " i "
-						+ " ON u." + OLD_RECORD_ID_COLUMN_NAME + "=i." + i.getUserRecordColumn().getName();
+					+ " JOIN "  + indexTable.getName() + " i "
+						+ " ON u." + OLD_RECORD_ID_COLUMN_NAME + "=i." + indexTable.getUserRecordColumn().getName();
 		
-		SQLHelper.executeStatement(connection, tmpIndexInsertStatement);
+		statements.add(tmpIndexInsertStatement);
 		
-		String insertIndexStatement = 
-			"INSERT INTO " + i.getName() + "(" 
-				+ SQLHelper.getCommaSeparatedColumnNames(indexColumnsWithoutUserRecord) + ","
-				+ i.getRecordIdColumn().getName() + ","
-				+ i.getUserRecordColumn().getName()
-			+ ") "
-				+ "SELECT "
-					+ SQLHelper.getCommaSeparatedColumnNamesWithPrefix("i", indexColumnsWithoutUserRecord) + ","
+		String insertHeader = 							
+				"INSERT INTO " + indexTable.getName() + "(" 
+					+ SQLHelper.getCommaSeparatedColumnNames(indexColumnsWithoutUserRecordAndWarehouse) + ","
+					+ indexTable.getRecordIdColumn().getName() + ","
+					+ indexTable.getUserRecordColumn().getName();
+		
+		String selectHeader = 
+				"SELECT "
+					+ SQLHelper.getCommaSeparatedColumnNamesWithPrefix("i", indexColumnsWithoutUserRecordAndWarehouse) + ","
 					+ "i." + NEW_RECORD_ID_COLUMN_NAME + "," 
-					+ "i." + i.getUserRecordColumn().getName()
-				+ " FROM " + indexTmpTableName + " i;";
+					+ "i." + indexTable.getUserRecordColumn().getName();
 		
-		SQLHelper.executeStatement(connection, insertIndexStatement);
-		
+		String insertIndexStatement =
+				maybeIndexWarehouseColumn
+					.map(
+						indexWarehouseColumn -> 
+							insertHeader + "," + indexWarehouseColumn.getName() + ") "
+							+ selectHeader  + "," + warehouseId	+ " FROM " + indexTmpTableName + " i;"
+					)
+					.orElseGet(
+						() -> 
+							insertHeader + ") " + selectHeader + " FROM " + indexTmpTableName + " i;"
+					);
+		statements.add(insertIndexStatement);
+
 		String dropTempIndexTableStatement = "DROP TABLE " + indexTmpTableName + ";";
-		SQLHelper.executeStatement(connection, dropTempIndexTableStatement);
+		statements.add(dropTempIndexTableStatement);
+
+		return statements;
 	}
-	
 }

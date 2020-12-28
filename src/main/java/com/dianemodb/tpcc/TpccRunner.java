@@ -18,7 +18,7 @@ import com.dianemodb.runner.InstanceRunner;
 import com.dianemodb.runner.KafkaClientRunner;
 import com.dianemodb.sql.SQLApplicationImpl;
 import com.dianemodb.tpcc.query.FindCustomerByWarehouseDistrictLastName;
-import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
+import com.dianemodb.tpcc.query.FindDistrictByWarehouseAndDistrictId;
 import com.dianemodb.tpcc.query.FindOrderLinesByOrderIdRangeDistrictAndWarehouse;
 import com.dianemodb.tpcc.query.FindOrderLinesByWarehouseDistrictOrderId;
 import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
@@ -84,7 +84,7 @@ public class TpccRunner extends AbstractTestRunner {
 					new FindCustomerByWarehouseDistrictAndId(customerTable),
 					
 					new FindCustomerByWarehouseDistrictLastName(customerTable),
-					new FindDistrictByIdAndWarehouse(districtTable),
+					new FindDistrictByWarehouseAndDistrictId(districtTable),
 					new FindOrderLinesByWarehouseDistrictOrderId(orderLineTable),
 					new FindOrderLinesByOrderIdRangeDistrictAndWarehouse(orderLineTable),
 					new FindWarehouseDetailsById(warehouseTable)

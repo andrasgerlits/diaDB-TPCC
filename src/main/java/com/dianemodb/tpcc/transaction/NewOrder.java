@@ -34,7 +34,7 @@ import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.entity.Stock;
 import com.dianemodb.tpcc.entity.Warehouse;
 import com.dianemodb.tpcc.init.TpccDataInitializer;
-import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
+import com.dianemodb.tpcc.query.FindDistrictByWarehouseAndDistrictId;
 import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
 import com.dianemodb.tpcc.query.neworder.FindItemById;
 import com.dianemodb.tpcc.query.neworder.FindStockByWarehouseItem;
@@ -133,7 +133,7 @@ public class NewOrder extends TpccTestProcess {
 		
 		Envelope queryDistrictEnvelope =
 				query(
-					FindDistrictByIdAndWarehouse.ID, 
+					FindDistrictByWarehouseAndDistrictId.ID, 
 					List.of(terminalWarehouseId, customerDistrictId)
 				);
 		

@@ -10,7 +10,7 @@ import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.entity.District;
 import com.dianemodb.tpcc.init.TpccDataInitializer;
-import com.dianemodb.tpcc.query.FindDistrictByIdAndWarehouse;
+import com.dianemodb.tpcc.query.FindDistrictByWarehouseAndDistrictId;
 import com.dianemodb.tpcc.query.FindOrderLinesByOrderIdRangeDistrictAndWarehouse;
 
 public class StockLevel extends TpccTestProcess {
@@ -40,7 +40,7 @@ public class StockLevel extends TpccTestProcess {
 	protected Result startTx() {
 		Envelope districtQuery = 
 				query(
-					FindDistrictByIdAndWarehouse.ID,
+					FindDistrictByWarehouseAndDistrictId.ID,
 					List.of(terminalWarehouseId, districtId)
 				);
 		

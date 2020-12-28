@@ -65,7 +65,12 @@ public class TpccInitializerRunner extends InitializerRunner {
 	
 	public static TpccInitializerRunner init(String[] args) throws Exception {
 		Options options = getCommonOptions();
-		options.addRequiredOption(NUMBER_OF_TX_SWITCH, "tx_number", true, "Number of transactions to use to create records");
+		options.addRequiredOption(
+				NUMBER_OF_TX_SWITCH, 
+				"tx_number", 
+				true, 
+				"Number of transactions to use to create records"
+		);
 		
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = parser.parse(options, args);
