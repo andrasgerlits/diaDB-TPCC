@@ -70,13 +70,13 @@ public class TpccDataPopulationGenerator {
 			for(ServerComputerId computerId : leafComputers) {
 				final int ii = i;
 
-				byte index = computerId.getIndexValue();
-				short newWarehouseId = (short) (index + (leafComputers.size() * (ii + 1)));
+				short oldWarehouseId = (short) computerId.getIndexValue();
+				short newWarehouseId = (short) (oldWarehouseId + (leafComputers.size() * (ii + 1)));
 				
 				executor.execute( 
 					() ->  {
 						try {
-							run(application, computerId, ii, index, newWarehouseId);
+							run(application, computerId, ii, oldWarehouseId, newWarehouseId);
 							latch.countDown();
 						} catch (SQLException e) {
 							throw new RuntimeException(e);
@@ -97,7 +97,7 @@ public class TpccDataPopulationGenerator {
 			SQLServerApplication application, 
 			ServerComputerId computerId, 
 			final int ii, 
-			byte index,
+			short oldWarehouseId,
 			short newWarehouseId
 	) throws SQLException {
 		System.out.println("Populating " + computerId.clearTextFormat() + " wh " + newWarehouseId);
@@ -106,7 +106,7 @@ public class TpccDataPopulationGenerator {
 			populate(
 				application, 
 				computerId, 
-				(short) index, 
+				oldWarehouseId, 
 				newWarehouseId
 			);
 
@@ -153,10 +153,8 @@ public class TpccDataPopulationGenerator {
 			short new_wh_id
 	) {
 		List<String> statements = new LinkedList<String>();
-				
-		ServerComputerId id = new ServerComputerId(ServerComputerId.ROOT, (byte) 0);
 		
-		String serverId = id.clearTextFormat();
+		String serverId = computerId.clearTextFormat();
 		
 		// init this to be the current value
 		String initSequence = 
@@ -207,9 +205,11 @@ public class TpccDataPopulationGenerator {
 		userRecordColumns.remove(recordIdColumn);
 		userRecordColumns.remove(warehouseIdColumn);
 		
-		String commaSeparatedColumnNames = SQLHelper.getCommaSeparatedColumnNames(userRecordColumns);
 		String userRecordTempTableName = userTable.getName() + "_tmp ";
 		
+		/*
+		 * create headings for temp-table, like "foo VARCHAR(16), bar INT"
+		 */
 		String recordIdDataType = recordIdColumn.getSQLDataType();
 		
 		List<String> nameAndValues = SQLHelper.convertColumnsToNameAndValue(userRecordColumns);
@@ -226,6 +226,8 @@ public class TpccDataPopulationGenerator {
 		
 		statements.add(createTableStatement);
 		
+		String commaSeparatedColumnNames = SQLHelper.getCommaSeparatedColumnNames(userRecordColumns);
+
 		String tmpInsertRecordsStatement =
 			"INSERT INTO " + userRecordTempTableName + "(" 
 					+ commaSeparatedColumnNames + ", " 

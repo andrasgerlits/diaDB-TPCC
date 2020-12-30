@@ -1,8 +1,13 @@
 package com.dianemodb.tpcc.query.orderstatus;
 
+import java.util.List;
+
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.dianemodb.h2impl.SingleParameterSetQueryDistributionPlan;
-import com.dianemodb.metaschema.distributed.MinMaxFunction;
-import com.dianemodb.metaschema.distributed.MinMaxType;
+import com.dianemodb.metaschema.distributed.LimitClause;
+import com.dianemodb.metaschema.distributed.OrderByClause;
+import com.dianemodb.metaschema.distributed.OrderByClause.OrderType;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.schema.OrdersTable;
 
@@ -18,6 +23,8 @@ import com.dianemodb.tpcc.schema.OrdersTable;
  * */
 public class FindMaxOrderIdForCustomer extends SingleParameterSetQueryDistributionPlan<Orders> {
 
+	private static final LimitClause LIMIT_CLAUSE = new LimitClause(1);
+	private static final OrderByClause<Orders> ORDER_BY_CLAUSE = new OrderByClause<>(List.of(Pair.of(OrdersTable.ORDER_ID_COLUMN, OrderType.DESC)));
 	public static final String ID = "findMaxOrderIdForCustomer";
 
 	public FindMaxOrderIdForCustomer(OrdersTable table) {
@@ -25,7 +32,8 @@ public class FindMaxOrderIdForCustomer extends SingleParameterSetQueryDistributi
 			ID,  
 			table, 
 			table.getCompositeCustomerIndex(),
-			new MinMaxFunction<Orders, Integer>(OrdersTable.ORDER_ID_COLUMN, MinMaxType.MAX)
+			ORDER_BY_CLAUSE,
+			LIMIT_CLAUSE
 		);
 	}
 }
