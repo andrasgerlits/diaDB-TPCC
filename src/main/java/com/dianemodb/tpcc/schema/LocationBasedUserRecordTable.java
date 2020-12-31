@@ -1,7 +1,5 @@
 package com.dianemodb.tpcc.schema;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -54,18 +52,5 @@ public abstract class LocationBasedUserRecordTable<R extends LocationBasedUserRe
 	@Override
 	protected List<RecordColumn<R, ?>> columns() {
 		return columns;
-	}
-
-	@Override
-	protected R setFieldsFromResultSet(ResultSet rs) throws SQLException {
-		R r = super.setFieldsFromResultSet(rs);
-		r.setStreet1(street1Column.getName());
-		r.setStreet2(street2Column.getName());
-		r.setCity(cityColumn.getName());
-		r.setState(stateColumn.getName());
-		r.setZip(zipColumn.getName());
-		return r;
-	}
-	
-	
+	}	
 }

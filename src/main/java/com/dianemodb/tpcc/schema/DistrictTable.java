@@ -1,7 +1,5 @@
 package com.dianemodb.tpcc.schema;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -130,14 +128,6 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	@Override
 	protected Collection<DistributedIndex<District>> indices() {
 		return indices;
-	}
-
-	public District readFromResultSet(ResultSet rs) throws SQLException {
-		District district = setFieldsFromResultSet(rs);
-		district.setId(rs.getByte(ID_COLUMNNAME));
-		district.setWarehouseId(rs.getShort(WAREHOUSE_ID_COLUMNNAME));
-		district.setNextOid(rs.getInt(NEXT_OID_COLUMN_NAME));
-		return district;
 	}
 
 	@Override
