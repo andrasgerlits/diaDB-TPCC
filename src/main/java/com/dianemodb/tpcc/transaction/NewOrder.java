@@ -39,6 +39,7 @@ import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
 import com.dianemodb.tpcc.query.neworder.FindItemById;
 import com.dianemodb.tpcc.query.neworder.FindStockByWarehouseItem;
 import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
+import com.dianemodb.tpcc.schema.ItemTable;
 
 
 public class NewOrder extends TpccTestProcess {
@@ -137,6 +138,9 @@ public class NewOrder extends TpccTestProcess {
 					List.of(terminalWarehouseId, customerDistrictId)
 				);
 		
+		ItemTable itemTable = (ItemTable) application.getTableById(ItemTable.ID);
+		short distId = itemTable.getDistributionIndexForServer(txId.getComputerId());
+		
 		/*
 		 *  since items are duplicated for each warehouse, this will only be
 		 *  a single query on the machine running the transaction. 
@@ -152,7 +156,7 @@ public class NewOrder extends TpccTestProcess {
 						 */
 						supplyingWarehouseAndQuantityByItemId.keySet()
 							.stream()
-							.map(itemId -> List.of(terminalWarehouseId, itemId))
+							.map(itemId -> List.of(distId, itemId))
 							.collect(Collectors.toSet())
 					)
 				);

@@ -61,7 +61,8 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 			STATE_COLUMN_NAME, 
 			ZIP_COLUMN_NAME, 
 			TAX_COLUMN_NAME, 
-			YTD_COLUMN_NAME
+			YTD_COLUMN_NAME,
+			servers
 		);
 		
 		this.columns = new LinkedList<>(super.columns());

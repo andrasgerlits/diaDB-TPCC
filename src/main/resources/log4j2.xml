@@ -88,10 +88,9 @@
 		<Logger name="org.apache" level="warn"/>
 		<Logger name="com.dianemodb" level="info" />
 		
-		<Logger name="com.dianemodb.tpcc" level="info" />
-
-		
 <!-- 
+		<Logger name="com.dianemodb.tpcc" level="info" />
+		
 		<Logger name="com.dianemodb.tpcc.transaction.TerminalBasedProcessScheduler" level="debug"/>
 		<Logger name="com.dianemodb.tpcc.transaction.TerminalPool" level="debug"/>
 		<Logger name="com.dianemodb.tpcc.transaction.Delivery" level="info" additivity="false">
@@ -100,7 +99,7 @@
 -->
 
 		<!-- log SQL times at debug -->
- 		<Logger name="com.dianemodb.integration.sqlwrapper" level="info" additivity="false">
+ 		<Logger name="com.dianemodb.integration.sqlwrapper" level="debug" additivity="false">
 			<AppenderRef ref="sql-times" />
 		</Logger>
 		
@@ -109,97 +108,19 @@
 			<AppenderRef ref="input"/>
 		</Logger>
 
-<!-- 
-		<Logger name="com.dianemodb.integration.test.ProcessManager" level="info"/>
-		<Logger name="com.dianemodb.tpcc" level="info"/>
-		
-		<Logger name="com.dianemodb.ComputerImpl" level="info"/>
-
-		<Logger name="com.dianemodb.tpcc.transaction.TpccProcessManager" level="debug" additivity="false">
-			<AppenderRef ref="test-client" />
-		</Logger>		
-		<Logger name="com.dianemodb.runner" level="info" additivity="false">
-			<AppenderRef ref="test-client" />
-		</Logger>
-		
-		<Logger name="com.dianemodb.ModificationCollection" level="info"/>
--->
-		<!-- LOGS AT DEBUG -->
-<!-- 		
-		<Logger name="com.dianemodb.OutputChannel" level="info" additivity="false">
-			<AppenderRef ref="computer-inputs" />
-		</Logger>
-		
-		<Logger name="com.dianemodb.Computer" level="info" additivity="false">
+		<!-- 
+			log times at debug
+			
+			logs the performance of each event that was executed
+			
+			Since both this log and the sql-log carry the correlation id, these can
+			be associated back
+			
+			So, this log gives an overview, the sql-logs provide the drilldown 
+		-->
+		<Logger name="com.dianemodb.Computer" level="debug" additivity="false">
 			<AppenderRef ref="performance"/>
-		</Logger>	
- -->
-		<!-- Query execution times -->
-<!-- 				
-		
-		<Logger name="com.dianemodb.kafka.KafkaServerClient" level="war"/>
-		<Logger name="com.dianemodb.kafka.EventAggregator" level="debug"/>
-		<Logger name="com.dianemodb.integration.test" level="info"/>
-		 	
-		
-		<Logger name="com.dianemodb.ComputerImpl" level="info"/>
-		
-		
-		<Logger name="com.dianemodb.Computer" level="warn"/>
- 		<Logger name="com.dianemodb.serverh2impl.SQLAwareMessageHandler" level="info"/>
-		<Logger name="com.dianemodb.integration.test.KafkaStartTest" level="info"/>
-		<Logger name="com.dianemodb.integration.test.ProcessManager" level="info"/>
-		<Logger name="com.dianemodb.integration.test.TestProcess" level="info"/>
-		<Logger name="com.dianemodb.serverh2impl.H2VersionStoreServiceImpl" level="info"/>
-		
-		
- 		
- 		
-		<Logger name="com.dianemodb.kafka.EventAggregator" level="info"/>
- -->
-		
-<!-- 
-CHATTY LOGGERS, explicitly disabled
- -->		
-<!-- 
-INPUT/OUTPUT LOGGER
-
-		<Logger name="com.dianemodb.h2impl.RecordChange" level="debug"/>
-		<Logger name="com.dianemodb.sql.SQLRecordStore" level="debug"/>
- -->
-
-<!-- 		
-		<Logger name="com.dianemodb.sql.SQLRecordStore" level="debug">
-			<AppenderRef ref="Console" />
-		</Logger>
-		<Logger name="com.dianemodb.event.version.TransitiveClosureEvent" level="debug">
-			<AppenderRef ref="Console" />
-		</Logger>
-		<Logger name="com.dianemodb.serverh2impl.H2TxStoreImpl" level="debug">
-			<AppenderRef ref="Console" />
 		</Logger>
 		
-		<Logger name="com.dianemodb.event.version.TokenPassingEvent" level="debug">
-			<AppenderRef ref="Console" />
-		</Logger>
-		
-		<Logger name="com.dianemodb.metaschema" level="warn" />		
-		<Logger name="com.dianemodb.serverh2impl" level="warn" />
-		<Logger name="com.dianemodb.integration.test" level="debug"/>
-		<Logger name="com.dianemodb.integration" level="debug"/>
-		<Logger name="com.dianemodb.event.tx" level="debug"/>
- -->
- 
- <!-- 
-SQL benchmark LOGGER
-
- -->
-		
-		
-<!-- 		
-		<Logger name="org.I0Itec.zkclient" level="info"/>
-		<Logger name="org.apache.zookeeper" level="info"/>
- -->
-
 	</Loggers>
 </Configuration>

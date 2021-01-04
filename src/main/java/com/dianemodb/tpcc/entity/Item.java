@@ -14,7 +14,12 @@ public class Item extends UserBaseRecord {
 	private String name;
 	private String price;
 	private String data;
-	private short warehouseId;
+
+	/**
+	 * We presume that we won't have more than 32k 
+	 * servers holding items.
+	 */
+	private short distId;
 	
 	@Deprecated
 	@SuppressWarnings({ "unused"})
@@ -25,13 +30,13 @@ public class Item extends UserBaseRecord {
 	public Item(TransactionId txId, RecordId recordId) {
 		super(txId, recordId, ItemTable.ID);
 	}
-
-	public short getWarehouseId() {
-		return warehouseId;
+	
+	public short getDistId() {
+		return distId;
 	}
 
-	public void setWarehouseId(short warehouseId) {
-		this.warehouseId = warehouseId;
+	public void setDistId(short distId) {
+		this.distId = distId;
 	}
 
 	public void setPrice(String price) {
@@ -83,11 +88,11 @@ public class Item extends UserBaseRecord {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + ((data == null) ? 0 : data.hashCode());
+		result = prime * result + distId;
 		result = prime * result + im;
 		result = prime * result + itemId;
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + ((price == null) ? 0 : price.hashCode());
-		result = prime * result + warehouseId;
 		return result;
 	}
 
@@ -105,6 +110,8 @@ public class Item extends UserBaseRecord {
 				return false;
 		} else if (!data.equals(other.data))
 			return false;
+		if (distId != other.distId)
+			return false;
 		if (im != other.im)
 			return false;
 		if (itemId != other.itemId)
@@ -119,16 +126,12 @@ public class Item extends UserBaseRecord {
 				return false;
 		} else if (!price.equals(other.price))
 			return false;
-		if (warehouseId != other.warehouseId)
-			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
 		return "Item [itemId=" + itemId + ", im=" + im + ", name=" + name + ", price=" + price + ", data=" + data
-				+ ", warehouseId=" + warehouseId + "]";
+				+ ", distId=" + distId + "]";
 	}
-
-
 }

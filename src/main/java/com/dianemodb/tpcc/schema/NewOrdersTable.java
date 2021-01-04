@@ -5,6 +5,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.dianemodb.Topology;
 import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
@@ -17,10 +19,11 @@ import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.OrderByClause.OrderType;
 import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
 import com.dianemodb.tpcc.entity.NewOrders;
 
-public class NewOrdersTable extends TpccBaseTable<NewOrders>{
+public class NewOrdersTable extends WarehouseBasedTable<NewOrders>{
 
 	public static final UserRecordTableId ID = new UserRecordTableId(NEW_ORDERS_TABLE_ID);
 	
@@ -101,7 +104,7 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 	private final RangeBasedDistributedIndex<NewOrders> compositeIndex;
 	
 	public NewOrdersTable(Topology servers) {
-		super(ID, TABLE_NAME, Caching.CACHED);
+		super(ID, TABLE_NAME, Caching.CACHED, servers);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
@@ -114,12 +117,17 @@ public class NewOrdersTable extends TpccBaseTable<NewOrders>{
 		
 		indexRuleMap.put(ORDER_ID_COLUMN, NullRule.INSTANCE);
 		
+		// we always look for the lowest order-id for new-orders 
 		compositeIndex = 				
 			new RangeBasedDistributedIndex<>(
 				servers,
 				this, 
-				List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, ORDER_ID_COLUMN),
-				indexRuleMap
+				indexRuleMap,
+				List.of(
+						Pair.of(WAREHOUSE_ID_COLUMN, OrderType.ASC), 
+						Pair.of(DISTRICT_ID_COLUMN, OrderType.ASC), 
+						Pair.of(ORDER_ID_COLUMN, OrderType.DESC)
+				)
 			);
 
 		this.indices = List.of(compositeIndex);

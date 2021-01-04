@@ -30,7 +30,7 @@ import com.dianemodb.metaschema.schema.UserRecordTable;
 import com.dianemodb.runner.DiaDBRunner;
 import com.dianemodb.runner.ExampleRunner;
 import com.dianemodb.runner.KafkaClientRunner;
-import com.dianemodb.tpcc.schema.TpccBaseTable;
+import com.dianemodb.tpcc.schema.WarehouseBasedTable;
 
 public class TpccDataPopulationGenerator {
 	
@@ -174,7 +174,12 @@ public class TpccDataPopulationGenerator {
 					.collect(Collectors.toList());
 		
 		for(ServerTable<?> table : tables) {
-			List<String> tableStatements = table( (TpccBaseTable<?>) table, serverId, wh_id, new_wh_id);
+			// the records which aren't aligned with warehouses should be ignored
+			if(!(table instanceof WarehouseBasedTable)) {
+				continue;
+			}
+			
+			List<String> tableStatements = table( (WarehouseBasedTable<?>) table, serverId, wh_id, new_wh_id);
 			statements.addAll(tableStatements);
 		}
 		
@@ -191,7 +196,7 @@ public class TpccDataPopulationGenerator {
 	}
 
 	private static <R extends UserRecord> List<String> table(
-			TpccBaseTable<R> userTable, 
+			WarehouseBasedTable<R> userTable, 
 			String serverId, 
 			short wh_id,
 			short new_wh_id
@@ -277,7 +282,7 @@ public class TpccDataPopulationGenerator {
 	}
 
 	private static <R extends UserRecord> List<String> index(
-				TpccBaseTable<R> userTable,
+				WarehouseBasedTable<R> userTable,
 				String serverId, 
 				String userRecordTempTableName,
 				DistributedIndex<R> index,

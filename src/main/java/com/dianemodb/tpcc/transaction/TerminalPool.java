@@ -76,20 +76,13 @@ public class TerminalPool {
 	private Optional<Entry<Short, AtomicInteger>> maybeAnyFreeTerminal() {
 		recalculatePoolSize();
 
-		List<Entry<Short, AtomicInteger>> list = 
-				freeTerminals.entrySet()
+		// returns the terminal from a warehouse with the most free terminals
+		return freeTerminals.entrySet()
 					.stream()
-					.filter(e -> e.getValue().intValue() > 0)
-					.collect(Collectors.toList());
-		
-		if(list.size() == 0) {
-			return Optional.empty();
-		}
-		
-		Entry<Short, AtomicInteger> result = 
-				list.get( (int) (Math.random() * list.size()) );
-		
-		return Optional.of(result);
+					.filter( e -> e.getValue().intValue() > 0 )
+					// descending order
+					.sorted( (e1, e2) -> Integer.valueOf(e2.getValue().intValue()).compareTo(e1.getValue().intValue()) )
+					.findFirst();
 	}
 	
 	public void borrow(TpccTestProcess process) {

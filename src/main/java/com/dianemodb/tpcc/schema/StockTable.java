@@ -21,7 +21,7 @@ import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
 import com.dianemodb.tpcc.entity.Stock;
 
-public class StockTable extends TpccBaseTable<Stock> {
+public class StockTable extends WarehouseBasedTable<Stock> {
 
 	public static final UserRecordTableId ID = new UserRecordTableId(STOCK_TABLE_ID);
 	
@@ -86,7 +86,7 @@ public class StockTable extends TpccBaseTable<Stock> {
 	private final RangeBasedDistributedIndex<Stock> itemWarehouseIndex;
  
 	public StockTable(Topology servers) {
-		super(ID, TABLE_NAME);
+		super(ID, TABLE_NAME, servers);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);

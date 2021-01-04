@@ -31,7 +31,7 @@ h_date datetime,
 h_amount decimal(6,2), 
 h_data varchar(24) )
 */ 
-public class HistoryTable extends TpccBaseTable<History> {
+public class HistoryTable extends WarehouseBasedTable<History> {
 	
 	public static final UserRecordTableId ID = new UserRecordTableId(HISTORY_TABLE_ID);
 
@@ -114,7 +114,7 @@ public class HistoryTable extends TpccBaseTable<History> {
 	private final RangeBasedDistributedIndex<History> compositeIndex;
 	
 	public HistoryTable(Topology servers) {
-		super(ID, TABLE_NAME);
+		super(ID, TABLE_NAME, servers);
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 

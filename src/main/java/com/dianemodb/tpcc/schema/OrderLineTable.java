@@ -22,7 +22,7 @@ import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
 import com.dianemodb.tpcc.entity.OrderLine;
 
-public class OrderLineTable extends TpccBaseTable<OrderLine> {
+public class OrderLineTable extends WarehouseBasedTable<OrderLine> {
 
 	public static final UserRecordTableId ID = new UserRecordTableId(ORDERS_LINE_TABLE_ID);
 	
@@ -80,7 +80,7 @@ public class OrderLineTable extends TpccBaseTable<OrderLine> {
 	private final DistributedIndex<OrderLine> orderIdRangeIndex;
 	
 	public OrderLineTable(Topology servers) {
-		super(ID, TABLE_NAME);
+		super(ID, TABLE_NAME, servers);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);

@@ -1,15 +1,18 @@
 package com.dianemodb.tpcc.init;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
+import com.dianemodb.ServerComputerId;
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Item;
+import com.dianemodb.tpcc.schema.ItemTable;
 
 public class ItemInitializer extends TpccDataInitializer {
 
@@ -27,6 +30,7 @@ public class ItemInitializer extends TpccDataInitializer {
 			int batchNumber
 	) {
 		List<UserRecord> records = new LinkedList<>();
+		ItemTable table = (ItemTable) application.getTableById(ItemTable.ID);
 		
 		for( int i = 0 ; i < ITEM_PER_TX; i++ ) {
 			Item prototype = new Item(txId, null);
@@ -51,10 +55,14 @@ public class ItemInitializer extends TpccDataInitializer {
 			
 			prototype.setData(data);
 			
-			// create a copy of each item for each warehouse, it's read-only, so safe to do
-			for(short j = 0; j < Constants.NUMBER_OF_WAREHOUSES; j++) {
+			Iterator<ServerComputerId> serverIter = table.getRecordMaintainingComputers().iterator();
+			
+			// create a copy of each item for each server, it's read-only, so safe to do
+			for(short j = 0; serverIter.hasNext(); j++) {
+				serverIter.next();
+				
 				Item clone = prototype.shallowClone(application, txId);
-				clone.setWarehouseId(j);
+				clone.setDistId(j);
 				records.add(clone);
 			}
 		}

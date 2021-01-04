@@ -31,7 +31,7 @@ o_d_id tinyint not null,
  tinyint, 
  tinyint, 
  */
-public class OrdersTable extends TpccBaseTable<Orders> {
+public class OrdersTable extends WarehouseBasedTable<Orders> {
 
 	public static final UserRecordTableId ID = new UserRecordTableId(ORDERS_TABLE_ID);
 	
@@ -99,7 +99,7 @@ public class OrdersTable extends TpccBaseTable<Orders> {
 	private final DistributedIndex<Orders> customerIndex;
 	
 	public OrdersTable(Topology servers) {
-		super(ID, TABLE_NAME);
+		super(ID, TABLE_NAME, servers);
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		

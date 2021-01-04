@@ -2,14 +2,12 @@ package com.dianemodb.tpcc.schema;
 
 import java.util.List;
 
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.SQLServerApplication;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.metaschema.schema.UserRecordTable;
 
 public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTable<R> {
@@ -28,12 +26,12 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 	private final RecordColumn<R, TransactionId> txIdColumn;
 	private final RecordColumn<R, RecordId> recordIdColumn;
 	
-	public TpccBaseTable(UserRecordTableId tableId, String name) {
-		this(tableId, name, Caching.CACHED);
+	public TpccBaseTable(UserRecordTableId tableId, String name, Topology topology) {
+		this(tableId, name, Caching.CACHED, topology);
 	}
 	
-	public TpccBaseTable(UserRecordTableId tableId, String name, Caching caching) {
-		super(tableId, name, caching);
+	public TpccBaseTable(UserRecordTableId tableId, String name, Caching caching, Topology topology) {
+		super(tableId, name, caching, topology);
 		
 		this.txIdColumn = TX_ID();
 		this.recordIdColumn = RECORD_ID();
@@ -51,22 +49,8 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 		return recordIdColumn;
 	}
 	
-	protected abstract DistributedIndex<R> getMaintainingComputerDecidingIndex();
-	
-	public abstract RecordColumn<R, Short> getWarehouseIdColumn();
-	
-	@Override
-	public final ServerComputerId chooseMaintainingComputer(
-			SQLServerApplication application,
-			List<ServerComputerId> computers, 
-			R thing
-	) {
-		return getMaintainingComputerDecidingIndex().getSingleMaintainingComputer(thing);
-	}
-
 	@Override
 	public RecordColumn<R, TransactionId> getTransactionIdColumn() {
 		return txIdColumn;
 	}
-
 }

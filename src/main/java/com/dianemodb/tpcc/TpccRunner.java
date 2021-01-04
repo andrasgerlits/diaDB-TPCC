@@ -149,7 +149,7 @@ public class TpccRunner extends AbstractTestRunner {
 								"-b", AbstractServerTestCase.getBootstrapUrl()
 							},
 							t -> createApplication(t),
-							48
+							300
 					)
 			);
 		}

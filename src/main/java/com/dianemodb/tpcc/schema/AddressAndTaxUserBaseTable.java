@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.dianemodb.Topology;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.BigDecimalColumn;
 import com.dianemodb.metaschema.RecordColumn;
@@ -31,7 +32,8 @@ public abstract class AddressAndTaxUserBaseTable<R extends AddressAndTaxUserBase
 			String stateColumn, 
 			String zipColumn,
 			String taxColumn,
-			String ytdColumn
+			String ytdColumn,
+			Topology topology
 	) {
 		super(
 			name, 
@@ -40,7 +42,8 @@ public abstract class AddressAndTaxUserBaseTable<R extends AddressAndTaxUserBase
 			street2Column, 
 			cityColumn, 
 			stateColumn, 
-			zipColumn
+			zipColumn,
+			topology
 		);
 		
 		this.nameColumn = 

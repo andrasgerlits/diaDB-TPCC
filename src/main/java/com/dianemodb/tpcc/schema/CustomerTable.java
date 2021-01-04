@@ -187,7 +187,8 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 			STREET_2_COLUMN_NAME,
 			CITY_COLUMN_NAME,
 			STATE_COLUMN_NAME,
-			ZIP_COLUMN_NAME
+			ZIP_COLUMN_NAME,
+			servers
 		);
 		
 		Map<RecordColumn<Customer,?>, ServerComputerIdNarrowingRule> basicRuleMap = 

@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.dianemodb.ServerComputerId;
 import com.dianemodb.Topology;
 import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
@@ -17,6 +18,7 @@ import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
+import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
 import com.dianemodb.tpcc.entity.Item;
@@ -32,23 +34,23 @@ public class ItemTable extends TpccBaseTable<Item> {
 	public static final String NAME_COLUMN_NAME = "i_name";
 	public static final String PRICE_COLUMN_NAME = "i_price";
 	public static final String DATA_COLUMN_NAME = "i_data";
-	public static final String WAREHOUSE_ID_COLUMN_NAME = "i_wh";
+	private static final String DIST_ID_COLUMN_NAME = "dist_id";
 	
 	public static final RecordColumn<Item, Integer> ID_COLUMN = 
 			new RecordColumn<>(new IntColumn(ID_COLUMN_NAME), Item::getItemId, Item::setItemId);
 	
-	public static final RecordColumn<Item, Short> WAREHOUSE_ID_COLUMN = 
-			new RecordColumn<>(new ShortColumn(WAREHOUSE_ID_COLUMN_NAME), Item::getWarehouseId, Item::setWarehouseId);
-
+	private static final RecordColumn<Item, Short> DIST_ID_COLUMN = 
+			new RecordColumn<>(new ShortColumn(DIST_ID_COLUMN_NAME), Item::getDistId, Item::setDistId);
+	
 	private static final List<RecordColumn<Item, ?>> COLUMNS = 
 			List.of(
 				ID_COLUMN,
+				DIST_ID_COLUMN,
 				new RecordColumn<>(new IntColumn(IM_ID_COLUMN_NAME), Item::getIm, Item::setIm),
 				new RecordColumn<>(new StringColumn(NAME_COLUMN_NAME), Item::getName, Item::setName),
 				new RecordColumn<>(new BigDecimalColumn(PRICE_COLUMN_NAME, 5, 2), Item::getPrice, Item::setPrice),
-				new RecordColumn<>(new StringColumn(DATA_COLUMN_NAME), Item::getData, Item::setData),
-				WAREHOUSE_ID_COLUMN
-		);
+				new RecordColumn<>(new StringColumn(DATA_COLUMN_NAME), Item::getData, Item::setData)
+			);
 
 	private final List<RecordColumn<Item, ?>> columns;
 
@@ -57,20 +59,23 @@ public class ItemTable extends TpccBaseTable<Item> {
 	private final RangeBasedDistributedIndex<Item> idIndex;
 	
 	public ItemTable(Topology servers) {
-		super(ID, TABLE_NAME, Caching.CACHED);
+		super(ID, TABLE_NAME, Caching.CACHED, servers);
 		
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
+		// can be used in queries for indices as if it were a warehouse-id
 		Map<RecordColumn<Item,?>, ServerComputerIdNarrowingRule> indexRuleMap = new HashMap<>();
-		indexRuleMap.put(WAREHOUSE_ID_COLUMN, WarehouseTable.getWarehouseDistributionRule());
+		
+		// follows the same distribution as warehouses, but on its own ID
+		indexRuleMap.put(DIST_ID_COLUMN, WarehouseTable.getWarehouseDistributionRule());
 		indexRuleMap.put(ID_COLUMN, NullRule.INSTANCE);
 		
 		this.idIndex = 			
 			new RangeBasedDistributedIndex<>(
 				servers, 
 				this, 
-				List.of(WAREHOUSE_ID_COLUMN, ID_COLUMN),
+				List.of(DIST_ID_COLUMN, ID_COLUMN),
 				indexRuleMap
 			);
 		
@@ -80,6 +85,28 @@ public class ItemTable extends TpccBaseTable<Item> {
 	@Override
 	public Item newInstance(TransactionId txId, RecordId recordId) {
 		return new Item(txId, recordId);
+	}
+	
+	public short getDistributionIndexForServer(ServerComputerId id) {
+		int index = getRecordMaintainingComputers().indexOf(id);
+		
+		assert index != -1 : getRecordMaintainingComputers() + " " + id;
+		
+		assert idIndex.getMaintainingComputer(
+					Condition.andEqualsEach(List.of(DIST_ID_COLUMN)), 
+					List.of(index)
+				)
+				.equals(id)
+			:
+			idIndex.getMaintainingComputer(
+					Condition.andEqualsEach(List.of(DIST_ID_COLUMN)), 
+					List.of(index)
+			) 
+			+ "\n" + id;
+		
+		assert index <= Short.MAX_VALUE : getRecordMaintainingComputers() + "\n" + id;
+		
+		return (short) index;
 	}
 
 	@Override
@@ -104,10 +131,5 @@ public class ItemTable extends TpccBaseTable<Item> {
 	@Override
 	protected DistributedIndex<Item> getMaintainingComputerDecidingIndex() {
 		return idIndex;
-	}
-
-	@Override
-	public RecordColumn<Item, Short> getWarehouseIdColumn() {
-		return WAREHOUSE_ID_COLUMN;
 	}
 }
