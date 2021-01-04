@@ -126,7 +126,7 @@ public class NewOrdersTable extends WarehouseBasedTable<NewOrders>{
 				List.of(
 						Pair.of(WAREHOUSE_ID_COLUMN, OrderType.ASC), 
 						Pair.of(DISTRICT_ID_COLUMN, OrderType.ASC), 
-						Pair.of(ORDER_ID_COLUMN, OrderType.DESC)
+						Pair.of(ORDER_ID_COLUMN, OrderType.ASC)
 				)
 			);
 
@@ -158,7 +158,7 @@ public class NewOrdersTable extends WarehouseBasedTable<NewOrders>{
 	}
 
 	@Override
-	protected DistributedIndex<NewOrders> getMaintainingComputerDecidingIndex() {
+	protected DistributedIndex<NewOrders> maintainingComputerDecidingIndex() {
 		return compositeIndex;
 	}
 

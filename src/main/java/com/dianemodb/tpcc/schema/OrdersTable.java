@@ -166,7 +166,7 @@ public class OrdersTable extends WarehouseBasedTable<Orders> {
 	}
 
 	@Override
-	protected DistributedIndex<Orders> getMaintainingComputerDecidingIndex() {
+	protected DistributedIndex<Orders> maintainingComputerDecidingIndex() {
 		return compositeIndex;
 	}
 

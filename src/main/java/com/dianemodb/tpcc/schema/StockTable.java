@@ -132,7 +132,7 @@ public class StockTable extends WarehouseBasedTable<Stock> {
 	}
 
 	@Override
-	protected DistributedIndex<Stock> getMaintainingComputerDecidingIndex() {
+	protected DistributedIndex<Stock> maintainingComputerDecidingIndex() {
 		return itemWarehouseIndex;
 	}
 

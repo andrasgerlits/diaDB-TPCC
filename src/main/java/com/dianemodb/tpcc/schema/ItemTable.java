@@ -34,18 +34,18 @@ public class ItemTable extends TpccBaseTable<Item> {
 	public static final String NAME_COLUMN_NAME = "i_name";
 	public static final String PRICE_COLUMN_NAME = "i_price";
 	public static final String DATA_COLUMN_NAME = "i_data";
-	private static final String DIST_ID_COLUMN_NAME = "dist_id";
+	private static final String DISTRIBUTION_ID_COLUMN_NAME = "dist_id";
 	
 	public static final RecordColumn<Item, Integer> ID_COLUMN = 
 			new RecordColumn<>(new IntColumn(ID_COLUMN_NAME), Item::getItemId, Item::setItemId);
 	
-	private static final RecordColumn<Item, Short> DIST_ID_COLUMN = 
-			new RecordColumn<>(new ShortColumn(DIST_ID_COLUMN_NAME), Item::getDistId, Item::setDistId);
+	private static final RecordColumn<Item, Short> DISTRIBUTION_ID_COLUMN = 
+			new RecordColumn<>(new ShortColumn(DISTRIBUTION_ID_COLUMN_NAME), Item::getDistId, Item::setDistId);
 	
 	private static final List<RecordColumn<Item, ?>> COLUMNS = 
 			List.of(
 				ID_COLUMN,
-				DIST_ID_COLUMN,
+				DISTRIBUTION_ID_COLUMN,
 				new RecordColumn<>(new IntColumn(IM_ID_COLUMN_NAME), Item::getIm, Item::setIm),
 				new RecordColumn<>(new StringColumn(NAME_COLUMN_NAME), Item::getName, Item::setName),
 				new RecordColumn<>(new BigDecimalColumn(PRICE_COLUMN_NAME, 5, 2), Item::getPrice, Item::setPrice),
@@ -68,14 +68,14 @@ public class ItemTable extends TpccBaseTable<Item> {
 		Map<RecordColumn<Item,?>, ServerComputerIdNarrowingRule> indexRuleMap = new HashMap<>();
 		
 		// follows the same distribution as warehouses, but on its own ID
-		indexRuleMap.put(DIST_ID_COLUMN, WarehouseTable.getWarehouseDistributionRule());
+		indexRuleMap.put(DISTRIBUTION_ID_COLUMN, WarehouseTable.getWarehouseDistributionRule());
 		indexRuleMap.put(ID_COLUMN, NullRule.INSTANCE);
 		
 		this.idIndex = 			
 			new RangeBasedDistributedIndex<>(
 				servers, 
 				this, 
-				List.of(DIST_ID_COLUMN, ID_COLUMN),
+				List.of(DISTRIBUTION_ID_COLUMN, ID_COLUMN),
 				indexRuleMap
 			);
 		
@@ -93,13 +93,13 @@ public class ItemTable extends TpccBaseTable<Item> {
 		assert index != -1 : getRecordMaintainingComputers() + " " + id;
 		
 		assert idIndex.getMaintainingComputer(
-					Condition.andEqualsEach(List.of(DIST_ID_COLUMN)), 
+					Condition.andEqualsEach(List.of(DISTRIBUTION_ID_COLUMN)), 
 					List.of(index)
 				)
 				.equals(id)
 			:
 			idIndex.getMaintainingComputer(
-					Condition.andEqualsEach(List.of(DIST_ID_COLUMN)), 
+					Condition.andEqualsEach(List.of(DISTRIBUTION_ID_COLUMN)), 
 					List.of(index)
 			) 
 			+ "\n" + id;
@@ -129,7 +129,7 @@ public class ItemTable extends TpccBaseTable<Item> {
 	}
 
 	@Override
-	protected DistributedIndex<Item> getMaintainingComputerDecidingIndex() {
+	protected DistributedIndex<Item> maintainingComputerDecidingIndex() {
 		return idIndex;
 	}
 }

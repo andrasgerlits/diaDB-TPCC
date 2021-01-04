@@ -1,6 +1,7 @@
 package com.dianemodb.tpcc.schema;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
@@ -8,6 +9,7 @@ import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.RecordColumn;
+import com.dianemodb.metaschema.distributed.DistributedIndex;
 import com.dianemodb.metaschema.schema.UserRecordTable;
 
 public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTable<R> {
@@ -38,6 +40,13 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 
 		this.columns = List.of(txIdColumn, recordIdColumn);
 	}
+	
+	@Override
+	public Optional<DistributedIndex<R>> getMaintainingComputerDecidingIndex() {
+		return Optional.of(maintainingComputerDecidingIndex());
+	}
+	
+	protected abstract DistributedIndex<R> maintainingComputerDecidingIndex();
 	
 	@Override
 	protected List<RecordColumn<R, ?>> columns() {

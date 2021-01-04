@@ -129,7 +129,7 @@ public class OrderLineTable extends WarehouseBasedTable<OrderLine> {
 	}
 
 	@Override
-	protected DistributedIndex<OrderLine> getMaintainingComputerDecidingIndex() {
+	protected DistributedIndex<OrderLine> maintainingComputerDecidingIndex() {
 		return orderIdRangeIndex;
 	}
 

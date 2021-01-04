@@ -100,7 +100,7 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	}
 
 	@Override
-	public DistributedIndex<Warehouse> getMaintainingComputerDecidingIndex() {
+	public DistributedIndex<Warehouse> maintainingComputerDecidingIndex() {
 		return index;
 	}
 

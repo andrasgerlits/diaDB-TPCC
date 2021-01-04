@@ -44,7 +44,7 @@ public class TpccProcessMaker {
 		Function<Short, ServerComputerId> f = 
 				w -> {
 					Set<ServerComputerId> computers = 
-						serverTable.getMaintainingComputerDecidingIndex()
+						serverTable.maintainingComputerDecidingIndex()
 							.getMaintainingComputer(equalsIdCondition , List.of(w));
 					
 					// in the current configuration, each warehouse lives on a single instance

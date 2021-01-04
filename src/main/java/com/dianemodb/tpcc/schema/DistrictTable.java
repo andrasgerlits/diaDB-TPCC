@@ -132,7 +132,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	}
 
 	@Override
-	protected DistributedIndex<District> getMaintainingComputerDecidingIndex() {
+	protected DistributedIndex<District> maintainingComputerDecidingIndex() {
 		return compositeIndex;
 	}
 

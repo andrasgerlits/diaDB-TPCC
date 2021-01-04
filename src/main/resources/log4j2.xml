@@ -98,16 +98,6 @@
 		</Logger>
 -->
 
-		<!-- log SQL times at debug -->
- 		<Logger name="com.dianemodb.integration.sqlwrapper" level="debug" additivity="false">
-			<AppenderRef ref="sql-times" />
-		</Logger>
-		
-		<!-- LOGS AT TRACE Logs inputs into a BASE24 file so that they can be replayed -->
-		<Logger name="com.dianemodb.ServerEvent" level="info" additivity="false">
-			<AppenderRef ref="input"/>
-		</Logger>
-
 		<!-- 
 			log times at debug
 			
@@ -122,5 +112,15 @@
 			<AppenderRef ref="performance"/>
 		</Logger>
 		
+		<!-- log SQL times at debug -->
+ 		<Logger name="com.dianemodb.integration.sqlwrapper" level="debug" additivity="false">
+			<AppenderRef ref="sql-times" />
+		</Logger>
+		
+		<!-- LOGS AT TRACE Logs inputs into a BASE24 file so that they can be replayed -->
+		<Logger name="com.dianemodb.ServerEvent" level="info" additivity="false">
+			<AppenderRef ref="input"/>
+		</Logger>
+
 	</Loggers>
 </Configuration>

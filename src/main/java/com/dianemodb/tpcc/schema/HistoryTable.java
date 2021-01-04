@@ -162,7 +162,7 @@ public class HistoryTable extends WarehouseBasedTable<History> {
 	}
 
 	@Override
-	protected DistributedIndex<History> getMaintainingComputerDecidingIndex() {
+	protected DistributedIndex<History> maintainingComputerDecidingIndex() {
 		return compositeIndex;
 	}
 

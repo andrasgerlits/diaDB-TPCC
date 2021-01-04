@@ -262,7 +262,7 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	}
 	
 	@Override
-	protected DistributedIndex<Customer> getMaintainingComputerDecidingIndex() {
+	protected DistributedIndex<Customer> maintainingComputerDecidingIndex() {
 		return compositeIndex;
 	}
 	
