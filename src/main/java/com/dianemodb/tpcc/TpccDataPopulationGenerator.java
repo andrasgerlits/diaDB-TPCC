@@ -34,17 +34,21 @@ import com.dianemodb.tpcc.schema.WarehouseBasedTable;
 
 public class TpccDataPopulationGenerator {
 	
-	private static final int PARALLEL_LOAD_THREADS = 2;
+	private static final int PARALLEL_LOAD_THREADS = 4;
+
 	private static final String OLD_RECORD_ID_COLUMN_NAME = "old_record_id";
 	private static final String NEW_RECORD_ID_COLUMN_NAME = "record_id";
 	private static final String ID_SEQ_NAME = "id_sequence";
 	private static final String WAREHOUSE_ID_COLUMN_NAME = "wh_id";
 	
+	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 2;
+	private static final int NUMBER_OF_EXISTING_WAREHOUSES = 23;
+	
 	public static void main(String[] args) throws Exception {
 		Topology topology = DiaDBRunner.readTopologyFromFile(ExampleRunner.SMALL_SINGLE_LEVEL_TOPOLOGY);
 		SQLServerApplication application = TpccRunner.createApplication(topology);
 
-		populate(topology, application, 11);
+		populate(topology, application, NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER);
 	}
 	
 	public static void populate(
@@ -71,7 +75,7 @@ public class TpccDataPopulationGenerator {
 				final int ii = i;
 
 				short oldWarehouseId = (short) computerId.getIndexValue();
-				short newWarehouseId = (short) (oldWarehouseId + (leafComputers.size() * (ii + 1)));
+				short newWarehouseId = (short) ((oldWarehouseId + (leafComputers.size() * (ii + NUMBER_OF_EXISTING_WAREHOUSES))));
 				
 				executor.execute( 
 					() ->  {

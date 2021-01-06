@@ -108,12 +108,12 @@
 			
 			So, this log gives an overview, the sql-logs provide the drilldown 
 		-->
-		<Logger name="com.dianemodb.Computer" level="debug" additivity="false">
+		<Logger name="com.dianemodb.Computer" level="info" additivity="false">
 			<AppenderRef ref="performance"/>
 		</Logger>
 		
 		<!-- log SQL times at debug -->
- 		<Logger name="com.dianemodb.integration.sqlwrapper" level="debug" additivity="false">
+ 		<Logger name="com.dianemodb.integration.sqlwrapper" level="info" additivity="false">
 			<AppenderRef ref="sql-times" />
 		</Logger>
 		

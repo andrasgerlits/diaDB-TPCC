@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ConversationId;
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.exception.DiaDbException;
 import com.dianemodb.integration.test.ProcessManager;
 import com.dianemodb.integration.test.TestProcess;
 import com.dianemodb.integration.test.TestProcess.Result;
@@ -60,7 +61,7 @@ public class TpccProcessManager extends ProcessManager {
 		scheduler.finished(tpccProcess);
 	}
 	
-	public void process(Map<ConversationId, Either<Object, ? extends Throwable>> results) {
+	public void process(Map<ConversationId, Either<Object, ? extends DiaDbException>> results) {
 		super.process(results);
 		
 		if(!scheduler.resume()) {

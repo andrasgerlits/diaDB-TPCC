@@ -106,8 +106,7 @@ public abstract class TpccTestProcess extends TestProcess {
 						parameters
 				);
 		
-		ExecuteWorkflowEvent queryEvent = 
-				new ExecuteWorkflowEvent(QueryWorkflow.TYPE, wfInput);
+		ExecuteWorkflowEvent queryEvent = new ExecuteWorkflowEvent(QueryWorkflow.TYPE, wfInput);
 		
 		return new Envelope(testProcess.txId.getComputerId(), queryEvent);				
 	}
@@ -211,6 +210,7 @@ public abstract class TpccTestProcess extends TestProcess {
 	
 	protected Result evaluateCommit(Object result) {
 		TxEndValue txEndState = ((Optional<TxEndValue>) result).get();
+		
 		if(txEndState.getTxEndState() == State.COMMITTED) {
 			LOGGER.debug(
 					"{} committed warehouse-id {} read-version {}", 
@@ -234,7 +234,12 @@ public abstract class TpccTestProcess extends TestProcess {
 	
 	protected Envelope modifyEvent(ModificationCollection modificationCollection) {
 		ChangeRecordsWorkflowInput wfInput = 
-				new ChangeRecordsWorkflowInput(txId, modificationCollection , txId.getComputerId(), readVersion);
+				new ChangeRecordsWorkflowInput(
+						txId, 
+						modificationCollection , 
+						txId.getComputerId(), 
+						readVersion
+				);
 		
 		ExecuteWorkflowEvent queryEvent = 
 				new ExecuteWorkflowEvent(ModifyRecordsWorkflow.TYPE, wfInput);
@@ -243,10 +248,6 @@ public abstract class TpccTestProcess extends TestProcess {
 	}
 	
 	protected Envelope query(String queryId, List<?> parameters) {
-		//TODO create a typesafe query-parameter creating structure by 
-		// referencing the conditions in the query
-		//QueryStep<?> step = application.getQuery(queryId);
-		
 		return query(queryId, parameters, this);
 	}
 

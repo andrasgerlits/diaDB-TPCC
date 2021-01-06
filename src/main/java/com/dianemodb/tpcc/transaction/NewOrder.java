@@ -193,6 +193,7 @@ public class NewOrder extends TpccTestProcess {
 		RecordWithVersion<Customer> customer = singleFromResultList(resultIter.next());
 		RecordWithVersion<Warehouse> warehouse = singleFromResultList(resultIter.next());
 		RecordWithVersion<District> district = singleFromResultList(resultIter.next());
+		
 		List<RecordWithVersion<Item>> items = (List<RecordWithVersion<Item>>) resultIter.next();
 		if(items.size() < supplyingWarehouseAndQuantityByItemId.size()) {
 			if(!supplyingWarehouseAndQuantityByItemId.containsKey(INVALID_ITEM_ID)) {

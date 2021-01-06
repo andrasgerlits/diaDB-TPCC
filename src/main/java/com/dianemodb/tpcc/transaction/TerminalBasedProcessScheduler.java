@@ -88,26 +88,19 @@ public class TerminalBasedProcessScheduler implements TpccProcessScheduler {
 
 		TpccTestProcess process = (TpccTestProcess) testProcess; 
 		
-		// if this failure was triggered by the client-API (so a designed failure)
-		if(ex instanceof ClientInitiatedRollbackTransactionException) {
-			// these are supposed to be finished transactions
-			finished((TpccTestProcess) testProcess);
-		}
 		// if this was an expected diadb exception, like concurrent commit, so safe to retry
+		// if process is already late, it has failed, stop retrying
+		if(!process.isLate()) {
+			retryCount++;
+			toRetry.add(process.cancelAndRetry());
+			
+			if(process.isTerminalBased()) {
+				terminals.ping(process);
+			}
+		}
 		else {
-			// if process is already late, it has failed, stop retrying
-			if(!process.isLate()) {
-				retryCount++;
-				toRetry.add(process.cancelAndRetry());
-				
-				if(process.isTerminalBased()) {
-					terminals.ping(process);
-				}
-			}
-			else {
-				// handle it like any other timed out process
-				finished((TpccTestProcess) process);
-			}
+			// handle it like any other timed out process
+			finished((TpccTestProcess) process);
 		}
 		return TestProcess.FINISHED;
 	}
