@@ -94,7 +94,7 @@ public class Orders extends UserBaseRecord {
 
 	@Override
 	public String toString() {
-		return "Orders [publicId=" + orderId + ", districtId=" + districtId + ", warehouseId=" + warehouseId
+		return "Orders [orderId=" + orderId + ", districtId=" + districtId + ", warehouseId=" + warehouseId
 				+ ", customerId=" + customerId + ", entryDate=" + getEntryDate() + ", carrierId=" + carrierId
 				+ ", orderLineCount=" + orderLineCount + ", allLocal=" + allLocal + ", txId=" + txId + ", recordId="
 				+ recordId + "]";

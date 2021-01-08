@@ -3,12 +3,8 @@ package com.dianemodb.tpcc.schema;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.lang3.tuple.Pair;
-
 import com.dianemodb.Topology;
-import com.dianemodb.h2impl.NullRule;
+import com.dianemodb.h2impl.IndexColumnDefinition;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
@@ -18,9 +14,7 @@ import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.TimestampColumn;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
-import com.dianemodb.metaschema.distributed.OrderByClause.OrderType;
-import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.tpcc.entity.NewOrders;
 
 public class NewOrdersTable extends WarehouseBasedTable<NewOrders>{
@@ -99,7 +93,7 @@ public class NewOrdersTable extends WarehouseBasedTable<NewOrders>{
 
 	private final LinkedList<RecordColumn<NewOrders, ?>> columns;
 
-	private final Collection<DistributedIndex<NewOrders>> indices;
+	private final Collection<UserRecordIndex<NewOrders>> indices;
 	
 	private final RangeBasedDistributedIndex<NewOrders> compositeIndex;
 	
@@ -109,26 +103,17 @@ public class NewOrdersTable extends WarehouseBasedTable<NewOrders>{
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
-		Map<RecordColumn<NewOrders,?>, ServerComputerIdNarrowingRule> indexRuleMap = 
-				DistrictTable.getDistrictBasedRoundRobinRules(
-						WAREHOUSE_ID_COLUMN, 
-						DISTRICT_ID_COLUMN
-				);
-		
-		indexRuleMap.put(ORDER_ID_COLUMN, NullRule.INSTANCE);
-		
 		// we always look for the lowest order-id for new-orders 
-		compositeIndex = 				
-			new RangeBasedDistributedIndex<>(
-				servers,
-				this, 
-				indexRuleMap,
-				List.of(
-						Pair.of(WAREHOUSE_ID_COLUMN, OrderType.ASC), 
-						Pair.of(DISTRICT_ID_COLUMN, OrderType.ASC), 
-						Pair.of(ORDER_ID_COLUMN, OrderType.ASC)
-				)
-			);
+		compositeIndex = 
+				new RangeBasedDistributedIndex<>(
+						servers,
+						this, 
+						List.of(
+							warehouseIndexColumnDefinition, 
+							new IndexColumnDefinition<>(DISTRICT_ID_COLUMN), 
+							new IndexColumnDefinition<>(ORDER_ID_COLUMN)
+						)
+				);
 
 		this.indices = List.of(compositeIndex);
 	}
@@ -153,13 +138,8 @@ public class NewOrdersTable extends WarehouseBasedTable<NewOrders>{
 	}
 
 	@Override
-	protected Collection<DistributedIndex<NewOrders>> indices() {
+	protected Collection<UserRecordIndex<NewOrders>> indices() {
 		return indices;
-	}
-
-	@Override
-	protected DistributedIndex<NewOrders> maintainingComputerDecidingIndex() {
-		return compositeIndex;
 	}
 
 	@Override

@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ConversationId;
-import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
 import com.dianemodb.integration.test.NextStep;
 import com.dianemodb.integration.test.TestProcess;
 import com.dianemodb.integration.test.TestProcess.Result;

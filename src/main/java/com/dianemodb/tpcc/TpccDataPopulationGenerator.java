@@ -22,7 +22,7 @@ import com.dianemodb.integration.sqlwrapper.BenchmarkingH2ConnectionWrapper;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.SQLHelper;
 import com.dianemodb.metaschema.SQLServerApplication;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.metaschema.index.IndexRecord;
 import com.dianemodb.metaschema.index.IndexTable;
 import com.dianemodb.metaschema.schema.ServerTable;
@@ -34,14 +34,14 @@ import com.dianemodb.tpcc.schema.WarehouseBasedTable;
 
 public class TpccDataPopulationGenerator {
 	
-	private static final int PARALLEL_LOAD_THREADS = 1;
+	private static final int PARALLEL_LOAD_THREADS = 4;
 
 	private static final String OLD_RECORD_ID_COLUMN_NAME = "old_record_id";
 	private static final String NEW_RECORD_ID_COLUMN_NAME = "record_id";
 	private static final String ID_SEQ_NAME = "id_sequence";
 	private static final String WAREHOUSE_ID_COLUMN_NAME = "wh_id";
 	
-	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 24;
+	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 49;
 	private static final int NUMBER_OF_EXISTING_WAREHOUSES = 1;
 	
 	public static void main(String[] args) throws Exception {
@@ -278,13 +278,13 @@ public class TpccDataPopulationGenerator {
 		
 		statements.add(insertRecordsStatement);
 		
-		Set<DistributedIndex<R>> indices = 
+		Set<UserRecordIndex<R>> indices = 
 				userTable.allIndices()
 					.values()
 					.stream()
 					.collect(Collectors.toSet());
 		
-		for(DistributedIndex<R> i : indices) {	
+		for(UserRecordIndex<R> i : indices) {	
 			List<String> indexStrings = index(userTable, serverId, userRecordTempTableName, i, new_wh_id);
 			statements.addAll(indexStrings);
 		}
@@ -299,7 +299,7 @@ public class TpccDataPopulationGenerator {
 				WarehouseBasedTable<R> userTable,
 				String serverId, 
 				String userRecordTempTableName,
-				DistributedIndex<R> index,
+				UserRecordIndex<R> index,
 				short warehouseId
 	) {
 		IndexTable indexTable = index.getTable();

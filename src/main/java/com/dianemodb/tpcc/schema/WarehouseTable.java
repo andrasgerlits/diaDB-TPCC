@@ -1,11 +1,8 @@
 package com.dianemodb.tpcc.schema;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-
 import com.dianemodb.Topology;
 import com.dianemodb.h2impl.IntegerRangeBasedIdNarrowingRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
@@ -14,7 +11,7 @@ import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.tpcc.entity.Warehouse;
 
 public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
@@ -40,7 +37,7 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 
 	public static final UserRecordTableId ID = new UserRecordTableId(WAREHOUSE_TABLE_ID);
 
-	private final Collection<DistributedIndex<Warehouse>> indices;
+	private final Collection<UserRecordIndex<Warehouse>> indices;
 
 	private final List<RecordColumn<Warehouse, ?>> columns;
 	
@@ -72,8 +69,7 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 				new RangeBasedDistributedIndex<>(
 						servers, 
 						this, 
-						List.of(ID_COLUMN),
-						new HashMap<>(Map.of(ID_COLUMN, getWarehouseDistributionRule()))
+						List.of(super.warehouseIndexColumnDefinition)
 				);
 		
 		this.indices = List.of(index);
@@ -95,16 +91,11 @@ public class WarehouseTable extends AddressAndTaxUserBaseTable<Warehouse> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<Warehouse>> indices() {
+	protected Collection<UserRecordIndex<Warehouse>> indices() {
 		return indices;
 	}
 
-	@Override
-	public DistributedIndex<Warehouse> maintainingComputerDecidingIndex() {
-		return index;
-	}
-
-	public DistributedIndex<Warehouse> getIdIndex() {
+	public UserRecordIndex<Warehouse> getIdIndex() {
 		return index;
 	}
 

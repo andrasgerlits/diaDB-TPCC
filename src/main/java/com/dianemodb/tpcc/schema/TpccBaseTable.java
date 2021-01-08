@@ -8,7 +8,7 @@ import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.metaschema.schema.UserRecordTable;
 
 public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTable<R> {
@@ -41,12 +41,12 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 	}
 	
 	@Override
-	public Optional<DistributedIndex<R>> getMaintainingComputerDecidingIndex() {
+	public Optional<UserRecordIndex<R>> getMaintainingComputerDecidingIndex() {
 		return Optional.of(maintainingComputerDecidingIndex());
 	}
 	
-	protected abstract DistributedIndex<R> maintainingComputerDecidingIndex();
-	
+	protected abstract UserRecordIndex<R> maintainingComputerDecidingIndex();
+
 	@Override
 	protected List<RecordColumn<R, ?>> columns() {
 		return columns;

@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
+import com.dianemodb.h2impl.IndexColumnDefinition;
 import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
@@ -16,7 +17,7 @@ import com.dianemodb.metaschema.ByteColumn;
 import com.dianemodb.metaschema.IntColumn;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
 import com.dianemodb.tpcc.entity.District;
 
@@ -77,7 +78,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	
 
 	private final List<RecordColumn<District, ?>> columns;
-	private final Collection<DistributedIndex<District>> indices;
+	private final Collection<UserRecordIndex<District>> indices;
 	private final RangeBasedDistributedIndex<District> compositeIndex;
 	
 	public DistrictTable(Topology servers) {
@@ -104,8 +105,10 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
-						List.of(WAREHOUSE_COLUMN, ID_COLUMN),
-						getDistrictBasedRoundRobinRules(WAREHOUSE_COLUMN, ID_COLUMN)
+						List.of(
+							warehouseIndexColumnDefinition, 
+							new IndexColumnDefinition<>(ID_COLUMN)
+						)
 				);
 		
 		this.indices = List.of(compositeIndex);
@@ -127,16 +130,11 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<District>> indices() {
+	protected Collection<UserRecordIndex<District>> indices() {
 		return indices;
 	}
 
-	@Override
-	protected DistributedIndex<District> maintainingComputerDecidingIndex() {
-		return compositeIndex;
-	}
-
-	public DistributedIndex<District> getCompositeIndex() {
+	public UserRecordIndex<District> getCompositeIndex() {
 		return compositeIndex;
 	}
 

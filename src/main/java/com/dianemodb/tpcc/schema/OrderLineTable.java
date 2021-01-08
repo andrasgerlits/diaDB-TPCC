@@ -3,10 +3,9 @@ package com.dianemodb.tpcc.schema;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import com.dianemodb.Topology;
-import com.dianemodb.h2impl.NullRule;
+import com.dianemodb.h2impl.IndexColumnDefinition;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
@@ -18,8 +17,7 @@ import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
-import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.tpcc.entity.OrderLine;
 
 public class OrderLineTable extends WarehouseBasedTable<OrderLine> {
@@ -75,9 +73,9 @@ public class OrderLineTable extends WarehouseBasedTable<OrderLine> {
 			);
 	
 	private final List<RecordColumn<OrderLine, ?>> columns;
-	private final Collection<DistributedIndex<OrderLine>> indices;
+	private final Collection<UserRecordIndex<OrderLine>> indices;
 	
-	private final DistributedIndex<OrderLine> orderIdRangeIndex;
+	private final UserRecordIndex<OrderLine> orderIdRangeIndex;
 	
 	public OrderLineTable(Topology servers) {
 		super(ID, TABLE_NAME, servers);
@@ -85,20 +83,15 @@ public class OrderLineTable extends WarehouseBasedTable<OrderLine> {
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
-		Map<RecordColumn<OrderLine,?>, ServerComputerIdNarrowingRule> indexRuleMap = 
-				DistrictTable.getDistrictBasedRoundRobinRules(
-						WAREHOUSE_ID_COLUMN, 
-						DISTRICT_ID_COLUMN
-				);
-		
-		indexRuleMap.put(ORDER_ID_COLUMN, NullRule.INSTANCE);
-		
 		orderIdRangeIndex = 
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
-						List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, ORDER_ID_COLUMN),
-						indexRuleMap
+						List.of(
+							warehouseIndexColumnDefinition, 
+							new IndexColumnDefinition<>(DISTRICT_ID_COLUMN), 
+							new IndexColumnDefinition<>(ORDER_ID_COLUMN)
+						)
 				);
 
 		this.indices = List.of(orderIdRangeIndex);
@@ -109,7 +102,7 @@ public class OrderLineTable extends WarehouseBasedTable<OrderLine> {
 		return new OrderLine(txId, recordId);
 	}
 
-	public DistributedIndex<OrderLine> getOrderIdRangeIndex() {
+	public UserRecordIndex<OrderLine> getOrderIdRangeIndex() {
 		return orderIdRangeIndex;
 	}
 
@@ -124,13 +117,8 @@ public class OrderLineTable extends WarehouseBasedTable<OrderLine> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<OrderLine>> indices() {
+	protected Collection<UserRecordIndex<OrderLine>> indices() {
 		return indices;
-	}
-
-	@Override
-	protected DistributedIndex<OrderLine> maintainingComputerDecidingIndex() {
-		return orderIdRangeIndex;
 	}
 
 	@Override

@@ -3,13 +3,10 @@ package com.dianemodb.tpcc.schema;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-
 import com.dianemodb.Topology;
-import com.dianemodb.h2impl.NullRule;
+import com.dianemodb.h2impl.IndexColumnDefinition;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
@@ -22,8 +19,7 @@ import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
-import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.tpcc.entity.Customer;
 
 public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
@@ -174,7 +170,7 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 
 	public static final UserRecordTableId ID = new UserRecordTableId(CUSTOMER_TABLE_ID);
 
-	private final Collection<DistributedIndex<Customer>> indices;
+	private final Collection<UserRecordIndex<Customer>> indices;
 	private final List<RecordColumn<Customer, ?>> columns;
 	private final RangeBasedDistributedIndex<Customer> compositeIndex;
 	private final RangeBasedDistributedIndex<Customer> lastNameIndex;
@@ -190,35 +186,27 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 			ZIP_COLUMN_NAME,
 			servers
 		);
-		
-		Map<RecordColumn<Customer,?>, ServerComputerIdNarrowingRule> basicRuleMap = 
-				DistrictTable.getDistrictBasedRoundRobinRules(
-						WAREHOUSE_ID_COLUMN, 
-						DISTRICT_ID_COLUMN
-				);
-		
-		Map<RecordColumn<Customer,?>, ServerComputerIdNarrowingRule> indexRuleMap =
-				new HashMap<>(basicRuleMap);
-		indexRuleMap.put(ID_COLUMN, NullRule.INSTANCE);
-		
+
 		compositeIndex = 
 			new RangeBasedDistributedIndex<>(
 				servers,
 				this, 
-				List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, ID_COLUMN),
-				indexRuleMap
+				List.of(
+					warehouseIndexColumnDefinition, 
+					new IndexColumnDefinition<>(DISTRICT_ID_COLUMN), 
+					new IndexColumnDefinition<>(ID_COLUMN)
+				)
 			);
-		
-		Map<RecordColumn<Customer,?>, ServerComputerIdNarrowingRule> lastNameRuleMap =
-				new HashMap<>(basicRuleMap);
-		lastNameRuleMap.put(LAST_NAME_COLUMN, NullRule.INSTANCE);
 		
 		lastNameIndex = 
 			new RangeBasedDistributedIndex<>(
 					servers, 
 					this, 
-					List.of(WAREHOUSE_ID_COLUMN, DISTRICT_ID_COLUMN, LAST_NAME_COLUMN), 
-					lastNameRuleMap
+					List.of(
+						warehouseIndexColumnDefinition, 
+						new IndexColumnDefinition<>(DISTRICT_ID_COLUMN), 
+						new IndexColumnDefinition<>(LAST_NAME_COLUMN)						
+					)
 			);
 		
 		this.indices = List.of(compositeIndex, lastNameIndex);
@@ -260,18 +248,13 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	protected List<RecordColumn<Customer, ?>> columns() {
 		return columns;
 	}
-	
-	@Override
-	protected DistributedIndex<Customer> maintainingComputerDecidingIndex() {
-		return compositeIndex;
-	}
-	
+
 	public RangeBasedDistributedIndex<Customer> getLastNameIndex() {
 		return lastNameIndex;
 	}
 
 	@Override
-	public Collection<DistributedIndex<Customer>> indices() {
+	public Collection<UserRecordIndex<Customer>> indices() {
 		return indices;
 	}
 

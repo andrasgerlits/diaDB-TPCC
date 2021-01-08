@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dianemodb.Topology;
+import com.dianemodb.h2impl.IndexColumnDefinition;
 import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
@@ -18,7 +19,7 @@ import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
 import com.dianemodb.tpcc.entity.History;
 /*
@@ -109,7 +110,7 @@ public class HistoryTable extends WarehouseBasedTable<History> {
 
 	private final List<RecordColumn<History, ?>> columns;
 
-	private final Collection<DistributedIndex<History>> indices;
+	private final Collection<UserRecordIndex<History>> indices;
 	
 	private final RangeBasedDistributedIndex<History> compositeIndex;
 	
@@ -131,11 +132,10 @@ public class HistoryTable extends WarehouseBasedTable<History> {
 						servers,
 						this, 
 						List.of(
-							CUSTOMER_WAREHOUSE_COLUMN, 
-							CUSTOMER_DISTRICT_ID_COLUMN, 
-							CUSTOMER_ID_COLUMN
-						),
-						indexRuleMap
+							warehouseIndexColumnDefinition, 
+							new IndexColumnDefinition<>(CUSTOMER_DISTRICT_ID_COLUMN), 
+							new IndexColumnDefinition<>(CUSTOMER_ID_COLUMN)
+						)
 				);
 
 		this.indices = List.of(compositeIndex);
@@ -157,13 +157,8 @@ public class HistoryTable extends WarehouseBasedTable<History> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<History>> indices() {
+	protected Collection<UserRecordIndex<History>> indices() {
 		return indices;
-	}
-
-	@Override
-	protected DistributedIndex<History> maintainingComputerDecidingIndex() {
-		return compositeIndex;
 	}
 
 	@Override

@@ -14,7 +14,6 @@ import com.dianemodb.ConversationId;
 import com.dianemodb.ServerComputerId;
 import com.dianemodb.ServerEvent;
 import com.dianemodb.Topology;
-import com.dianemodb.event.ExecuteWorkflowEvent;
 import com.dianemodb.event.tx.RollbackTransactionEvent;
 import com.dianemodb.event.tx.StartTransactionEvent;
 import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
@@ -28,8 +27,6 @@ import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.TpccRunner;
 import com.dianemodb.tpcc.transaction.TpccTestProcess;
 import com.dianemodb.version.ReadVersion;
-import com.dianemodb.workflow.query.QueryWorkflowInput;
-
 import fj.data.Either;
 
 public class ProcessAggregatorTest {

@@ -31,7 +31,7 @@ public class FindMaxOrderIdForCustomer extends SingleParameterSetQueryDistributi
 	
 	public static final String ID = "findMaxOrderIdForCustomer";
 
-	private static final Condition<Orders> CONDITION = 			
+	private static final Condition<Orders> CONDITION = 
 			Condition.andEqualsEach(
 				List.of(
 					OrdersTable.WAREHOUSE_ID_COLUMN,

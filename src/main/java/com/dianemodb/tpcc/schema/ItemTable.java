@@ -1,14 +1,13 @@
 package com.dianemodb.tpcc.schema;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import com.dianemodb.ServerComputerId;
 import com.dianemodb.Topology;
-import com.dianemodb.h2impl.NullRule;
+import com.dianemodb.functional.FunctionalUtil;
+import com.dianemodb.h2impl.IndexColumnDefinition;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
@@ -19,8 +18,7 @@ import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.distributed.Condition;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
-import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.tpcc.entity.Item;
 
 public class ItemTable extends TpccBaseTable<Item> {
@@ -54,7 +52,7 @@ public class ItemTable extends TpccBaseTable<Item> {
 
 	private final List<RecordColumn<Item, ?>> columns;
 
-	private final Collection<DistributedIndex<Item>> indices;
+	private final Collection<UserRecordIndex<Item>> indices;
 
 	private final RangeBasedDistributedIndex<Item> idIndex;
 	
@@ -64,21 +62,20 @@ public class ItemTable extends TpccBaseTable<Item> {
 		this.columns = new LinkedList<>(super.columns());
 		this.columns.addAll(COLUMNS);
 		
-		// can be used in queries for indices as if it were a warehouse-id
-		Map<RecordColumn<Item,?>, ServerComputerIdNarrowingRule> indexRuleMap = new HashMap<>();
-		
-		// follows the same distribution as warehouses, but on its own ID
-		indexRuleMap.put(DISTRIBUTION_ID_COLUMN, WarehouseTable.getWarehouseDistributionRule());
-		indexRuleMap.put(ID_COLUMN, NullRule.INSTANCE);
-		
 		this.idIndex = 			
 			new RangeBasedDistributedIndex<>(
 				servers, 
 				this, 
-				List.of(DISTRIBUTION_ID_COLUMN, ID_COLUMN),
-				indexRuleMap
+				List.of(
+					// follows the same distribution as warehouses, but on its own ID
+					new IndexColumnDefinition<>(
+							DISTRIBUTION_ID_COLUMN, 
+							WarehouseTable.getWarehouseDistributionRule()
+					), 
+					new IndexColumnDefinition<>(ID_COLUMN)
+			)
 			);
-		
+
 		this.indices = List.of(idIndex);
 	}
 
@@ -92,10 +89,10 @@ public class ItemTable extends TpccBaseTable<Item> {
 		
 		assert index != -1 : getRecordMaintainingComputers() + " " + id;
 		
-		assert idIndex.getMaintainingComputer(
+		assert FunctionalUtil.singleResult(idIndex.getMaintainingComputer(
 					Condition.andEqualsEach(List.of(DISTRIBUTION_ID_COLUMN)), 
 					List.of(index)
-				)
+				))
 				.equals(id)
 			:
 			idIndex.getMaintainingComputer(
@@ -124,12 +121,12 @@ public class ItemTable extends TpccBaseTable<Item> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<Item>> indices() {
+	protected Collection<UserRecordIndex<Item>> indices() {
 		return indices;
 	}
 
 	@Override
-	protected DistributedIndex<Item> maintainingComputerDecidingIndex() {
+	protected UserRecordIndex<Item> maintainingComputerDecidingIndex() {
 		return idIndex;
 	}
 }

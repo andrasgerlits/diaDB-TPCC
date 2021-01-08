@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dianemodb.Topology;
+import com.dianemodb.h2impl.IndexColumnDefinition;
 import com.dianemodb.h2impl.NullRule;
 import com.dianemodb.h2impl.RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
@@ -17,7 +18,7 @@ import com.dianemodb.metaschema.LongColumn;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
-import com.dianemodb.metaschema.distributed.DistributedIndex;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.metaschema.distributed.ServerComputerIdNarrowingRule;
 import com.dianemodb.tpcc.entity.Stock;
 
@@ -81,7 +82,7 @@ public class StockTable extends WarehouseBasedTable<Stock> {
 			);
 
 	private final LinkedList<RecordColumn<Stock, ?>> columns;
-	private final Collection<DistributedIndex<Stock>> indices;
+	private final Collection<UserRecordIndex<Stock>> indices;
 
 	private final RangeBasedDistributedIndex<Stock> itemWarehouseIndex;
  
@@ -100,8 +101,10 @@ public class StockTable extends WarehouseBasedTable<Stock> {
 				new RangeBasedDistributedIndex<>(
 						servers,
 						this, 
-						List.of(WAREHOUSE_ID_COLUMN, ITEM_ID_COLUMN),
-						indexRuleMap
+						List.of(
+							warehouseIndexColumnDefinition, 
+							new IndexColumnDefinition<>(ITEM_ID_COLUMN)
+						)
 				);
 		
 		this.indices = List.of(itemWarehouseIndex);
@@ -127,13 +130,8 @@ public class StockTable extends WarehouseBasedTable<Stock> {
 	}
 
 	@Override
-	protected Collection<DistributedIndex<Stock>> indices() {
+	protected Collection<UserRecordIndex<Stock>> indices() {
 		return indices;
-	}
-
-	@Override
-	protected DistributedIndex<Stock> maintainingComputerDecidingIndex() {
-		return itemWarehouseIndex;
 	}
 
 	@Override
