@@ -39,7 +39,7 @@ public class NewOrdersTable extends WarehouseBasedTable<NewOrders>{
 	public static final String ALL_LOCAL_COLUMN_NAME = "o_all_local";
 	
 	public static final RecordColumn<NewOrders, TransactionId> TX_ID_COLUMN = TX_ID();
-	public static final RecordColumn<NewOrders, RecordId> RECORD_ID_COLUMN = RECORD_ID();
+	public static final RecordColumn<NewOrders, Long> RECORD_ID_COLUMN = RECORD_ID();
 
 	public static final RecordColumn<NewOrders, Byte> DISTRICT_ID_COLUMN = 				
 			new RecordColumn<>(

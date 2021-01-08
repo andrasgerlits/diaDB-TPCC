@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
-import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.RecordColumn;
@@ -26,7 +25,7 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 
 	private final List<RecordColumn<R, ?>> columns;
 	private final RecordColumn<R, TransactionId> txIdColumn;
-	private final RecordColumn<R, RecordId> recordIdColumn;
+	private final RecordColumn<R, Long> recordIdColumn;
 	
 	public TpccBaseTable(UserRecordTableId tableId, String name, Topology topology) {
 		this(tableId, name, Caching.CACHED, topology);
@@ -54,7 +53,7 @@ public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTabl
 	}
 
 	@Override
-	public RecordColumn<R, RecordId> getRecordIdColumn() {
+	public RecordColumn<R, Long> getRecordIdColumn() {
 		return recordIdColumn;
 	}
 	

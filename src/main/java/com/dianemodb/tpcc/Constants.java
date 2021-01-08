@@ -3,7 +3,7 @@ package com.dianemodb.tpcc;
 public class Constants {
 
 	// 200 -> 40GB
-	public static final int NUMBER_OF_WAREHOUSES = 200;
+	public static final int NUMBER_OF_WAREHOUSES = 8;
 	
 	public static final int STOCK_PER_WAREHOUSE = 100000;
 	public static final int ORDER_LINE_PER_WAREHOUSE = 300000;

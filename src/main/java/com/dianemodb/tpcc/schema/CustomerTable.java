@@ -57,7 +57,7 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	public static final String DATA_COLUMN_NAME = "c_data";
 	
 	public static final RecordColumn<Customer, TransactionId> TX_ID_COLUMN = TX_ID();
-	public static final RecordColumn<Customer, RecordId> RECORD_ID_COLUMN = RECORD_ID();
+	public static final RecordColumn<Customer, Long> RECORD_ID_COLUMN = RECORD_ID();
 
 	public static final RecordColumn<Customer, Integer> ID_COLUMN = 
 			new RecordColumn<>(

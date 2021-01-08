@@ -11,13 +11,13 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import com.dianemodb.ServerComputerId;
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
 import com.dianemodb.computertest.framework.TestComputer;
-import com.dianemodb.id.RecordId;
 import com.dianemodb.integration.sqlwrapper.BenchmarkingH2ConnectionWrapper;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.SQLHelper;
@@ -34,15 +34,15 @@ import com.dianemodb.tpcc.schema.WarehouseBasedTable;
 
 public class TpccDataPopulationGenerator {
 	
-	private static final int PARALLEL_LOAD_THREADS = 4;
+	private static final int PARALLEL_LOAD_THREADS = 1;
 
 	private static final String OLD_RECORD_ID_COLUMN_NAME = "old_record_id";
 	private static final String NEW_RECORD_ID_COLUMN_NAME = "record_id";
 	private static final String ID_SEQ_NAME = "id_sequence";
 	private static final String WAREHOUSE_ID_COLUMN_NAME = "wh_id";
 	
-	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 2;
-	private static final int NUMBER_OF_EXISTING_WAREHOUSES = 23;
+	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 24;
+	private static final int NUMBER_OF_EXISTING_WAREHOUSES = 1;
 	
 	public static void main(String[] args) throws Exception {
 		Topology topology = DiaDBRunner.readTopologyFromFile(ExampleRunner.SMALL_SINGLE_LEVEL_TOPOLOGY);
@@ -69,9 +69,16 @@ public class TpccDataPopulationGenerator {
 							return t;
 						}
 					);
-		
+
+		AtomicBoolean goon = new AtomicBoolean(true);
+
+		OUTER:
 		for( int i = 0; i < multiplier; i++ ) {
 			for(ServerComputerId computerId : leafComputers) {
+				if(!goon.get()) {
+					break OUTER;
+				}
+				
 				final int ii = i;
 
 				short oldWarehouseId = (short) computerId.getIndexValue();
@@ -83,6 +90,7 @@ public class TpccDataPopulationGenerator {
 							run(application, computerId, ii, oldWarehouseId, newWarehouseId);
 							latch.countDown();
 						} catch (SQLException e) {
+							goon.set(false);
 							throw new RuntimeException(e);
 						}
 					}
@@ -90,10 +98,12 @@ public class TpccDataPopulationGenerator {
 			}
 		}
 		
-		try {
-			latch.await();
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
+		if(goon.get()) {
+			try {
+				latch.await();
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
@@ -208,7 +218,7 @@ public class TpccDataPopulationGenerator {
 		List<String> statements = new LinkedList<String>();
 		
 		RecordColumn<R, Short> warehouseIdColumn = userTable.getWarehouseIdColumn();
-		RecordColumn<R, RecordId> recordIdColumn = userTable.getRecordIdColumn();
+		RecordColumn<R, Long> recordIdColumn = userTable.getRecordIdColumn();
 
 		List<RecordColumn<R, ?>> userRecordColumns = userTable.getColumns();
 		userRecordColumns.remove(recordIdColumn);
@@ -246,7 +256,7 @@ public class TpccDataPopulationGenerator {
 				+ ")" 
 				+ "SELECT " 
 					+ commaSeparatedColumnNames + ", "
-					+ "'" + serverId + ":' || " + ID_SEQ_NAME + ".nextval," 
+					+ ID_SEQ_NAME + ".nextval," 
 					+ recordIdColumn.getName() + ","
 					+ new_wh_id
 				+ " FROM " + userTable.getName() 
@@ -355,11 +365,13 @@ public class TpccDataPopulationGenerator {
 				+ ") "
 				+ "SELECT " 
 					+ SQLHelper.getCommaSeparatedColumnNamesWithPrefix("i", indexColumnsWithoutUserRecordAndWarehouse) + ", "
-					+ "('" + serverId + ":' || " + ID_SEQ_NAME  + ".nextval),"
-					+ "u." + NEW_RECORD_ID_COLUMN_NAME
+					+ ID_SEQ_NAME  + ".nextval,"
+					
+					// user-record id is text with server prefix
+					+ "('" + serverId + ":' || u." + NEW_RECORD_ID_COLUMN_NAME + ")"
 					+ " FROM " + userRecordTempTableName + " u " 
 					+ " JOIN "  + indexTable.getName() + " i "
-						+ " ON u." + OLD_RECORD_ID_COLUMN_NAME + "=i." + indexTable.getUserRecordColumn().getName();
+						+ " ON ('" + serverId + ":' || u." + OLD_RECORD_ID_COLUMN_NAME + ")=i." + indexTable.getUserRecordColumn().getName();
 		
 		statements.add(tmpIndexInsertStatement);
 		
