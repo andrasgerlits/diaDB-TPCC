@@ -5,9 +5,9 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+
 import com.dianemodb.Topology;
-import com.dianemodb.h2impl.IndexColumnDefinition;
-import com.dianemodb.h2impl.RangeBasedDistributedIndex;
+import com.dianemodb.h2impl.H2RangeBasedDistributedIndex;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
@@ -20,6 +20,8 @@ import com.dianemodb.metaschema.ShortColumn;
 import com.dianemodb.metaschema.StringColumn;
 import com.dianemodb.metaschema.TimestampColumn;
 import com.dianemodb.metaschema.distributed.UserRecordIndex;
+import com.dianemodb.query.IndexColumnDefinition;
+import com.dianemodb.query.RangeBasedDistributedIndex;
 import com.dianemodb.tpcc.entity.Customer;
 
 public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
@@ -188,7 +190,7 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 		);
 
 		compositeIndex = 
-			new RangeBasedDistributedIndex<>(
+			new H2RangeBasedDistributedIndex<>(
 				servers,
 				this, 
 				List.of(
@@ -199,7 +201,7 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 			);
 		
 		lastNameIndex = 
-			new RangeBasedDistributedIndex<>(
+			new H2RangeBasedDistributedIndex<>(
 					servers, 
 					this, 
 					List.of(

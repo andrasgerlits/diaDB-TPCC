@@ -34,14 +34,14 @@ import com.dianemodb.tpcc.schema.WarehouseBasedTable;
 
 public class TpccDataPopulationGenerator {
 	
-	private static final int PARALLEL_LOAD_THREADS = 4;
+	private static final int PARALLEL_LOAD_THREADS = 2;
 
 	private static final String OLD_RECORD_ID_COLUMN_NAME = "old_record_id";
 	private static final String NEW_RECORD_ID_COLUMN_NAME = "record_id";
 	private static final String ID_SEQ_NAME = "id_sequence";
 	private static final String WAREHOUSE_ID_COLUMN_NAME = "wh_id";
 	
-	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 49;
+	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 64;
 	private static final int NUMBER_OF_EXISTING_WAREHOUSES = 1;
 	
 	public static void main(String[] args) throws Exception {
@@ -90,6 +90,7 @@ public class TpccDataPopulationGenerator {
 							run(application, computerId, ii, oldWarehouseId, newWarehouseId);
 							latch.countDown();
 						} catch (SQLException e) {
+							executor.shutdownNow();
 							goon.set(false);
 							throw new RuntimeException(e);
 						}
@@ -176,7 +177,7 @@ public class TpccDataPopulationGenerator {
 					+ "SELECT f.value FROM ID_FACTORY f "
 					+ " WHERE f.name='" + TestComputer.USER_RECORD_ID_FACTORY_ID + "' "
 					+ " LIMIT 1"
-				+ ");";
+				+ ")";
 		
 		statements.add(initSequence);
 		
@@ -203,7 +204,7 @@ public class TpccDataPopulationGenerator {
 		
 		statements.add(updateIdFactoryStatement);
 		
-		String dropIdSequenceStatement = "DROP SEQUENCE " + ID_SEQ_NAME + ";";
+		String dropIdSequenceStatement = "DROP SEQUENCE " + ID_SEQ_NAME;
 		statements.add(dropIdSequenceStatement);
 		
 		return statements;
@@ -260,7 +261,7 @@ public class TpccDataPopulationGenerator {
 					+ recordIdColumn.getName() + ","
 					+ new_wh_id
 				+ " FROM " + userTable.getName() 
-				+ " WHERE " + warehouseIdColumn.getName() + "=" + wh_id + ";";
+				+ " WHERE " + warehouseIdColumn.getName() + "=" + wh_id;
 		
 		statements.add(tmpInsertRecordsStatement);
 		
@@ -278,18 +279,22 @@ public class TpccDataPopulationGenerator {
 		
 		statements.add(insertRecordsStatement);
 		
-		Set<UserRecordIndex<R>> indices = 
-				userTable.allIndices()
-					.values()
-					.stream()
-					.collect(Collectors.toSet());
+		Set<UserRecordIndex<R>> indices =
+				userTable.getMaintainingComputerDecidingIndex()
+					.map( 
+						i -> userTable.allIndices()
+								.values()
+								.stream()
+								.collect(Collectors.toSet())
+					)
+					.orElse(Set.of());
 		
 		for(UserRecordIndex<R> i : indices) {	
 			List<String> indexStrings = index(userTable, serverId, userRecordTempTableName, i, new_wh_id);
 			statements.addAll(indexStrings);
 		}
 		
-		String dropTempUserTableStatement = "DROP TABLE " + userRecordTempTableName + ";";
+		String dropTempUserTableStatement = "DROP TABLE " + userRecordTempTableName;
 		statements.add(dropTempUserTableStatement);
 
 		return statements;
@@ -392,15 +397,15 @@ public class TpccDataPopulationGenerator {
 					.map(
 						indexWarehouseColumn -> 
 							insertHeader + "," + indexWarehouseColumn.getName() + ") "
-							+ selectHeader  + "," + warehouseId	+ " FROM " + indexTmpTableName + " i;"
+							+ selectHeader  + "," + warehouseId	+ " FROM " + indexTmpTableName + " i"
 					)
 					.orElseGet(
 						() -> 
-							insertHeader + ") " + selectHeader + " FROM " + indexTmpTableName + " i;"
+							insertHeader + ") " + selectHeader + " FROM " + indexTmpTableName + " i"
 					);
 		statements.add(insertIndexStatement);
 
-		String dropTempIndexTableStatement = "DROP TABLE " + indexTmpTableName + ";";
+		String dropTempIndexTableStatement = "DROP TABLE " + indexTmpTableName;
 		statements.add(dropTempIndexTableStatement);
 
 		return statements;

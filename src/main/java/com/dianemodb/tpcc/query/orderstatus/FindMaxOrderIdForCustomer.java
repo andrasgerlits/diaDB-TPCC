@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.dianemodb.h2impl.SingleParameterSetQueryDistributionPlan;
+import com.dianemodb.h2impl.H2SingleParameterSetQueryDistributionPlan;
 import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.metaschema.distributed.LimitClause;
 import com.dianemodb.metaschema.distributed.OrderByClause;
@@ -22,7 +22,7 @@ import com.dianemodb.tpcc.schema.OrdersTable;
  * This could be changed by introducing the order-id as part of an index on OrdersTable
  * and specifying a realistic range.
  * */
-public class FindMaxOrderIdForCustomer extends SingleParameterSetQueryDistributionPlan<Orders> {
+public class FindMaxOrderIdForCustomer extends H2SingleParameterSetQueryDistributionPlan<Orders> {
 
 	private static final LimitClause LIMIT_CLAUSE = new LimitClause(1);
 	

@@ -1,10 +1,10 @@
 package com.dianemodb.tpcc.query;
 
-import com.dianemodb.h2impl.SingleParameterSetQueryDistributionPlan;
+import com.dianemodb.h2impl.H2SingleParameterSetQueryDistributionPlan;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.schema.CustomerTable;
 
-public class FindCustomerByWarehouseDistrictLastName extends SingleParameterSetQueryDistributionPlan<Customer> {
+public class FindCustomerByWarehouseDistrictLastName extends H2SingleParameterSetQueryDistributionPlan<Customer> {
 
 	public static final String ID = "findCustomerByLastName";
 

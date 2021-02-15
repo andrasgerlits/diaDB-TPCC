@@ -4,11 +4,12 @@ import java.util.List;
 
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
-import com.dianemodb.h2impl.IndexColumnDefinition;
-import com.dianemodb.h2impl.RangeBasedDistributedIndex;
+import com.dianemodb.h2impl.H2RangeBasedDistributedIndex;
 import com.dianemodb.id.UserRecordTableId;
 import com.dianemodb.metaschema.RecordColumn;
 import com.dianemodb.metaschema.distributed.UserRecordIndex;
+import com.dianemodb.query.IndexColumnDefinition;
+import com.dianemodb.query.RangeBasedDistributedIndex;
 
 public abstract class WarehouseBasedTable<R extends UserRecord> extends TpccBaseTable<R> {
 
@@ -30,7 +31,7 @@ public abstract class WarehouseBasedTable<R extends UserRecord> extends TpccBase
 				);
 		
 		this.distributionIndex = 
-				new RangeBasedDistributedIndex<>(
+				new H2RangeBasedDistributedIndex<>(
 						topology, 
 						this, 
 						List.of(warehouseIndexColumnDefinition)

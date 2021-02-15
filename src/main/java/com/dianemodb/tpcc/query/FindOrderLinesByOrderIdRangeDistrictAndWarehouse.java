@@ -4,13 +4,13 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.dianemodb.h2impl.SingleParameterSetQueryDistributionPlan;
+import com.dianemodb.h2impl.H2SingleParameterSetQueryDistributionPlan;
 import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.metaschema.distributed.Operator;
 import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.schema.OrderLineTable;
 
-public class FindOrderLinesByOrderIdRangeDistrictAndWarehouse extends SingleParameterSetQueryDistributionPlan<OrderLine> {
+public class FindOrderLinesByOrderIdRangeDistrictAndWarehouse extends H2SingleParameterSetQueryDistributionPlan<OrderLine> {
 
 	public static final String ID = "findOrderLinesByOrderIdRange";
 	

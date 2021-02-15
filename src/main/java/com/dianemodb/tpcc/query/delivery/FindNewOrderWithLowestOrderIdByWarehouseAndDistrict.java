@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.dianemodb.h2impl.SingleParameterSetQueryDistributionPlan;
+import com.dianemodb.h2impl.H2SingleParameterSetQueryDistributionPlan;
 import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.metaschema.distributed.LimitClause;
 import com.dianemodb.metaschema.distributed.OrderByClause;
@@ -19,7 +19,7 @@ import com.dianemodb.tpcc.schema.NewOrdersTable;
  *  ORDER BY t.o_id ASC 
  *  LIMIT 1
  */
-public class FindNewOrderWithLowestOrderIdByWarehouseAndDistrict extends SingleParameterSetQueryDistributionPlan<NewOrders>{
+public class FindNewOrderWithLowestOrderIdByWarehouseAndDistrict extends H2SingleParameterSetQueryDistributionPlan<NewOrders>{
 
 	public static final String ID = "findNewOrdersByDistrictAndWarehouse";
 	
