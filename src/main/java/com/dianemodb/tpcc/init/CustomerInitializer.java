@@ -18,7 +18,7 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 	
 	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(CustomerInitializer.class.getName());
 
-	private static final int ITEM_PER_BATCH = 10000;
+	private static final int ITEM_PER_BATCH = 1000;
 	
 	private static final int TOTAL_NUMBER_OF_BATCHES = 
 			Constants.NUMBER_OF_WAREHOUSES 

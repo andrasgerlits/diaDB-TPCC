@@ -103,7 +103,7 @@ public class HistoryTable extends WarehouseBasedTable<History> {
 					History::setAmount
 				),
 				new RecordColumn<>(
-					new StringColumn(DATA_COLUMN_NAME), 
+					new StringColumn(DATA_COLUMN_NAME, 24), 
 					History::getData,
 					History::setData
 				)

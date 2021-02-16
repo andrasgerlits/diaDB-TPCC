@@ -44,7 +44,7 @@ public class TpccRunner extends AbstractTestRunner {
 	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TpccRunner.class.getName());
 	
 	// flip this switch to alternate between running the test or initializing the database
-	private static final boolean recreate = true;
+	private static final boolean recreate = false;
 
 	public static SQLServerApplication createApplication(Topology topology) {
 		

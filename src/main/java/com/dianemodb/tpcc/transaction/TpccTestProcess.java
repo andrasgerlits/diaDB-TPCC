@@ -87,7 +87,12 @@ public abstract class TpccTestProcess extends TestProcess {
 			return new CustomerSelectionByLastName(randomLastName, warehouseId, districtId);
 		}
 		else {
-			int customerId = random.nextInt(Constants.CUSTOMER_PER_DISTRICT);
+	        int l = TpccDataInitializer.randomInt(0, 1023);
+	        int r = TpccDataInitializer.randomInt(1, (Constants.CUSTOMER_PER_DISTRICT));
+	        int C = TpccDataInitializer.randomInt(0, 1023);
+	        
+	        int customerId = ((l | r) + C) % Constants.CUSTOMER_PER_DISTRICT;
+	        
 			return new CustomerSelectionById(warehouseId, districtId, customerId);
 		}
 	}

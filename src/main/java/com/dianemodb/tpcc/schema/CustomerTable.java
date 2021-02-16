@@ -80,28 +80,28 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	
 	public static final RecordColumn<Customer, String> FIRST_NAME_COLUMN = 
 			new RecordColumn<>(
-					new StringColumn(FIRST_NAME_COLUMN_NAME), 
+					new StringColumn(FIRST_NAME_COLUMN_NAME, 16), 
 					Customer::getFirstName,
 					Customer::setFirstName
 			);
 	
 	public static final RecordColumn<Customer, String> MIDDLE_NAME_COLUMN =
 			new RecordColumn<>(
-					new StringColumn(MIDDLE_NAME_COLUMN_NAME), 
+					new StringColumn(MIDDLE_NAME_COLUMN_NAME, 2), 
 					Customer::getMiddleName,
 					Customer::setMiddleName
 			);
 	
 	public static final RecordColumn<Customer, String> LAST_NAME_COLUMN = 
 			new RecordColumn<>(
-					new StringColumn(LAST_NAME_COLUMN_NAME), 
+					new StringColumn(LAST_NAME_COLUMN_NAME, 16), 
 					Customer::getLastName,
 					Customer::setLastName
 			);
 	
 	public static final RecordColumn<Customer, String> PHONE_COLUMN =
 			new RecordColumn<>(
-					new StringColumn(PHONE_COLUMN_NAME), 
+					new StringColumn(PHONE_COLUMN_NAME, 16), 
 					Customer::getPhone,
 					Customer::setPhone
 			);
@@ -115,7 +115,7 @@ public class CustomerTable extends LocationBasedUserRecordTable<Customer> {
 	
 	public static final RecordColumn<Customer, String> CREDIT_COLUMN = 
 			new RecordColumn<>(
-					new StringColumn(CREDIT_COLUMN_NAME), 
+					new StringColumn(CREDIT_COLUMN_NAME, 2), 
 					Customer::getCredit,
 					Customer::setCredit
 			);

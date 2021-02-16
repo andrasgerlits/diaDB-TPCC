@@ -65,7 +65,10 @@ public abstract class TpccDataInitializer {
 	}
 	
 	public static int randomItemId() {
-		return randomInt(0, Constants.ITEM_NUMBER);
+        int l = randomInt(0, 8191);
+        int r = randomInt(1, Constants.ITEM_NUMBER);
+        int C = randomInt(0, 8191);
+        return ((l | r) + C) % Constants.ITEM_NUMBER;
 	}
 	
 	public static String randomValue(String...string) {
@@ -124,19 +127,28 @@ public abstract class TpccDataInitializer {
 	}
 	
 	public static String generateLastName(int customerId) {
-		String idString = String.valueOf(customerId);	
-		String name = 
-			idString.chars()
-				.mapToObj( 
-					c -> {
-						int p = Integer.valueOf(String.valueOf( (char) c ));
-						assert p >=0 && p < 10 : p + " " + c;
-						return Constants.LAST_NAMES[p]; 
-					}
-				)
-				.collect(Collectors.joining());
-		
-		return name;
+		if(customerId < 1000) {
+			String idString = String.valueOf(customerId);
+			
+			String name = 
+				idString.chars()
+					.mapToObj( 
+						c -> {
+							int p = Integer.valueOf(String.valueOf( (char) c ));
+							assert p >=0 && p < 10 : p + " " + c;
+							return Constants.LAST_NAMES[p]; 
+						}
+					)
+					.collect(Collectors.joining());
+			
+			return name;
+		}
+		else {
+	        int l = randomInt(0, 255);
+	        int r = randomInt(0, 999);
+	        int C = randomInt(0, 255);
+	        return String.valueOf(((l | r) + C) % (999 - 0 + 1) + 0);
+		}
 	}
 	
 	protected final SQLServerApplication application;

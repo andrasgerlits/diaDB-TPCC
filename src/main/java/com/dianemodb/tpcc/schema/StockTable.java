@@ -66,20 +66,20 @@ public class StockTable extends WarehouseBasedTable<Stock> {
 				ITEM_ID_COLUMN,
 				WAREHOUSE_ID_COLUMN,
 				new RecordColumn<>(new ShortColumn(QUANTITY_COLUMN_NAME), Stock::getQuantity, Stock::setQuantity),
-				new RecordColumn<>(new StringColumn(DIST_1_COLUMN_NAME), Stock::getDist1, Stock::setDist1),
-				new RecordColumn<>(new StringColumn(DIST_2_COLUMN_NAME), Stock::getDist2, Stock::setDist2),
-				new RecordColumn<>(new StringColumn(DIST_3_COLUMN_NAME), Stock::getDist3, Stock::setDist3),
-				new RecordColumn<>(new StringColumn(DIST_4_COLUMN_NAME), Stock::getDist4, Stock::setDist4),
-				new RecordColumn<>(new StringColumn(DIST_5_COLUMN_NAME), Stock::getDist5, Stock::setDist5),
-				new RecordColumn<>(new StringColumn(DIST_6_COLUMN_NAME), Stock::getDist6, Stock::setDist6),
-				new RecordColumn<>(new StringColumn(DIST_7_COLUMN_NAME), Stock::getDist7, Stock::setDist7),
-				new RecordColumn<>(new StringColumn(DIST_8_COLUMN_NAME), Stock::getDist8, Stock::setDist8),
-				new RecordColumn<>(new StringColumn(DIST_9_COLUMN_NAME), Stock::getDist9, Stock::setDist9),
-				new RecordColumn<>(new StringColumn(DIST_10_COLUMN_NAME), Stock::getDist10, Stock::setDist10),
+				new RecordColumn<>(new StringColumn(DIST_1_COLUMN_NAME, 24), Stock::getDist1, Stock::setDist1),
+				new RecordColumn<>(new StringColumn(DIST_2_COLUMN_NAME, 24), Stock::getDist2, Stock::setDist2),
+				new RecordColumn<>(new StringColumn(DIST_3_COLUMN_NAME, 24), Stock::getDist3, Stock::setDist3),
+				new RecordColumn<>(new StringColumn(DIST_4_COLUMN_NAME, 24), Stock::getDist4, Stock::setDist4),
+				new RecordColumn<>(new StringColumn(DIST_5_COLUMN_NAME, 24), Stock::getDist5, Stock::setDist5),
+				new RecordColumn<>(new StringColumn(DIST_6_COLUMN_NAME, 24), Stock::getDist6, Stock::setDist6),
+				new RecordColumn<>(new StringColumn(DIST_7_COLUMN_NAME, 24), Stock::getDist7, Stock::setDist7),
+				new RecordColumn<>(new StringColumn(DIST_8_COLUMN_NAME, 24), Stock::getDist8, Stock::setDist8),
+				new RecordColumn<>(new StringColumn(DIST_9_COLUMN_NAME, 24), Stock::getDist9, Stock::setDist9),
+				new RecordColumn<>(new StringColumn(DIST_10_COLUMN_NAME, 24), Stock::getDist10, Stock::setDist10),
 				new RecordColumn<>(new LongColumn(YTD_COLUMN_NAME), Stock::getYtd, Stock::setYtd),
 				new RecordColumn<>(new ShortColumn(ORDER_COLUMN_NAME), Stock::getOrderCnt, Stock::setOrderCnt),
 				new RecordColumn<>(new ShortColumn(REMOTE_COLUMN_NAME), Stock::getRemoteCnt, Stock::setRemoteCnt),
-				new RecordColumn<>(new StringColumn(DATA_COLUMN_NAME), Stock::getData, Stock::setData)
+				new RecordColumn<>(new StringColumn(DATA_COLUMN_NAME, 50), Stock::getData, Stock::setData)
 			);
 
 	private final LinkedList<RecordColumn<Stock, ?>> columns;

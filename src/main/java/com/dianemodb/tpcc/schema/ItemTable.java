@@ -46,9 +46,9 @@ public class ItemTable extends TpccBaseTable<Item> {
 				ID_COLUMN,
 				DISTRIBUTION_ID_COLUMN,
 				new RecordColumn<>(new IntColumn(IM_ID_COLUMN_NAME), Item::getIm, Item::setIm),
-				new RecordColumn<>(new StringColumn(NAME_COLUMN_NAME), Item::getName, Item::setName),
+				new RecordColumn<>(new StringColumn(NAME_COLUMN_NAME, 24), Item::getName, Item::setName),
 				new RecordColumn<>(new BigDecimalColumn(PRICE_COLUMN_NAME, 5, 2), Item::getPrice, Item::setPrice),
-				new RecordColumn<>(new StringColumn(DATA_COLUMN_NAME), Item::getData, Item::setData)
+				new RecordColumn<>(new StringColumn(DATA_COLUMN_NAME, 50), Item::getData, Item::setData)
 			);
 
 	private final List<RecordColumn<Item, ?>> columns;

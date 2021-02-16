@@ -35,7 +35,7 @@ com.dianemodb.tpcc.TpccRunner
 -ea ^
 
 java.exe ^
--Ddiadb.home=:/tmp/tpccdb_big/ ^
+-Ddiadb.home=d:/tmp/tpccdb_big/ ^
 -Xmx4096M ^
 -Xms256m ^
 -server ^
