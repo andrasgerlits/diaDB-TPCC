@@ -21,6 +21,9 @@ import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Warehouse;
 import com.dianemodb.tpcc.schema.WarehouseTable;
 
+/**
+ * Supplies new TPC-C transactions based on the specification.
+ * */
 public class TpccProcessMaker {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TpccProcessMaker.class.getName());
