@@ -41,7 +41,7 @@ public class TpccDataPopulationGenerator {
 	private static final String ID_SEQ_NAME = "id_sequence";
 	private static final String WAREHOUSE_ID_COLUMN_NAME = "wh_id";
 	
-	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 64;
+	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 74;
 	private static final int NUMBER_OF_EXISTING_WAREHOUSES = 1;
 	
 	public static void main(String[] args) throws Exception {

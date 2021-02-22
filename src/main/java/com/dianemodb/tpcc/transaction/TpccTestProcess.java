@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,10 +13,6 @@ import com.dianemodb.ModificationCollection;
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.ServerComputerId;
 import com.dianemodb.UserRecord;
-import com.dianemodb.event.ExecuteWorkflowEvent;
-import com.dianemodb.event.tx.CommitTransactionEvent;
-import com.dianemodb.functional.FunctionalUtil;
-import com.dianemodb.id.TransactionId;
 import com.dianemodb.integration.test.NextStep;
 import com.dianemodb.integration.test.TestProcess;
 import com.dianemodb.message.Envelope;
@@ -27,13 +22,8 @@ import com.dianemodb.tpcc.init.TpccDataInitializer;
 import com.dianemodb.tpcc.query.CustomerSelectionById;
 import com.dianemodb.tpcc.query.CustomerSelectionByLastName;
 import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
-import com.dianemodb.version.ReadVersion;
 import com.dianemodb.version.Transaction.State;
-import com.dianemodb.workflow.query.QueryWorkflow;
-import com.dianemodb.workflow.query.QueryWorkflowInput;
 import com.dianemodb.workflow.tx.TxEndValue;
-import com.dianemodb.workflow.write.ChangeRecordsWorkflowInput;
-import com.dianemodb.workflow.write.ModifyRecordsWorkflow;
 
 public abstract class TpccTestProcess extends TestProcess {
 	
@@ -64,18 +54,6 @@ public abstract class TpccTestProcess extends TestProcess {
 		return value != null && value.contains(searched);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static <R extends UserRecord> RecordWithVersion<R> singleFromResultList(Object result) {
-		if(result instanceof List) {
-			List<? extends RecordWithVersion<? extends UserRecord>> list = (List<? extends RecordWithVersion<? extends UserRecord>>) result;
-			return (RecordWithVersion<R>) FunctionalUtil.singleResult(list);
-		}
-		else {
-			assert result instanceof RecordWithVersion : result; 
-			return (RecordWithVersion<R>) result;
-		}
-	}
-	
 	protected static CustomerSelectionStrategy randomStrategy(
 			Random random, 
 			short warehouseId, 
@@ -95,25 +73,6 @@ public abstract class TpccTestProcess extends TestProcess {
 	        
 			return new CustomerSelectionById(warehouseId, districtId, customerId);
 		}
-	}
-
-	
-	public static Envelope query(
-			String queryId, 
-			List<?> parameters, 
-			TpccTestProcess testProcess
-	) {
-		QueryWorkflowInput wfInput = 
-				new QueryWorkflowInput(
-						queryId, 
-						testProcess.txId, 
-						testProcess.readVersion, 
-						parameters
-				);
-		
-		ExecuteWorkflowEvent queryEvent = new ExecuteWorkflowEvent(QueryWorkflow.TYPE, wfInput);
-		
-		return new Envelope(testProcess.txId.getComputerId(), queryEvent);				
 	}
 
 	protected final Random random;
@@ -175,6 +134,29 @@ public abstract class TpccTestProcess extends TestProcess {
 		return true;
 	}
 	
+	@Override
+	protected Result startInternal(Object result) {
+		Result res = super.startInternal(result);
+		
+		LOGGER.debug(
+				"{} starting w_id {} tx-id {} read-version {}",
+				uuid,
+				terminalWarehouseId, 
+				txId, 
+				readVersion
+		);
+		
+		return res;
+	}
+
+	public NextStep start() {
+		return ofSingle(
+				startTransaction(), 
+				this::startInternal, 
+				initialRequestedMinStartTime
+			);
+	}
+
 	public boolean isLate() {
 		long maxLatency = MAX_TIMES_BY_CLASS.get(this.getClass());;
 		if(finished == -1) { 
@@ -209,10 +191,6 @@ public abstract class TpccTestProcess extends TestProcess {
 		return of(commitTx(), this::evaluateCommit);
 	}
 	
-	protected Envelope commitTx() {
-		return new Envelope(txId.getComputerId(), new CommitTransactionEvent(txId));
-	}
-	
 	protected Result evaluateCommit(Object result) {
 		TxEndValue txEndState = ((Optional<TxEndValue>) result).get();
 		
@@ -237,37 +215,6 @@ public abstract class TpccTestProcess extends TestProcess {
 		}
 	}
 	
-	protected Envelope modifyEvent(ModificationCollection modificationCollection) {
-		ChangeRecordsWorkflowInput wfInput = 
-				new ChangeRecordsWorkflowInput(
-						txId, 
-						modificationCollection , 
-						txId.getComputerId(), 
-						readVersion
-				);
-		
-		ExecuteWorkflowEvent queryEvent = 
-				new ExecuteWorkflowEvent(ModifyRecordsWorkflow.TYPE, wfInput);
-		
-		return new Envelope(txId.getComputerId(), queryEvent);
-	}
-	
-	protected Envelope query(String queryId, List<?> parameters) {
-		return query(queryId, parameters, this);
-	}
-
-	protected <T extends UserRecord> RecordWithVersion<T> singleRecord(Object returned) {
-		@SuppressWarnings("unchecked")
-		List<? extends RecordWithVersion<T>> result = (List<? extends RecordWithVersion<T>>) returned;
-		
-		return FunctionalUtil.singleResult(result);
-	}
-	
-	@Override
-	public NextStep start() {
-		return ofSingle(startTransaction(), this::startInternal, initialRequestedMinStartTime);
-	}
-
 	// TX is rolled back when it receives an exception
 	public NextStep cancelAndRetry() {
 		retryCount++;
@@ -278,25 +225,6 @@ public abstract class TpccTestProcess extends TestProcess {
 	public int getRetryCount() {
 		return retryCount;
 	}
-	
-	@SuppressWarnings("unchecked")
-	protected Result startInternal(Object result) {
-		Pair<TransactionId, ReadVersion> pair = (Pair<TransactionId, ReadVersion>) result;
-		txId = pair.getKey();
-		readVersion = pair.getValue();
-
-		LOGGER.debug(
-				"{} starting w_id {} tx-id {} read-version {}",
-				uuid,
-				terminalWarehouseId, 
-				txId, 
-				readVersion
-		);
-		
-		return startTx();
-	}
-
-	protected abstract Result startTx();
 	
 	protected <R extends UserRecord> Envelope update(RecordWithVersion<R> original, R updated) {
 		ModificationCollection modificationCollection = new ModificationCollection();
