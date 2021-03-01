@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ConversationId;
 import com.dianemodb.integration.test.NextStep;
-import com.dianemodb.integration.test.TestProcess;
-import com.dianemodb.integration.test.TestProcess.Result;
+import com.dianemodb.integration.test.BaseProcess;
+import com.dianemodb.integration.test.BaseProcess.Result;
 import com.dianemodb.tpcc.Constants;
 
 public class TerminalBasedProcessScheduler implements TpccProcessScheduler {
@@ -80,7 +80,7 @@ public class TerminalBasedProcessScheduler implements TpccProcessScheduler {
 	}
 	
 	@Override
-	public Result failed(ConversationId conversationId, Throwable ex, TestProcess testProcess) {
+	public Result failed(ConversationId conversationId, Throwable ex, BaseProcess testProcess) {
 		if(LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Process failed {}", testProcess);
 		}
@@ -101,7 +101,7 @@ public class TerminalBasedProcessScheduler implements TpccProcessScheduler {
 			// handle it like any other timed out process
 			finished((TpccTestProcess) process);
 		}
-		return TestProcess.FINISHED;
+		return BaseProcess.FINISHED;
 	}
 
 	public boolean resume() {

@@ -1,13 +1,17 @@
 package com.dianemodb.tpcc.transaction;
 
 import java.util.List;
+import java.util.Map;
 
 import com.dianemodb.ConversationId;
 import com.dianemodb.ServerComputerId;
+import com.dianemodb.exception.DiaDbException;
+import com.dianemodb.integration.test.BaseProcess;
+import com.dianemodb.integration.test.BaseProcess.Result;
 import com.dianemodb.integration.test.ProcessManager;
-import com.dianemodb.integration.test.TestProcess;
-import com.dianemodb.integration.test.TestProcess.Result;
 import com.dianemodb.metaschema.SQLServerApplication;
+
+import fj.data.Either;
 
 public class TpccProcessManager extends ProcessManager {
 
@@ -29,7 +33,7 @@ public class TpccProcessManager extends ProcessManager {
 				);
 	}
 	
-	public Result failed(ConversationId conversationId, Throwable ex, TestProcess testProcess) {
+	public Result failed(ConversationId conversationId, Throwable ex, BaseProcess testProcess) {
 		return scheduler.failed(conversationId, ex, testProcess);
 	}
 
@@ -38,9 +42,18 @@ public class TpccProcessManager extends ProcessManager {
 		// Doesn't finish until cancelled
 		return false;
 	}
+	
+	@Override
+	public void process(
+			Map<ConversationId, Either<Object, ? extends DiaDbException>> results
+	) {
+		super.process(results);
+		scheduler.resume();
+	}
+
 
 	@Override
-	protected void success(TestProcess process) {
+	protected void success(BaseProcess process) {
 		scheduler.finished((TpccTestProcess) process );
 	}
 }

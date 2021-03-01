@@ -14,7 +14,7 @@ import com.dianemodb.RecordWithVersion;
 import com.dianemodb.ServerComputerId;
 import com.dianemodb.UserRecord;
 import com.dianemodb.integration.test.NextStep;
-import com.dianemodb.integration.test.TestProcess;
+import com.dianemodb.integration.test.BaseProcess;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.Constants;
@@ -25,7 +25,7 @@ import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
 import com.dianemodb.version.Transaction.State;
 import com.dianemodb.workflow.tx.TxEndValue;
 
-public abstract class TpccTestProcess extends TestProcess {
+public abstract class TpccTestProcess extends BaseProcess {
 	
 	static final Logger LOGGER = LoggerFactory.getLogger(TpccTestProcess.class.getName());
 	
@@ -201,7 +201,7 @@ public abstract class TpccTestProcess extends TestProcess {
 					txId, 
 					readVersion
 			);
-			return TestProcess.FINISHED;
+			return BaseProcess.FINISHED;
 		}
 		else {
 			LOGGER.debug(

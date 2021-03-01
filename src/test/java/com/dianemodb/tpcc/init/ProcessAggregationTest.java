@@ -20,8 +20,8 @@ import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
 import com.dianemodb.functional.ByteUtil;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.integration.test.ProcessManager;
-import com.dianemodb.integration.test.TestProcess;
-import com.dianemodb.integration.test.TestProcess.Result;
+import com.dianemodb.integration.test.BaseProcess;
+import com.dianemodb.integration.test.BaseProcess.Result;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.SQLServerApplication;
 import com.dianemodb.tpcc.TpccRunner;
@@ -30,7 +30,7 @@ import com.dianemodb.version.ReadVersion;
 
 import fj.data.Either;
 
-public class ProcessAggregatorTest {
+public class ProcessAggregationTest {
 	
 	private static final ServerComputerId OTHER_COMPUTER_ID = ServerComputerId.valueOf("1");
 
@@ -53,17 +53,17 @@ public class ProcessAggregatorTest {
 
 	@Test
 	public void testClientRollbackBeingSent() throws Exception {
-		ProcessManager aggregator = 
+		ProcessManager manager = 
 			new ProcessManager(List.of(), 100) {
 				
 				@Override
-				protected void success(TestProcess process) {
+				protected void success(BaseProcess process) {
 					// TODO Auto-generated method stub
 					
 				}
 				
 				@Override
-				protected Result failed(ConversationId conversationId, Throwable ex, TestProcess process) {
+				protected Result failed(ConversationId conversationId, Throwable ex, BaseProcess process) {
 					// TODO Auto-generated method stub
 					return null;
 				}
@@ -85,17 +85,17 @@ public class ProcessAggregatorTest {
 				}
 			};
 				
-		aggregator.queueNextSteps(List.of(process.start()));
+		manager.sendNextSteps(List.of(process.start()));
 		
 		// the first message being sent will be the start-tx event
 		assertSingleEnvelopeBeingSentOfType(
-				aggregator, 
+				manager, 
 				StartTransactionEvent.class, 
 				Optional.empty()
 		);
 
 		// make it roll back the TX
-		aggregator.receiveResults(
+		manager.receiveResults(
 				Map.of(
 					CONVERSATION_ID, 
 					Either.left(Pair.of(TX_ID, READ_VERSION))
@@ -104,13 +104,13 @@ public class ProcessAggregatorTest {
 		
 		// it should have a rollback message waiting to be sent
 		assertSingleEnvelopeBeingSentOfType(
-				aggregator, 
+				manager, 
 				RollbackTransactionEvent.class, 
 				Optional.of(TX_ID)
 		);
 
 		// make it roll back the TX
-		aggregator.receiveResults(
+		manager.receiveResults(
 				Map.of(
 					CONVERSATION_ID, 
 					Either.left(Pair.of(TX_ID, READ_VERSION))
