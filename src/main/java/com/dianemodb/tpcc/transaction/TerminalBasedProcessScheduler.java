@@ -20,9 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ConversationId;
-import com.dianemodb.integration.test.NextStep;
 import com.dianemodb.integration.test.BaseProcess;
 import com.dianemodb.integration.test.BaseProcess.Result;
+import com.dianemodb.integration.test.NextStep;
 import com.dianemodb.tpcc.Constants;
 
 public class TerminalBasedProcessScheduler implements TpccProcessScheduler {

@@ -42,7 +42,7 @@ public class TpccDataPopulationGenerator {
 	private static final String WAREHOUSE_ID_COLUMN_NAME = "wh_id";
 	
 	private static final int NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER = 74;
-	private static final int NUMBER_OF_EXISTING_WAREHOUSES = 1;
+	private static final int NUMBER_OF_EXISTING_WAREHOUSES = 75;
 	
 	public static void main(String[] args) throws Exception {
 		Topology topology = DiaDBRunner.readTopologyFromFile(ExampleRunner.SMALL_SINGLE_LEVEL_TOPOLOGY);

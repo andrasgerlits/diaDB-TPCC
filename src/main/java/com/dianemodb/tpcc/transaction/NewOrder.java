@@ -296,6 +296,10 @@ public class NewOrder extends TpccTestProcess {
 						)
 					);
 		
+		if(stockByItemAndWarehouseId.size() != supplyingWarehouseAndQuantityByItemId.size()) {
+			throw new IllegalStateException();
+		}
+		
 		Map<Pair<Integer, Short>, Item> itemByIdAndWarehouseId = 
 				supplyingWarehouseAndQuantityByItemId.entrySet()
 					.stream()
@@ -313,6 +317,10 @@ public class NewOrder extends TpccTestProcess {
 							}
 						)
 					);
+		
+		if(itemByIdAndWarehouseId.size() != supplyingWarehouseAndQuantityByItemId.size()) {
+			throw new IllegalStateException();
+		}
 		
 		Iterator<Entry<Pair<Integer, Short>, RecordWithVersion<Stock>>> stockIter = 
 				stockByItemAndWarehouseId.entrySet().iterator();
