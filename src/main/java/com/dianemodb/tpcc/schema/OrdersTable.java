@@ -6,14 +6,15 @@ import java.util.List;
 
 import com.dianemodb.Topology;
 import com.dianemodb.h2impl.H2RangeBasedDistributedIndex;
+import com.dianemodb.id.IndexTableId;
 import com.dianemodb.id.RecordId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
-import com.dianemodb.metaschema.ByteColumn;
-import com.dianemodb.metaschema.IntColumn;
-import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.ShortColumn;
-import com.dianemodb.metaschema.TimestampColumn;
+import com.dianemodb.metaschema.column.ByteColumn;
+import com.dianemodb.metaschema.column.IntColumn;
+import com.dianemodb.metaschema.column.RecordColumn;
+import com.dianemodb.metaschema.column.ShortColumn;
+import com.dianemodb.metaschema.column.TimestampColumn;
 import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.query.IndexColumnDefinition;
 import com.dianemodb.tpcc.entity.Orders;
@@ -103,6 +104,7 @@ public class OrdersTable extends WarehouseBasedTable<Orders> {
 		
 		this.compositeIndex = 				
 				new H2RangeBasedDistributedIndex<>(
+						new IndexTableId(0, ID),
 						servers,
 						this, 
 						List.of(
@@ -114,6 +116,7 @@ public class OrdersTable extends WarehouseBasedTable<Orders> {
 		
 		this.customerIndex = 
 				new H2RangeBasedDistributedIndex<>(
+						new IndexTableId(1, ID),
 						servers,
 						this, 
 						List.of(

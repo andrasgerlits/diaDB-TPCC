@@ -7,9 +7,9 @@ import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.id.UserRecordTableId;
-import com.dianemodb.metaschema.RecordColumn;
+import com.dianemodb.metaschema.UserRecordTable;
+import com.dianemodb.metaschema.column.RecordColumn;
 import com.dianemodb.metaschema.distributed.UserRecordIndex;
-import com.dianemodb.metaschema.schema.UserRecordTable;
 
 public abstract class TpccBaseTable<R extends UserRecord> extends UserRecordTable<R> {
 	

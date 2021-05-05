@@ -18,11 +18,11 @@ import org.slf4j.LoggerFactory;
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.Record;
 import com.dianemodb.RecordWithVersion;
-import com.dianemodb.ServerComputerId;
 import com.dianemodb.UserRecord;
 import com.dianemodb.functional.FunctionalUtil;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.message.Envelope;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.NewOrders;
@@ -45,7 +45,7 @@ public class Delivery extends TpccTestProcess {
 	protected Delivery(
 			Random random,
 			ServerComputerId txComputer,
-			SQLServerApplication application, 
+			DianemoApplication application, 
 			short warehouseId,
 			String uuid
 	) {
@@ -55,7 +55,9 @@ public class Delivery extends TpccTestProcess {
 
 	@Override
 	protected Result startTx() {
-		LOGGER.debug("start {}", uuid);
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug("start {}", uuid);
+		}
 
 		List<Envelope> queries =
 				IntStream.range(0, Constants.DISTRICT_PER_WAREHOUSE)
@@ -75,7 +77,9 @@ public class Delivery extends TpccTestProcess {
 	private Result process(List<Object> r) {
 		List<List<RecordWithVersion<NewOrders>>> results = (List) r;
 		
-		LOGGER.debug("Process {} {}", uuid, results);
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Process {} {}", uuid, results);
+		}
 		
 		// finish TX without writing anything to the DB if there was nothing in any one
 		if(results.isEmpty() || results.stream().anyMatch( rl -> rl.isEmpty())) {
@@ -90,7 +94,9 @@ public class Delivery extends TpccTestProcess {
 		 // select orders for each new_order found
 		this.newOrders = (List<RecordWithVersion<NewOrders>>) results.iterator().next();
 
-		LOGGER.debug("toQueries {} {}", uuid, newOrders);
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug("toQueries {} {}", uuid, newOrders);
+		}
 		
 		List<NewOrders> noList = 
 				newOrders.stream()
@@ -185,7 +191,9 @@ public class Delivery extends TpccTestProcess {
 	}
 
 	private Result updateRecords(List<? extends Object> results) {
-		LOGGER.debug("update {} {}", uuid, results);
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug("update {} {}", uuid, results);
+		}
 		Timestamp now = new Timestamp(System.currentTimeMillis());
 		
 		List<List<? extends RecordWithVersion<? extends Record>>> resultLists = 

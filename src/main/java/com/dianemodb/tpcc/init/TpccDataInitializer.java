@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.dianemodb.UserRecord;
 import com.dianemodb.functional.ByteUtil;
 import com.dianemodb.id.TransactionId;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.AddressAndTaxUserBaseRecord;
 import com.dianemodb.tpcc.entity.LocationBasedUserRecord;
@@ -151,12 +151,12 @@ public abstract class TpccDataInitializer {
 		}
 	}
 	
-	protected final SQLServerApplication application;
+	protected final DianemoApplication application;
 	private int numberProcessed = 0;
 	private long startTime = -1;
 	private final String itemTypeName;
 
-	public TpccDataInitializer(SQLServerApplication application) {
+	public TpccDataInitializer(DianemoApplication application) {
 		this.application = application;
 		this.itemTypeName = getClass().getSimpleName();
 	}

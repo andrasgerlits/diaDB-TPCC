@@ -5,17 +5,18 @@ import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
+import com.dianemodb.ServerConfig;
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
 import com.dianemodb.functional.FunctionalUtil;
 import com.dianemodb.integration.AbstractServerTestCase;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.integration.test.runner.AbstractTestRunner;
+import com.dianemodb.integration.test.runner.ExampleRunner;
+import com.dianemodb.integration.test.runner.InstanceRunner;
+import com.dianemodb.kryo.KryoSerializer;
+import com.dianemodb.metaschema.DianemoApplication;
+import com.dianemodb.metaschema.UserRecordTable;
 import com.dianemodb.metaschema.distributed.UserRecordQueryStep;
-import com.dianemodb.metaschema.schema.UserRecordTable;
-import com.dianemodb.runner.AbstractTestRunner;
-import com.dianemodb.runner.ExampleRunner;
-import com.dianemodb.runner.InstanceRunner;
-import com.dianemodb.runner.KafkaClientRunner;
 import com.dianemodb.sql.SQLApplicationImpl;
 import com.dianemodb.tpcc.query.FindCustomerByWarehouseDistrictLastName;
 import com.dianemodb.tpcc.query.FindDistrictByWarehouseAndDistrictId;
@@ -46,7 +47,7 @@ public class TpccRunner extends AbstractTestRunner {
 	// flip this switch to alternate between running the test or initializing the database
 	private static final boolean recreate = false;
 
-	public static SQLServerApplication createApplication(Topology topology) {
+	public static DianemoApplication createApplication(Topology topology) {
 		
 		CustomerTable customerTable = new CustomerTable(topology);
 		NewOrdersTable newOrdersTable = new NewOrdersTable(topology);
@@ -90,7 +91,7 @@ public class TpccRunner extends AbstractTestRunner {
 					new FindWarehouseDetailsById(warehouseTable)
 				);
 		
-		return new SQLApplicationImpl(recordTables, queryPlans);
+		return new SQLApplicationImpl("tpcc", recordTables, queryPlans, topology, KryoSerializer::new);
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -127,7 +128,7 @@ public class TpccRunner extends AbstractTestRunner {
 						// start everything
 						//"-i", "0,1,2", 
 						"-t", topologyFile,
-						"-" + InstanceRunner.SUBDIRECTORY_SWITCH, KafkaClientRunner.ABSOLUTE_ROOT_DIRECTORY + "server_" + idBase
+						"-" + InstanceRunner.SUBDIRECTORY_SWITCH, ServerConfig.DEFAULT_ROOT_DIRECTORY + "server_" + idBase
 					},
 					t -> createApplication(t),
 					reInitData

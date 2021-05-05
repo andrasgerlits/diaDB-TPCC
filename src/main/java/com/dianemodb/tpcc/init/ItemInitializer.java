@@ -6,10 +6,10 @@ import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
-import com.dianemodb.ServerComputerId;
 import com.dianemodb.UserRecord;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.id.TransactionId;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Item;
 import com.dianemodb.tpcc.schema.ItemTable;
@@ -18,7 +18,7 @@ public class ItemInitializer extends TpccDataInitializer {
 
 	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(ItemInitializer.class.getName());
 
-	public ItemInitializer(SQLServerApplication application) {
+	public ItemInitializer(DianemoApplication application) {
 		super(application);
 	}
 

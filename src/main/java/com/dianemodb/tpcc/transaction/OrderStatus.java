@@ -6,9 +6,9 @@ import java.util.Optional;
 import java.util.Random;
 
 import com.dianemodb.RecordWithVersion;
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.message.Envelope;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
@@ -24,7 +24,7 @@ public class OrderStatus extends TpccTestProcess {
 	public OrderStatus(
 			Random random,
 			ServerComputerId txComputer, 
-			SQLServerApplication application, 
+			DianemoApplication application, 
 			short warehouseId,
 			byte districtId,
 			String uuid

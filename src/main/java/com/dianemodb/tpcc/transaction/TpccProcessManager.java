@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Map;
 
 import com.dianemodb.ConversationId;
-import com.dianemodb.ServerComputerId;
 import com.dianemodb.exception.DiaDbException;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.integration.test.BaseProcess;
 import com.dianemodb.integration.test.BaseProcess.Result;
 import com.dianemodb.integration.test.ProcessManager;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 
 import fj.data.Either;
 
@@ -19,11 +19,11 @@ public class TpccProcessManager extends ProcessManager {
 	private TpccProcessScheduler scheduler;
 	
 	public TpccProcessManager(
-			SQLServerApplication application, 
+			DianemoApplication application, 
 			List<ServerComputerId> leafComputers,
 			int concurrentRequestNumber
 	) {
-		super(leafComputers, concurrentRequestNumber);
+		super(leafComputers, concurrentRequestNumber, application);
 		
 		this.processMaker = new TpccProcessMaker(application);
 		this.scheduler = 

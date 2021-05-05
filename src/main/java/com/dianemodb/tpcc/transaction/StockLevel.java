@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Random;
 
 import com.dianemodb.RecordWithVersion;
-import com.dianemodb.ServerComputerId;
 import com.dianemodb.functional.FunctionalUtil;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.message.Envelope;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.entity.District;
 import com.dianemodb.tpcc.init.TpccDataInitializer;
 import com.dianemodb.tpcc.query.FindDistrictByWarehouseAndDistrictId;
@@ -21,7 +21,7 @@ public class StockLevel extends TpccTestProcess {
 	protected StockLevel(
 			Random random, 
 			ServerComputerId txComputer,
-			SQLServerApplication application, 
+			DianemoApplication application, 
 			short warehouseId,
 			byte districtId,
 			String uuid

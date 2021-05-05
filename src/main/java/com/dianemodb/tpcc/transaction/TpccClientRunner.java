@@ -1,5 +1,6 @@
 package com.dianemodb.tpcc.transaction;
 
+import java.util.List;
 import java.util.Properties;
 import java.util.function.Function;
 
@@ -8,39 +9,51 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 
-import com.dianemodb.ServerComputerId;
 import com.dianemodb.Topology;
 import com.dianemodb.functional.FunctionalUtil;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.integration.AbstractServerTestCase;
+import com.dianemodb.integration.runner.AbstractClientRunner;
 import com.dianemodb.integration.test.ProcessManager;
-import com.dianemodb.metaschema.SQLServerApplication;
-import com.dianemodb.runner.AbstractClientRunner;
-import com.dianemodb.runner.ExampleRunner;
+import com.dianemodb.integration.test.runner.ExampleRunner;
+import com.dianemodb.metaschema.DianemoApplication;
 
 public class TpccClientRunner extends AbstractClientRunner {
 
 	private int concurrentRequestNumber;
+	private final String appId;
 	
 	public TpccClientRunner(
 			Properties kafkaServerProperties, 
 			String bootStrapUrl, 
 			ServerComputerId topicId,
 			Topology topology, 
-			SQLServerApplication application,
+			DianemoApplication application,
 			int concurrentRequestNumber
 	) throws Exception {
-		super(kafkaServerProperties, bootStrapUrl, topicId, topology, application);
+		super(
+			kafkaServerProperties, 
+			bootStrapUrl, 
+			topicId, 
+			topology, 
+			List.of(application)
+	);
+		this.appId = application.getId();
 		this.concurrentRequestNumber = concurrentRequestNumber;
 	}
 
 	@Override
 	protected ProcessManager createTestProcessManager() {
-		return new TpccProcessManager(application, topology.getLeafNodes(), concurrentRequestNumber);
+		return new TpccProcessManager(
+						application(appId), 
+						topology.getLeafNodes(), 
+						concurrentRequestNumber
+					);
 	}
 
 	public static TpccClientRunner init(
 			String[] args, 
-			Function<Topology, SQLServerApplication> f,
+			Function<Topology, DianemoApplication> f,
 			int parallelRequestNumber
 	) {
 		Options options = getCommonOptions();
@@ -54,7 +67,7 @@ public class TpccClientRunner extends AbstractClientRunner {
 				String topologyFileName = cmd.getOptionValue("t", ExampleRunner.DEFAULT_TOPOLOGY_JSON);
 				String bootstrapUrl = cmd.getOptionValue("b", AbstractServerTestCase.getBootstrapUrl());
 				
-				Topology topology = readTopologyFromFile(topologyFileName);
+				Topology topology = Topology.readTopologyFromJsonFile(topologyFileName);
 
 				return new TpccClientRunner(
 								getKafkaServerProperties(cmd), 

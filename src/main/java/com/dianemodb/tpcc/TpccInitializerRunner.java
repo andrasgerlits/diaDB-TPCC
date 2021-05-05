@@ -10,11 +10,12 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.slf4j.LoggerFactory;
 
-import com.dianemodb.ServerComputerId;
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.id.TransactionId;
-import com.dianemodb.runner.InitializerRunner;
+import com.dianemodb.integration.runner.InitializerRunner;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.init.CustomerInitializer;
 import com.dianemodb.tpcc.init.DistrictInitializer;
 import com.dianemodb.tpcc.init.ItemInitializer;
@@ -51,6 +52,8 @@ public class TpccInitializerRunner extends InitializerRunner {
 
 		this.initializers = new LinkedList<>();
 		
+		DianemoApplication application = singleApp();
+		
 		initializers.add(new ItemInitializer(application));
 		initializers.add(new WarehouseInitializer(application));
 		initializers.add(new DistrictInitializer(application));
@@ -80,7 +83,7 @@ public class TpccInitializerRunner extends InitializerRunner {
 					getKafkaServerProperties(cmd), 
 					cmd.getOptionValue("b"), 
 					getTopicId(cmd), 
-					readTopologyFromFile(cmd.getOptionValue("t")),
+					Topology.readTopologyFromJsonFile(cmd.getOptionValue("t")),
 					Integer.valueOf(cmd.getOptionValue(NUMBER_OF_TX_SWITCH))			
 				);
 		

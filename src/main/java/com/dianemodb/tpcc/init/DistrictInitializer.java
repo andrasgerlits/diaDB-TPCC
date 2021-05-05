@@ -6,13 +6,13 @@ import java.util.List;
 
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.District;
 
 public class DistrictInitializer extends TpccDataInitializer {
 	
-	public DistrictInitializer(SQLServerApplication application) {
+	public DistrictInitializer(DianemoApplication application) {
 		super(application);
 	}
 

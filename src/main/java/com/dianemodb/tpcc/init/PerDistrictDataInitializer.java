@@ -2,14 +2,14 @@ package com.dianemodb.tpcc.init;
 
 import java.util.Arrays;
 
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 
 public abstract class PerDistrictDataInitializer extends TpccDataInitializer {
 
 	final int[] numberInBatch;
 	
-	public PerDistrictDataInitializer(SQLServerApplication application, int numberPerDistrict) {
+	public PerDistrictDataInitializer(DianemoApplication application, int numberPerDistrict) {
 		super(application);
 		this.numberInBatch = 
 				new int[]{ 

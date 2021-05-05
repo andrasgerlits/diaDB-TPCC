@@ -10,9 +10,9 @@ import java.util.Random;
 
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.RecordWithVersion;
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.message.Envelope;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.District;
 import com.dianemodb.tpcc.entity.Warehouse;
@@ -32,7 +32,7 @@ public class Payment extends TpccTestProcess {
 	public Payment(
 			Random random,
 			ServerComputerId txComputer,
-			SQLServerApplication application,
+			DianemoApplication application,
 			short warehouseId,
 			byte districtId,
 			String uuid

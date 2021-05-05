@@ -92,7 +92,9 @@ public class TerminalPool {
 		assert !isEmpty();
 		
 		long now = System.currentTimeMillis();
-		LOGGER.debug("Borrowing terminal {}", process.getMinInitialRequestTime() - now);
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Borrowing terminal {}", process.getMinInitialRequestTime() - now);
+		}
 		
 		short warehouseId = process.getWarehouseId();
 		
@@ -178,7 +180,9 @@ public class TerminalPool {
 		Map<Long, Short> freeUpNow = 
 				new HashMap<>(terminalFreeupTimes.subMap(0L, System.currentTimeMillis()));
 
-		LOGGER.debug("Returning {}", freeUpNow.size());
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Returning {}", freeUpNow.size());
+		}
 		
 		for(Short warehouseId : freeUpNow.values()) {
 			int currentlyFree = freeTerminals.get(warehouseId).incrementAndGet();

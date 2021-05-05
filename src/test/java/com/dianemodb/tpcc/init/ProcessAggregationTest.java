@@ -5,25 +5,27 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.dianemodb.ConversationId;
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.ServerConfig;
 import com.dianemodb.ServerEvent;
 import com.dianemodb.Topology;
 import com.dianemodb.event.tx.RollbackTransactionEvent;
 import com.dianemodb.event.tx.StartTransactionEvent;
 import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
 import com.dianemodb.functional.ByteUtil;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.integration.test.BaseProcess;
 import com.dianemodb.integration.test.BaseProcess.Result;
 import com.dianemodb.integration.test.ProcessManager;
 import com.dianemodb.message.Envelope;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.TpccRunner;
 import com.dianemodb.tpcc.transaction.TpccTestProcess;
 import com.dianemodb.version.ReadVersion;
@@ -39,9 +41,13 @@ public class ProcessAggregationTest {
 	private static final List<ServerComputerId> COMPUTERS =
 			List.of(COMPUTER_ID, OTHER_COMPUTER_ID);
 	
-	private static final Topology TOPOLOGY = new Topology(Map.of(ServerComputerId.ROOT, COMPUTERS));
+	private static final Topology TOPOLOGY = 
+			new Topology(
+					Map.of(ServerComputerId.ROOT, COMPUTERS), 
+					ServerConfig.DEFAULT_ROOT_DIRECTORY
+			);
 	
-	private static final SQLServerApplication APPLICATION = TpccRunner.createApplication(TOPOLOGY);
+	private static final DianemoApplication APPLICATION = TpccRunner.createApplication(TOPOLOGY);
 	
 	private static final Random RANDOM = new Random();
 	
@@ -54,7 +60,7 @@ public class ProcessAggregationTest {
 	@Test
 	public void testClientRollbackBeingSent() throws Exception {
 		ProcessManager manager = 
-			new ProcessManager(List.of(), 100) {
+			new ProcessManager(List.of(), 100, APPLICATION) {
 				
 				@Override
 				protected void success(BaseProcess process) {
@@ -125,7 +131,13 @@ public class ProcessAggregationTest {
 	) {
 		AtomicBoolean hasFlushed = new AtomicBoolean(false);
 		aggregator.flushMessages(
-				l -> {
+				m -> {
+					List<Envelope> l = 
+							m.stream()
+								.filter( p -> p.getKey() == APPLICATION)
+								.map(Pair::getValue)
+								.collect(Collectors.toList());
+					
 					// it must only have the same envelope
 					Assert.assertEquals(1, l.size());
 					Envelope envelopeBeingSent = l.iterator().next();

@@ -5,8 +5,8 @@ import java.util.List;
 
 import com.dianemodb.Topology;
 import com.dianemodb.id.UserRecordTableId;
-import com.dianemodb.metaschema.RecordColumn;
-import com.dianemodb.metaschema.StringColumn;
+import com.dianemodb.metaschema.column.RecordColumn;
+import com.dianemodb.metaschema.column.StringColumn;
 import com.dianemodb.tpcc.entity.LocationBasedUserRecord;
 
 public abstract class LocationBasedUserRecordTable<R extends LocationBasedUserRecord> extends WarehouseBasedTable<R> {

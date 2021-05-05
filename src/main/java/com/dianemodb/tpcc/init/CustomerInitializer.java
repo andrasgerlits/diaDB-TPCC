@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.History;
@@ -26,7 +26,7 @@ public class CustomerInitializer extends PerDistrictDataInitializer {
 				* Constants.CUSTOMER_PER_DISTRICT 
 				/ ITEM_PER_BATCH;
 
-	public CustomerInitializer(SQLServerApplication application) {
+	public CustomerInitializer(DianemoApplication application) {
 		super(application, Constants.CUSTOMER_PER_DISTRICT);
 	}
 

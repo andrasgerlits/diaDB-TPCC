@@ -14,22 +14,21 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import com.dianemodb.ServerComputerId;
+import com.dianemodb.ServerConfig;
 import com.dianemodb.Topology;
 import com.dianemodb.UserRecord;
-import com.dianemodb.computertest.framework.TestComputer;
+import com.dianemodb.h2impl.H2Computer;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.integration.sqlwrapper.BenchmarkingH2ConnectionWrapper;
-import com.dianemodb.metaschema.RecordColumn;
+import com.dianemodb.integration.test.runner.ExampleRunner;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.metaschema.SQLHelper;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.ServerTable;
+import com.dianemodb.metaschema.UserRecordTable;
+import com.dianemodb.metaschema.column.RecordColumn;
 import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.metaschema.index.IndexRecord;
 import com.dianemodb.metaschema.index.IndexTable;
-import com.dianemodb.metaschema.schema.ServerTable;
-import com.dianemodb.metaschema.schema.UserRecordTable;
-import com.dianemodb.runner.DiaDBRunner;
-import com.dianemodb.runner.ExampleRunner;
-import com.dianemodb.runner.KafkaClientRunner;
 import com.dianemodb.tpcc.schema.WarehouseBasedTable;
 
 public class TpccDataPopulationGenerator {
@@ -45,15 +44,16 @@ public class TpccDataPopulationGenerator {
 	private static final int NUMBER_OF_EXISTING_WAREHOUSES = 75;
 	
 	public static void main(String[] args) throws Exception {
-		Topology topology = DiaDBRunner.readTopologyFromFile(ExampleRunner.SMALL_SINGLE_LEVEL_TOPOLOGY);
-		SQLServerApplication application = TpccRunner.createApplication(topology);
+		Topology topology = Topology.readTopologyFromJsonFile(ExampleRunner.SMALL_SINGLE_LEVEL_TOPOLOGY);
+		
+		DianemoApplication application = TpccRunner.createApplication(topology);
 
 		populate(topology, application, NUMBER_OF_WAREHOUSES_TO_GENERATE_PER_COMPUTER);
 	}
 	
 	public static void populate(
 			Topology topology, 
-			SQLServerApplication application,
+			DianemoApplication application,
 			int multiplier
 	) {
 		List<ServerComputerId> leafComputers = topology.getLeafNodes();
@@ -109,7 +109,7 @@ public class TpccDataPopulationGenerator {
 	}
 
 	private static void run(
-			SQLServerApplication application, 
+			DianemoApplication application, 
 			ServerComputerId computerId, 
 			final int ii, 
 			short oldWarehouseId,
@@ -128,7 +128,7 @@ public class TpccDataPopulationGenerator {
 		// this is the default directory, configured byt the environment switch
 		Connection connection = 
 				BenchmarkingH2ConnectionWrapper.createConnection(
-						KafkaClientRunner.ABSOLUTE_ROOT_DIRECTORY + "server_1", 
+						ServerConfig.DEFAULT_ROOT_DIRECTORY + "server_1", 
 						computerId.clearTextFormat()
 				);
 		
@@ -144,7 +144,7 @@ public class TpccDataPopulationGenerator {
 		// this should trigger compacting and at worst fails ASAP if H2 would crash
 		connection = 
 				BenchmarkingH2ConnectionWrapper.createConnection(
-						KafkaClientRunner.ABSOLUTE_ROOT_DIRECTORY + "server_1", 
+						ServerConfig.DEFAULT_ROOT_DIRECTORY + "server_1", 
 						computerId.clearTextFormat()
 				);
 		
@@ -162,7 +162,7 @@ public class TpccDataPopulationGenerator {
 	}
 
 	public static List<String> populate(
-			SQLServerApplication application,
+			DianemoApplication application,
 			ServerComputerId computerId,
 			short wh_id,
 			short new_wh_id
@@ -175,7 +175,7 @@ public class TpccDataPopulationGenerator {
 		String initSequence = 
 				"CREATE SEQUENCE " + ID_SEQ_NAME + " start with ("
 					+ "SELECT f.value FROM ID_FACTORY f "
-					+ " WHERE f.name='" + TestComputer.USER_RECORD_ID_FACTORY_ID + "' "
+					+ " WHERE f.name='" + H2Computer.USER_RECORD_ID_FACTORY_ID + "' "
 					+ " LIMIT 1"
 				+ ")";
 		
@@ -200,7 +200,7 @@ public class TpccDataPopulationGenerator {
 		
 		String updateIdFactoryStatement = 
 				"UPDATE ID_FACTORY SET value = " + ID_SEQ_NAME + ".nextval "
-						+ "WHERE name='" + TestComputer.USER_RECORD_ID_FACTORY_ID + "'";
+						+ "WHERE name='" + H2Computer.USER_RECORD_ID_FACTORY_ID + "'";
 		
 		statements.add(updateIdFactoryStatement);
 		

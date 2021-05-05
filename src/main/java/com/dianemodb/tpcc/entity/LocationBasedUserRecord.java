@@ -14,7 +14,6 @@ public abstract class LocationBasedUserRecord extends UserBaseRecord {
 	private String zip;
 	
 	@Deprecated
-	@SuppressWarnings({ "unused"})
 	protected LocationBasedUserRecord() {
 		// required for serialization
 	}

@@ -11,12 +11,12 @@ import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.RecordWithVersion;
-import com.dianemodb.ServerComputerId;
 import com.dianemodb.UserRecord;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.integration.test.BaseProcess;
 import com.dianemodb.integration.test.NextStep;
 import com.dianemodb.message.Envelope;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.init.TpccDataInitializer;
 import com.dianemodb.tpcc.query.CustomerSelectionById;
@@ -76,7 +76,7 @@ public abstract class TpccTestProcess extends BaseProcess {
 	}
 
 	protected final Random random;
-	protected final SQLServerApplication application;
+	protected final DianemoApplication application;
 	private final ServerComputerId txComputer;
 	protected final short terminalWarehouseId;
 	
@@ -105,7 +105,7 @@ public abstract class TpccTestProcess extends BaseProcess {
 	
 	protected TpccTestProcess(
 			Random random, 
-			SQLServerApplication application, 
+			DianemoApplication application, 
 			ServerComputerId txComputer, 
 			int keyingTimeInMs, 
 			int meanThinkTimeInMs,
@@ -137,14 +137,15 @@ public abstract class TpccTestProcess extends BaseProcess {
 	@Override
 	protected Result startInternal(Object result) {
 		Result res = super.startInternal(result);
-		
-		LOGGER.debug(
-				"{} starting w_id {} tx-id {} read-version {}",
-				uuid,
-				terminalWarehouseId, 
-				txId, 
-				readVersion
-		);
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug(
+					"{} starting w_id {} tx-id {} read-version {}",
+					uuid,
+					terminalWarehouseId, 
+					txId, 
+					readVersion
+			);
+		}
 		
 		return res;
 	}
@@ -195,21 +196,25 @@ public abstract class TpccTestProcess extends BaseProcess {
 		TxEndValue txEndState = ((Optional<TxEndValue>) result).get();
 		
 		if(txEndState.getTxEndState() == State.COMMITTED) {
-			LOGGER.debug(
-					"{} committed warehouse-id {} read-version {}", 
-					terminalWarehouseId, 
-					txId, 
-					readVersion
-			);
+			if(LOGGER.isDebugEnabled()) {
+				LOGGER.debug(
+						"{} committed warehouse-id {} read-version {}", 
+						terminalWarehouseId, 
+						txId, 
+						readVersion
+				);
+			}
 			return BaseProcess.FINISHED;
 		}
 		else {
-			LOGGER.debug(
-					"{} commit failed, retrying warehouse-id {} read-version {}", 
-					terminalWarehouseId, 
-					txId, 
-					readVersion
-			);
+			if(LOGGER.isDebugEnabled()) {
+				LOGGER.debug(
+						"{} commit failed, retrying warehouse-id {} read-version {}", 
+						terminalWarehouseId, 
+						txId, 
+						readVersion
+				);
+			}
 			assert txEndState.getTxEndState() == State.CANCELLED;
 			return of(cancelAndRetry());
 		}
@@ -218,7 +223,9 @@ public abstract class TpccTestProcess extends BaseProcess {
 	// TX is rolled back when it receives an exception
 	public NextStep cancelAndRetry() {
 		retryCount++;
-		LOGGER.debug("{} retrying {}", startTime);
+		if(LOGGER.isDebugEnabled()) {
+			LOGGER.debug("{} retrying {}", startTime);
+		}
 		return ofSingle(startTransaction(), this::startInternal, 0L);
 	}
 	

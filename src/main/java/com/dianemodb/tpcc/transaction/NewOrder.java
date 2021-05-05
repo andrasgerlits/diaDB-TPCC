@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
 import com.dianemodb.RecordWithVersion;
-import com.dianemodb.ServerComputerId;
 import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
+import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.message.Envelope;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.District;
@@ -76,7 +76,7 @@ public class NewOrder extends TpccTestProcess {
 	public NewOrder(
 			Random random, 
 			ServerComputerId txComputer,
-			SQLServerApplication application,
+			DianemoApplication application,
 
 			short homeWarehouseId,
 			byte homeDistrictId,

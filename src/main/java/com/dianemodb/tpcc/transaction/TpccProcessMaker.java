@@ -13,9 +13,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dianemodb.ServerComputerId;
 import com.dianemodb.functional.ByteUtil;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.id.ServerComputerId;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.metaschema.distributed.Condition;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Warehouse;
@@ -37,7 +37,7 @@ public class TpccProcessMaker {
 	
 	private final List<TpccProcessFactory> prototypeList;
 
-	public TpccProcessMaker(SQLServerApplication application) {
+	public TpccProcessMaker(DianemoApplication application) {
 		// tx maintained on the same computer as the warehouse-record
 		WarehouseTable serverTable = (WarehouseTable) application.getTableById(WarehouseTable.ID);
 		
@@ -93,7 +93,7 @@ public class TpccProcessMaker {
 	}
 	
 	private List<TpccProcessFactory> createFactoryPrototypeList(
-			SQLServerApplication application,
+			DianemoApplication application,
 			Function<Short, ServerComputerId> f
 	) {
 		Random random = new Random();

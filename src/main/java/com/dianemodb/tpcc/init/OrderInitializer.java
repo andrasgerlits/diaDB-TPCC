@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.NewOrders;
 import com.dianemodb.tpcc.entity.OrderLine;
@@ -19,7 +19,7 @@ public class OrderInitializer extends PerDistrictDataInitializer {
 	
 	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(OrderInitializer.class.getName());
 	
-	public OrderInitializer(SQLServerApplication application) {
+	public OrderInitializer(DianemoApplication application) {
 		super(application, Constants.ORDER_PER_DISTRICT);
 	}
 

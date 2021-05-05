@@ -13,7 +13,6 @@ public abstract class AddressAndTaxUserBaseRecord extends LocationBasedUserRecor
 	private String ytd;
 	
 	@Deprecated
-	@SuppressWarnings({ "unused"})
 	protected AddressAndTaxUserBaseRecord() {
 		// required for serialization
 	}

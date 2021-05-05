@@ -7,13 +7,13 @@ import org.slf4j.LoggerFactory;
 
 import com.dianemodb.UserRecord;
 import com.dianemodb.id.TransactionId;
-import com.dianemodb.metaschema.SQLServerApplication;
+import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Stock;
 
 public class StockInitializer extends TpccDataInitializer {
 	
-	public StockInitializer(SQLServerApplication application) {
+	public StockInitializer(DianemoApplication application) {
 		super(application);
 	}
 
