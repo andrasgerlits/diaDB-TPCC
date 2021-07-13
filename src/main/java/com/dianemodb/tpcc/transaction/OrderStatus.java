@@ -5,15 +5,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.dianemodb.QueryDefinition;
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.DianemoApplication;
+import com.dianemodb.metaschema.distributed.Condition;
+import com.dianemodb.metaschema.distributed.Operator;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.query.CustomerSelectionStrategy;
-import com.dianemodb.tpcc.query.FindOrderLinesByWarehouseDistrictOrderId;
-import com.dianemodb.tpcc.query.orderstatus.FindMaxOrderIdForCustomer;
+import com.dianemodb.tpcc.schema.OrdersTable;
 
 public class OrderStatus extends TpccTestProcess {
 
@@ -49,7 +53,17 @@ public class OrderStatus extends TpccTestProcess {
 		
 		Envelope maxOrderIdQuery =
 				query(
-					FindMaxOrderIdForCustomer.ID, 
+					new QueryDefinition<>(
+						OrdersTable.ID, 
+						new Condition<>(
+							List.of(
+								Pair.of(OrdersTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
+								Pair.of(OrdersTable.DISTRICT_ID_COLUMN, Operator.EQ),
+								Pair.of(OrdersTable.CUSTOMER_ID_COLUMN, Operator.EQ)
+							)
+						), 
+						false
+					), 
 					List.of(terminalWarehouseId, districtId, customer.getRecord().getPublicId())
 				);
 		
@@ -62,7 +76,7 @@ public class OrderStatus extends TpccTestProcess {
 		
 		Envelope findOrderLinesQuery = 
 				query(
-					FindOrderLinesByWarehouseDistrictOrderId.ID,
+					Delivery.FIND_ORDER_LINES_BY_WH_DS_ID,
 					List.of(new ArrayList<>(List.of(terminalWarehouseId, districtId, orderId)))
 				);
 		

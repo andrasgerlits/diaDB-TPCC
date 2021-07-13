@@ -1,6 +1,5 @@
 package com.dianemodb.tpcc;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.slf4j.LoggerFactory;
@@ -15,20 +14,8 @@ import com.dianemodb.integration.test.runner.ExampleRunner;
 import com.dianemodb.integration.test.runner.InstanceRunner;
 import com.dianemodb.kryo.KryoSerializer;
 import com.dianemodb.metaschema.DianemoApplication;
+import com.dianemodb.metaschema.DianemoApplicationImpl;
 import com.dianemodb.metaschema.UserRecordTable;
-import com.dianemodb.metaschema.distributed.UserRecordQueryStep;
-import com.dianemodb.sql.SQLApplicationImpl;
-import com.dianemodb.tpcc.query.FindCustomerByWarehouseDistrictLastName;
-import com.dianemodb.tpcc.query.FindDistrictByWarehouseAndDistrictId;
-import com.dianemodb.tpcc.query.FindOrderLinesByOrderIdRangeDistrictAndWarehouse;
-import com.dianemodb.tpcc.query.FindOrderLinesByWarehouseDistrictOrderId;
-import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
-import com.dianemodb.tpcc.query.delivery.FindNewOrderWithLowestOrderIdByWarehouseAndDistrict;
-import com.dianemodb.tpcc.query.delivery.FindOrderByWarehouseDistrictOrderId;
-import com.dianemodb.tpcc.query.neworder.FindItemById;
-import com.dianemodb.tpcc.query.neworder.FindStockByWarehouseItem;
-import com.dianemodb.tpcc.query.orderstatus.FindMaxOrderIdForCustomer;
-import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
 import com.dianemodb.tpcc.schema.CustomerTable;
 import com.dianemodb.tpcc.schema.DistrictTable;
 import com.dianemodb.tpcc.schema.HistoryTable;
@@ -72,26 +59,7 @@ public class TpccRunner extends AbstractTestRunner {
 					warehouseTable
 				);
 		
-		Collection<UserRecordQueryStep<?>> queryPlans = 
-				List.of(
-					new FindNewOrderWithLowestOrderIdByWarehouseAndDistrict(newOrdersTable),
-					new FindOrderByWarehouseDistrictOrderId(ordersTable),
-					
-					new FindItemById(itemTable),
-					new FindStockByWarehouseItem(stockTable),
-					
-					new FindMaxOrderIdForCustomer(ordersTable),
-					
-					new FindCustomerByWarehouseDistrictAndId(customerTable),
-					
-					new FindCustomerByWarehouseDistrictLastName(customerTable),
-					new FindDistrictByWarehouseAndDistrictId(districtTable),
-					new FindOrderLinesByWarehouseDistrictOrderId(orderLineTable),
-					new FindOrderLinesByOrderIdRangeDistrictAndWarehouse(orderLineTable),
-					new FindWarehouseDetailsById(warehouseTable)
-				);
-		
-		return new SQLApplicationImpl("tpcc", recordTables, queryPlans, topology, KryoSerializer::new);
+		return new DianemoApplicationImpl("tpcc", recordTables, 100, topology, KryoSerializer::new);
 	}
 	
 	public static void main(String[] args) throws Exception {

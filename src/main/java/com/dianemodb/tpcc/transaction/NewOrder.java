@@ -19,11 +19,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
+import com.dianemodb.QueryDefinition;
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
 import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.DianemoApplication;
+import com.dianemodb.metaschema.distributed.Condition;
+import com.dianemodb.metaschema.distributed.Operator;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.District;
@@ -34,12 +37,11 @@ import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.entity.Stock;
 import com.dianemodb.tpcc.entity.Warehouse;
 import com.dianemodb.tpcc.init.TpccDataInitializer;
-import com.dianemodb.tpcc.query.FindDistrictByWarehouseAndDistrictId;
-import com.dianemodb.tpcc.query.FindWarehouseDetailsById;
-import com.dianemodb.tpcc.query.neworder.FindItemById;
-import com.dianemodb.tpcc.query.neworder.FindStockByWarehouseItem;
-import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
+import com.dianemodb.tpcc.schema.CustomerTable;
+import com.dianemodb.tpcc.schema.DistrictTable;
 import com.dianemodb.tpcc.schema.ItemTable;
+import com.dianemodb.tpcc.schema.StockTable;
+import com.dianemodb.tpcc.schema.WarehouseTable;
 
 
 public class NewOrder extends TpccTestProcess {
@@ -115,11 +117,63 @@ public class NewOrder extends TpccTestProcess {
 		}
 	}
 	
+	public static final QueryDefinition<Customer> FIND_CUSTOMER_BY_WH_DIST_ID = 
+			new QueryDefinition<Customer>(
+					CustomerTable.ID, 
+					new Condition<>(
+						List.of(
+							Pair.of(CustomerTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
+							Pair.of(CustomerTable.DISTRICT_ID_COLUMN, Operator.EQ),
+							Pair.of(CustomerTable.ID_COLUMN, Operator.EQ)
+						)
+					),
+					false
+			);
+	
+	public static final QueryDefinition<Warehouse> FIND_WAREHOUSE_BY_ID = 
+			new QueryDefinition<>(
+					WarehouseTable.ID, 
+					new Condition<>(WarehouseTable.ID_COLUMN, Operator.EQ),
+					false
+			);
+	
+	public static final QueryDefinition<District> FIND_DISTRICT_BY_WH_DIST_ID = 
+			new QueryDefinition<>(
+					DistrictTable.ID, 
+					new Condition<>(
+						List.of(
+							Pair.of(DistrictTable.WAREHOUSE_COLUMN, Operator.EQ),
+							Pair.of(DistrictTable.ID_COLUMN, Operator.EQ)
+						)
+					),
+					false
+			);
+	
+	public static final QueryDefinition<Item> FIND_ITEM_BY_ID = 
+			new QueryDefinition<>(
+					ItemTable.ID, 
+					new Condition<>(ItemTable.ID_COLUMN, Operator.EQ),
+					true
+			);
+	
+	
+	public static final QueryDefinition<Stock> FIND_STOCK_BY_WH_ITEM_ID =
+			new QueryDefinition<>(
+					StockTable.ID,
+					new Condition<>(
+						List.of(
+							Pair.of(StockTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
+							Pair.of(StockTable.ITEM_ID_COLUMN, Operator.EQ)
+						)
+					),
+					true
+			);
+	
 	@Override
 	protected Result startTx() {		
 		Envelope queryCustomerEnvelope = 
 				query(
-					FindCustomerByWarehouseDistrictAndId.ID, 
+					FIND_CUSTOMER_BY_WH_DIST_ID, 
 					// query is multiparam-based
 					List.of(
 						List.of(terminalWarehouseId, customerDistrictId, customerId)
@@ -128,13 +182,13 @@ public class NewOrder extends TpccTestProcess {
 
 		Envelope queryWarehouseEnvelope = 
 				query(
-					FindWarehouseDetailsById.ID, 
+					FIND_WAREHOUSE_BY_ID, 
 					List.of(terminalWarehouseId)
 				);
 		
 		Envelope queryDistrictEnvelope =
 				query(
-					FindDistrictByWarehouseAndDistrictId.ID, 
+					FIND_DISTRICT_BY_WH_DIST_ID, 
 					List.of(terminalWarehouseId, customerDistrictId)
 				);
 		
@@ -147,7 +201,7 @@ public class NewOrder extends TpccTestProcess {
 		 */
 		Envelope queryItemEnvelope = 
 				query(
-					FindItemById.ID, 
+					FIND_ITEM_BY_ID, 
 					new ArrayList<>(
 						/*
 						 * warehouse only added for efficiency, collecting as a set, since
@@ -169,7 +223,7 @@ public class NewOrder extends TpccTestProcess {
 					.map( e -> new LinkedList<>(List.of(e.getValue().getKey(), e.getKey())))
 					.collect(Collectors.toList());
 		
-		Envelope queryStocksEnvelope = query(FindStockByWarehouseItem.ID, itemWarehouseIds);
+		Envelope queryStocksEnvelope = query(FIND_STOCK_BY_WH_ITEM_ID, itemWarehouseIds);
 
 		return of(
 				List.of(

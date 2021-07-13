@@ -13,13 +13,16 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.dianemodb.functional.ByteUtil;
 import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.metaschema.distributed.Condition;
+import com.dianemodb.metaschema.distributed.SingleIndexBasedQueryPlan;
+import com.dianemodb.metaschema.distributed.UserRecordIndex;
+import com.dianemodb.metaschema.index.IndexRecord;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Warehouse;
 import com.dianemodb.tpcc.schema.WarehouseTable;
+import com.dianemodb.util.ByteUtil;
 
 /**
  * Supplies new TPC-C transactions based on the specification.
@@ -46,9 +49,16 @@ public class TpccProcessMaker {
 				
 		Function<Short, ServerComputerId> f = 
 				w -> {
+					UserRecordIndex<Warehouse> decidingIndex = serverTable.maintainingComputerDecidingIndex();
+					
+					Condition<IndexRecord> indexCondition =
+							SingleIndexBasedQueryPlan.recordConditionToIndexCondition(
+									equalsIdCondition, 
+									decidingIndex
+							);
+					
 					Set<ServerComputerId> computers = 
-						serverTable.maintainingComputerDecidingIndex()
-							.getMaintainingComputer(equalsIdCondition , List.of(w));
+						decidingIndex.getMaintainingComputer(indexCondition, List.of(w));
 					
 					// in the current configuration, each warehouse lives on a single instance
 					assert computers.size() == 1;

@@ -3,9 +3,15 @@ package com.dianemodb.tpcc.query;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.dianemodb.QueryDefinition;
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.message.Envelope;
+import com.dianemodb.metaschema.distributed.Condition;
+import com.dianemodb.metaschema.distributed.Operator;
 import com.dianemodb.tpcc.entity.Customer;
+import com.dianemodb.tpcc.schema.CustomerTable;
 import com.dianemodb.tpcc.transaction.TpccTestProcess;
 
 public class CustomerSelectionByLastName implements CustomerSelectionStrategy {
@@ -40,7 +46,17 @@ public class CustomerSelectionByLastName implements CustomerSelectionStrategy {
 	@Override
 	public Envelope customerQuery(TpccTestProcess process) {
 		return TpccTestProcess.query(
-				FindCustomerByWarehouseDistrictLastName.ID, 
+				new QueryDefinition<>(
+						CustomerTable.ID, 
+						new Condition<>(
+							List.of(
+								Pair.of(CustomerTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
+								Pair.of(CustomerTable.DISTRICT_ID_COLUMN, Operator.EQ),
+								Pair.of(CustomerTable.LAST_NAME_COLUMN, Operator.EQ)
+							)
+						), 
+						false
+				), 
 				List.of(warehouseId, districtId, lastName),
 				process
 			);

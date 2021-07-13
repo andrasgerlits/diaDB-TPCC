@@ -18,6 +18,7 @@ import com.dianemodb.metaschema.column.RecordColumn;
 import com.dianemodb.metaschema.column.ShortColumn;
 import com.dianemodb.metaschema.column.StringColumn;
 import com.dianemodb.metaschema.distributed.Condition;
+import com.dianemodb.metaschema.distributed.SingleIndexBasedQueryPlan;
 import com.dianemodb.metaschema.distributed.UserRecordIndex;
 import com.dianemodb.query.IndexColumnDefinition;
 import com.dianemodb.query.RangeBasedDistributedIndex;
@@ -91,19 +92,7 @@ public class ItemTable extends TpccBaseTable<Item> {
 		int index = getRecordMaintainingComputers().indexOf(id);
 		
 		assert index != -1 : getRecordMaintainingComputers() + " " + id;
-		
-		assert FunctionalUtil.singleResult(idIndex.getMaintainingComputer(
-					Condition.andEqualsEach(List.of(DISTRIBUTION_ID_COLUMN)), 
-					List.of(index)
-				))
-				.equals(id)
-			:
-			idIndex.getMaintainingComputer(
-					Condition.andEqualsEach(List.of(DISTRIBUTION_ID_COLUMN)), 
-					List.of(index)
-			) 
-			+ "\n" + id;
-		
+
 		assert index <= Short.MAX_VALUE : getRecordMaintainingComputers() + "\n" + id;
 		
 		return (short) index;

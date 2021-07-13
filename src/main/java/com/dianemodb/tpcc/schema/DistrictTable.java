@@ -41,7 +41,7 @@ public class DistrictTable extends AddressAndTaxUserBaseTable<District> {
 	public static final String WAREHOUSE_ID_COLUMNNAME = "d_w_id";
 	public static final String NEXT_OID_COLUMN_NAME = "d_next_o_id";
 
-	private static final RecordColumn<District, Short> WAREHOUSE_COLUMN = 
+	public static final RecordColumn<District, Short> WAREHOUSE_COLUMN = 
 			new RecordColumn<>(
 					new ShortColumn(WAREHOUSE_ID_COLUMNNAME), 
 					District::getWarehouseId, 

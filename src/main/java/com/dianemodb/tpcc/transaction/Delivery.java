@@ -6,16 +6,19 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.dianemodb.ModificationCollection;
+import com.dianemodb.QueryDefinition;
 import com.dianemodb.Record;
 import com.dianemodb.RecordWithVersion;
 import com.dianemodb.UserRecord;
@@ -23,16 +26,21 @@ import com.dianemodb.functional.FunctionalUtil;
 import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.DianemoApplication;
+import com.dianemodb.metaschema.distributed.Condition;
+import com.dianemodb.metaschema.distributed.LimitClause;
+import com.dianemodb.metaschema.distributed.Operator;
+import com.dianemodb.metaschema.distributed.OrderByClause;
+import com.dianemodb.metaschema.distributed.OrderByClause.OrderType;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.Customer;
 import com.dianemodb.tpcc.entity.NewOrders;
 import com.dianemodb.tpcc.entity.OrderLine;
 import com.dianemodb.tpcc.entity.Orders;
 import com.dianemodb.tpcc.init.TpccDataInitializer;
-import com.dianemodb.tpcc.query.FindOrderLinesByWarehouseDistrictOrderId;
-import com.dianemodb.tpcc.query.delivery.FindNewOrderWithLowestOrderIdByWarehouseAndDistrict;
-import com.dianemodb.tpcc.query.delivery.FindOrderByWarehouseDistrictOrderId;
-import com.dianemodb.tpcc.query.payment.FindCustomerByWarehouseDistrictAndId;
+import com.dianemodb.tpcc.schema.CustomerTable;
+import com.dianemodb.tpcc.schema.NewOrdersTable;
+import com.dianemodb.tpcc.schema.OrderLineTable;
+import com.dianemodb.tpcc.schema.OrdersTable;
 
 public class Delivery extends TpccTestProcess {
 
@@ -41,6 +49,50 @@ public class Delivery extends TpccTestProcess {
 	private final short carrierId; 
 	
 	private List<RecordWithVersion<NewOrders>> newOrders;
+	
+	public static final QueryDefinition<NewOrders> FIND_NEW_ORDERS_WITH_LOWEST_ORDER_ID_BY_WH_AND_DST =
+			new QueryDefinition<>(
+					NewOrdersTable.ID, 
+					new Condition<>(
+						List.of(
+							Pair.of(NewOrdersTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
+							Pair.of(NewOrdersTable.DISTRICT_ID_COLUMN, Operator.EQ)
+						)
+					), 
+					false,
+					Optional.of(
+						new OrderByClause<>(
+							List.of(Pair.of(NewOrdersTable.ORDER_ID_COLUMN, OrderType.ASC))
+						)
+					),
+					Optional.of(new LimitClause(1))
+			);	
+
+	public static final QueryDefinition<OrderLine> FIND_ORDER_LINES_BY_WH_DS_ID = 
+			new QueryDefinition<>(
+					OrderLineTable.ID, 
+					new Condition<>(
+						List.of(
+							Pair.of(OrderLineTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
+							Pair.of(OrderLineTable.DISTRICT_ID_COLUMN, Operator.EQ),
+							Pair.of(OrderLineTable.ORDER_ID_COLUMN, Operator.EQ)
+						)
+					), 
+					true
+			);
+
+	public static final QueryDefinition<Customer> FIND_CUSTOMER_BY_WH_DIST_ID = 
+			new QueryDefinition<Customer>(
+					CustomerTable.ID, 
+					new Condition<>(
+						List.of(
+							Pair.of(CustomerTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
+							Pair.of(CustomerTable.DISTRICT_ID_COLUMN, Operator.EQ),
+							Pair.of(CustomerTable.ID_COLUMN, Operator.EQ)
+						)
+					),
+					true
+			);
 	
 	protected Delivery(
 			Random random,
@@ -64,7 +116,7 @@ public class Delivery extends TpccTestProcess {
 					.mapToObj( 
 						districtId -> 
 							query(
-								FindNewOrderWithLowestOrderIdByWarehouseAndDistrict.ID,
+								FIND_NEW_ORDERS_WITH_LOWEST_ORDER_ID_BY_WH_AND_DST,
 								List.of( terminalWarehouseId, Byte.valueOf( (byte) districtId) )
 							)
 					)
@@ -73,7 +125,7 @@ public class Delivery extends TpccTestProcess {
 		return of(queries, this::process);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private Result process(List<Object> r) {
 		List<List<RecordWithVersion<NewOrders>>> results = (List) r;
 		
@@ -110,7 +162,21 @@ public class Delivery extends TpccTestProcess {
 						.collect(Collectors.toSet())
 				);
 		
-		Envelope orderQuery = query(FindOrderByWarehouseDistrictOrderId.ID, orderQueryParams );
+		Envelope orderQuery = 
+				query(
+					new QueryDefinition<Orders>(
+							OrdersTable.ID, 
+							new Condition<>(
+								List.of(
+									Pair.of(OrdersTable.WAREHOUSE_ID_COLUMN, Operator.EQ),
+									Pair.of(OrdersTable.DISTRICT_ID_COLUMN, Operator.EQ),
+									Pair.of(OrdersTable.ORDER_ID_COLUMN, Operator.EQ)
+								)
+							),
+							true
+					), 
+					orderQueryParams 
+				);
 		
 		List<List<? extends Number>> customerQueryParams = 
 				new ArrayList<>(
@@ -119,7 +185,11 @@ public class Delivery extends TpccTestProcess {
 						.collect(Collectors.toSet())
 				);
 		
-		Envelope customerQuery = query(FindCustomerByWarehouseDistrictAndId.ID, customerQueryParams);
+		Envelope customerQuery = 
+				query(
+					FIND_CUSTOMER_BY_WH_DIST_ID, 
+					customerQueryParams
+				);
 		
 		List<List<?>> orderLineQueryParams = 
 				new ArrayList<>(
@@ -128,7 +198,11 @@ public class Delivery extends TpccTestProcess {
 						.collect(Collectors.toSet())
 				);
 		
-		Envelope orderLinesQuery = query(FindOrderLinesByWarehouseDistrictOrderId.ID, orderLineQueryParams);
+		Envelope orderLinesQuery = 
+				query(
+					FIND_ORDER_LINES_BY_WH_DS_ID, 
+					orderLineQueryParams
+				);
 
 		return of(
 				List.of(orderQuery, customerQuery, orderLinesQuery), 
@@ -190,6 +264,7 @@ public class Delivery extends TpccTestProcess {
 			);
 	}
 
+	@SuppressWarnings("unchecked")
 	private Result updateRecords(List<? extends Object> results) {
 		if(LOGGER.isDebugEnabled()) {
 			LOGGER.debug("update {} {}", uuid, results);

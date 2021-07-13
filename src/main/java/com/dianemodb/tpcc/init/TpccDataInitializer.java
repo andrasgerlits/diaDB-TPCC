@@ -9,12 +9,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 
 import com.dianemodb.UserRecord;
-import com.dianemodb.functional.ByteUtil;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.Constants;
 import com.dianemodb.tpcc.entity.AddressAndTaxUserBaseRecord;
 import com.dianemodb.tpcc.entity.LocationBasedUserRecord;
+import com.dianemodb.util.ByteUtil;
 
 public abstract class TpccDataInitializer {
 

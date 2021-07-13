@@ -18,7 +18,6 @@ import com.dianemodb.Topology;
 import com.dianemodb.event.tx.RollbackTransactionEvent;
 import com.dianemodb.event.tx.StartTransactionEvent;
 import com.dianemodb.exception.ClientInitiatedRollbackTransactionException;
-import com.dianemodb.functional.ByteUtil;
 import com.dianemodb.id.ServerComputerId;
 import com.dianemodb.id.TransactionId;
 import com.dianemodb.integration.test.BaseProcess;
@@ -28,6 +27,7 @@ import com.dianemodb.message.Envelope;
 import com.dianemodb.metaschema.DianemoApplication;
 import com.dianemodb.tpcc.TpccRunner;
 import com.dianemodb.tpcc.transaction.TpccTestProcess;
+import com.dianemodb.util.ByteUtil;
 import com.dianemodb.version.ReadVersion;
 
 import fj.data.Either;
